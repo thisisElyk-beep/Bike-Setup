@@ -1,0 +1,33 @@
+{
+  "name": "Dialed — Bike Setup",
+  "short_name": "Dialed",
+  "description": "Mountain bike setup tracker and tuning log",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0909",
+  "theme_color": "#0a0909",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Add Bike",
+      "short_name": "Add",
+      "description": "Add a new bike to your fleet",
+      "url": "/?action=add-bike"
+    }
+  ]
+}
