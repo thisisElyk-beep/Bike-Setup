@@ -1,0 +1,285 @@
+import { getComponents, getTestSessions } from './db.js';
+import { showToast } from './app.js';
+
+export async function exportBikePDF(bike) {
+  showToast('Generating PDF...', 'info');
+
+  // Dynamically load jsPDF
+  let jsPDF;
+  try {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    await new Promise((resolve, reject) => {
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+    jsPDF = window.jspdf.jsPDF;
+  } catch (e) {
+    showToast('Failed to load PDF library', 'error');
+    return;
+  }
+
+  const [components, sessions] = await Promise.all([
+    getComponents(bike.id).catch(() => []),
+    getTestSessions(bike.id).catch(() => []),
+  ]);
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, ML = 18, MR = 18, TW = W - ML - MR;
+  let y = 0;
+
+  // ── Helpers ─────────────────────────────────────────────
+  const checkPage = (needed = 8) => {
+    if (y + needed > 272) { doc.addPage(); y = 20; }
+  };
+
+  const hex2rgb = hex => {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return [r, g, b];
+  };
+
+  const ACCENT = hex2rgb('#f59e0b');
+  const DARK   = [16, 15, 15];
+  const MID    = [90, 88, 88];
+  const LIGHT  = [220, 218, 216];
+  const BG     = [245, 243, 242];
+
+  const text = (str, x, yy, opts = {}) => {
+    doc.setFontSize(opts.size || 10);
+    doc.setFont('helvetica', opts.style || 'normal');
+    doc.setTextColor(...(opts.color || DARK));
+    doc.text(String(str ?? ''), x, yy, { maxWidth: opts.maxWidth });
+  };
+
+  const hRule = (yy, color = LIGHT) => {
+    doc.setDrawColor(...color);
+    doc.setLineWidth(0.3);
+    doc.line(ML, yy, W - MR, yy);
+  };
+
+  const sectionHeader = (title) => {
+    checkPage(14);
+    y += 6;
+    doc.setFillColor(...ACCENT);
+    doc.rect(ML, y, TW, 7, 'F');
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(10, 9, 9);
+    doc.text(title.toUpperCase(), ML + 3, y + 5);
+    y += 12;
+  };
+
+  const kv = (key, val, col1 = ML, colW = TW) => {
+    checkPage(7);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...MID);
+    doc.text(String(key), col1, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...DARK);
+    doc.text(String(val ?? '—'), col1 + colW * 0.42, y, { maxWidth: colW * 0.55 });
+    y += 6;
+  };
+
+  // ── COVER / HEADER ───────────────────────────────────────
+  doc.setFillColor(...DARK);
+  doc.rect(0, 0, W, 42, 'F');
+
+  doc.setFillColor(...ACCENT);
+  doc.rect(ML, 14, 3, 14, 'F');
+
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(240, 238, 238);
+  doc.text(bike.name || 'Untitled Bike', ML + 8, 24);
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...ACCENT);
+  doc.text((bike.type || 'Mountain Bike').toUpperCase() + ' — SETUP SUMMARY', ML + 8, 32);
+
+  doc.setFontSize(8);
+  doc.setTextColor(120, 118, 118);
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  doc.text(`Generated ${today}`, W - MR, 32, { align: 'right' });
+
+  y = 54;
+
+  // ── FRAME ────────────────────────────────────────────────
+  const fr = bike.baseline?.frame || {};
+  if (fr.brand || fr.model) {
+    sectionHeader('Frame & Geometry');
+    const cols = [
+      ['Brand', fr.brand], ['Model', fr.model], ['Year', fr.year],
+      ['Size', fr.size], ['Material', fr.material], ['Color', fr.color],
+    ];
+    cols.filter(([,v]) => v).forEach(([k,v]) => kv(k, v));
+    if (fr.notes) { kv('Notes', fr.notes); }
+  }
+
+  // ── WHEELS ────────────────────────────────────────────────
+  const wh = bike.baseline?.wheels || {};
+  const ft = bike.baseline?.frontTire || {};
+  const rt = bike.baseline?.rearTire  || {};
+  sectionHeader('Wheels & Tires');
+
+  if (wh.brand || wh.model) {
+    kv('Wheelset', `${wh.brand || ''} ${wh.model || ''}`.trim());
+    if (wh.size) kv('Size', wh.size);
+    if (wh.hub)  kv('Hub', wh.hub);
+  }
+
+  if (ft.brand) {
+    y += 2;
+    doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...MID);
+    doc.text('FRONT TIRE', ML, y); y += 5;
+    const ftItems = [['Brand / Model', `${ft.brand} ${ft.model||''}`], ['Size', ft.size], ['Compound', ft.compound], ['Casing', ft.casing], ['Inserts', ft.inserts], ['Pressure', ft.psi ? `${ft.psi} psi` : null]];
+    ftItems.filter(([,v]) => v).forEach(([k,v]) => kv(k, v));
+  }
+
+  if (rt.brand) {
+    y += 2;
+    doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...MID);
+    doc.text('REAR TIRE', ML, y); y += 5;
+    const rtItems = [['Brand / Model', `${rt.brand} ${rt.model||''}`], ['Size', rt.size], ['Compound', rt.compound], ['Casing', rt.casing], ['Inserts', rt.inserts], ['Pressure', rt.psi ? `${rt.psi} psi` : null]];
+    rtItems.filter(([,v]) => v).forEach(([k,v]) => kv(k, v));
+  }
+
+  // ── FORK ─────────────────────────────────────────────────
+  const fk = bike.baseline?.fork || {};
+  if (fk.brand) {
+    sectionHeader('Fork');
+    const fkItems = [
+      ['Brand / Model', `${fk.brand} ${fk.model||''}`],
+      ['Travel', fk.travel], ['Offset', fk.offset],
+      ['Spring Type', fk.type || 'air'],
+      ...(fk.type !== 'coil'
+        ? [['Air Pressure', fk.psi ? `${fk.psi} psi` : null], ['Tokens', fk.tokens != null ? `${fk.tokens}` : null], ['Spacer Size', fk.spacerSize]]
+        : [['Spring Rate', fk.springRate], ['Spring Brand', fk.springBrand]]),
+      ['LSR', fk.lsr != null ? `${fk.lsr} clicks` : null],
+      ['HSR', fk.hsr != null ? `${fk.hsr} clicks` : null],
+      ['LSC', fk.lsc != null ? `${fk.lsc} clicks` : null],
+      ['HSC', fk.hsc != null ? `${fk.hsc} clicks` : null],
+    ];
+    fkItems.filter(([,v]) => v != null).forEach(([k,v]) => kv(k, v));
+    if (fk.notes) kv('Notes', fk.notes);
+  }
+
+  // ── SHOCK ─────────────────────────────────────────────────
+  const sk = bike.baseline?.shock || {};
+  if (sk.brand) {
+    sectionHeader('Rear Shock');
+    const skItems = [
+      ['Brand / Model', `${sk.brand} ${sk.model||''}`],
+      ['Stroke', sk.stroke], ['Eye-to-Eye', sk.eye],
+      ['Spring Type', sk.type || 'air'],
+      ...(sk.type !== 'coil'
+        ? [['Air Pressure', sk.psi ? `${sk.psi} psi` : null], ['Tokens', sk.tokens != null ? `${sk.tokens}` : null]]
+        : [['Spring Rate', sk.springRate], ['Spring Brand', sk.springBrand]]),
+      ['LSR', sk.lsr != null ? `${sk.lsr} clicks` : null],
+      ['HSR', sk.hsr != null ? `${sk.hsr} clicks` : null],
+      ['LSC', sk.lsc != null ? `${sk.lsc} clicks` : null],
+      ['HSC', sk.hsc != null ? `${sk.hsc} clicks` : null],
+    ];
+    skItems.filter(([,v]) => v != null).forEach(([k,v]) => kv(k, v));
+    if (sk.notes) kv('Notes', sk.notes);
+  }
+
+  // ── COCKPIT ───────────────────────────────────────────────
+  const hb = bike.baseline?.handlebar || {};
+  const st = bike.baseline?.stem      || {};
+  if (hb.brand || st.brand) {
+    sectionHeader('Cockpit');
+    if (hb.brand) {
+      const hbItems = [['Handlebar', `${hb.brand} ${hb.model||''}`], ['Width', hb.width], ['Rise', hb.rise], ['Sweep', hb.sweep], ['Material', hb.material]];
+      hbItems.filter(([,v]) => v).forEach(([k,v]) => kv(k, v));
+    }
+    if (st.brand) {
+      const stItems = [['Stem', `${st.brand} ${st.model||''}`], ['Length', st.length], ['Clamp', st.clamp]];
+      stItems.filter(([,v]) => v).forEach(([k,v]) => kv(k, v));
+    }
+  }
+
+  // ── DRIVETRAIN ────────────────────────────────────────────
+  const dt = bike.baseline?.drivetrain || {};
+  if (dt.brand) {
+    sectionHeader('Drivetrain');
+    const dtItems = [['Brand / Group', `${dt.brand} ${dt.model||''}`], ['Cassette', dt.cassette], ['Chainring', dt.chainring], ['Chain', dt.chain], ['Rear Derailleur', dt.rd]];
+    dtItems.filter(([,v]) => v).forEach(([k,v]) => kv(k, v));
+    if (dt.notes) kv('Notes', dt.notes);
+  }
+
+  // ── DROPPER ────────────────────────────────────────────────
+  const dp = bike.baseline?.dropper || {};
+  if (dp.brand) {
+    sectionHeader('Dropper Post');
+    const dpItems = [['Brand / Model', `${dp.brand} ${dp.model||''}`], ['Travel', dp.travel], ['Diameter', dp.diameter]];
+    dpItems.filter(([,v]) => v).forEach(([k,v]) => kv(k, v));
+  }
+
+  // ── COMPONENTS ────────────────────────────────────────────
+  if (components.length > 0) {
+    sectionHeader(`Installed Components (${components.length})`);
+    const grouped = {};
+    components.forEach(c => {
+      if (!grouped[c.category]) grouped[c.category] = [];
+      grouped[c.category].push(c);
+    });
+    Object.keys(grouped).sort().forEach(cat => {
+      grouped[cat].forEach(c => {
+        checkPage(7);
+        kv(c.category, `${c.brand || ''} ${c.model || ''}`.trim() || '—');
+      });
+    });
+  }
+
+  // ── TEST HISTORY ──────────────────────────────────────────
+  const recentSessions = sessions.slice(0, 5);
+  if (recentSessions.length > 0) {
+    sectionHeader('Recent Test Sessions');
+    recentSessions.forEach(s => {
+      checkPage(14);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...DARK);
+      doc.text(s.name || 'Unnamed Session', ML, y);
+      if (s.adopted) {
+        doc.setFontSize(7.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(...ACCENT);
+        doc.text('ADOPTED', W - MR, y, { align: 'right' });
+      }
+      y += 5;
+      if (s.trail || s.conditions) {
+        doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(...MID);
+        doc.text([s.trail, s.conditions, s.weather].filter(Boolean).join(' · '), ML, y);
+        y += 5;
+      }
+      if (s.notes) {
+        doc.setFontSize(8); doc.setTextColor(...MID);
+        const wrapped = doc.splitTextToSize(s.notes, TW);
+        wrapped.slice(0,3).forEach(line => { checkPage(5); doc.text(line, ML, y); y += 4.5; });
+      }
+      y += 3;
+      hRule(y);
+      y += 4;
+    });
+  }
+
+  // ── FOOTER ────────────────────────────────────────────────
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(160, 158, 158);
+    doc.text(`DIALED — ${bike.name || 'Bike Setup'}`, ML, 290);
+    doc.text(`${i} / ${pageCount}`, W - MR, 290, { align: 'right' });
+  }
+
+  // ── SAVE ──────────────────────────────────────────────────
+  const filename = `dialed-${(bike.name || 'bike').toLowerCase().replace(/\s+/g,'-')}-${new Date().toISOString().slice(0,10)}.pdf`;
+  doc.save(filename);
+  showToast('PDF exported', 'success');
+}
