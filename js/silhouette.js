@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────
 // SILHOUETTE — SVG bike diagrams
-// Geometry: 2019 Santa Cruz Bronson (63.9° HA, 76° SA)
-// All coordinates mathematically verified in Node.js
+// All geometry mathematically verified in Node.js
+// Top tube slopes upward toward head tube on every bike ✓
 // ─────────────────────────────────────────────────────────
 
 const VB_DEFAULT = [0, 0, 800, 480];
@@ -9,7 +9,7 @@ const VB_DEFAULT = [0, 0, 800, 480];
 const ZONE_META = {
   'front-wheel': { label: 'Front Wheel / Tire', vb: [448, 192, 280, 280], key: 'frontTire' },
   'rear-wheel':  { label: 'Rear Wheel / Tire',  vb: [0,   192, 280, 280], key: 'rearTire' },
-  'fork':        { label: 'Fork',               vb: [548, 128, 225, 248], key: 'fork' },
+  'fork':        { label: 'Fork',               vb: [548, 118, 220, 258], key: 'fork' },
   'shock':       { label: 'Rear Shock',         vb: [322, 238, 168, 168], key: 'shock' },
   'handlebar':   { label: 'Cockpit / Bars',     vb: [444,  60, 210, 168], key: 'handlebar' },
   'drivetrain':  { label: 'Drivetrain',         vb: [290, 298, 210, 175], key: 'drivetrain' },
@@ -43,7 +43,7 @@ function mtbWheel(cx, cy, zoneId) {
   </g>`;
 }
 
-function roadWheel(cx, cy, zoneId, tireW = 7) {
+function roadWheel(cx, cy, zoneId, tireW = 6) {
   return `
   <g id="g-${zoneId}" class="bike-zone" data-zone="${zoneId}">
     <circle cx="${cx}" cy="${cy}" r="110" fill="none" stroke-width="${tireW}"/>
@@ -55,293 +55,263 @@ function roadWheel(cx, cy, zoneId, tireW = 7) {
   </g>`;
 }
 
-// ── FULL SUSPENSION MTB ───────────────────────────────────
-// Verified geometry (Node.js):
-//   RW(148,350) FW(658,350) BB(382,368)
-//   76° SA, stLen=240 → ST(324,135)
-//   63.9° HA: HC(599,230) → HT(575,181)  fork HA=63.82° ✓
-//   Top tube (324,135)→(575,181): 10.3° downward toward front ✓
-//   Fork: lTop(591,234) lSplit(617,285) lBot(650,350) — on-line ✓
-//          rTop(607,226) rSplit(633,281) rBot(666,350) — on-line ✓
-//   SS(352,247) — seatstay meets seat tube at t=0.52
-//   Shock: SHT(359,275) on seat tube t=0.40, SHB(412,318) on rocker
-//   Both shock mounts inside main triangle ✓
-//   POST(311,82) — dropper 55px above ST, same vector
-function svgMTBFS(hasMotor = false) {
-  const RW   = {x:148, y:350};
-  const FW   = {x:658, y:350};
-  const BB   = {x:382, y:368};
-  const ST   = {x:324, y:135};   // 76° SA, stLen=240
-  const HT   = {x:575, y:181};   // 63.9° HA, htLen=55
-  const HC   = {x:599, y:230};   // fork crown
+// ── SHARED HELPERS ────────────────────────────────────────
+// Saddle: flat with slight rear rise
+function saddle(SAD) {
+  return `
+    <line x1="${SAD.x-36}" y1="${SAD.y}" x2="${SAD.x+30}" y2="${SAD.y-2}"
+          stroke-width="2.5" stroke-linecap="round" opacity="0.46"/>
+    <path d="M ${SAD.x-38} ${SAD.y-10}
+             C ${SAD.x-20} ${SAD.y-8} ${SAD.x+8} ${SAD.y-5} ${SAD.x+40} ${SAD.y-2}"
+          fill="none" stroke-width="5.5" stroke-linecap="round"/>
+    <path d="M ${SAD.x-40} ${SAD.y-8}
+             C ${SAD.x-20} ${SAD.y-6} ${SAD.x+8} ${SAD.y-3} ${SAD.x+42} ${SAD.y}
+             L ${SAD.x+42} ${SAD.y+5}
+             C ${SAD.x+8}  ${SAD.y+2} ${SAD.x-20} ${SAD.y-1} ${SAD.x-40} ${SAD.y-3} Z"
+          fill="currentColor" stroke="none" opacity="0.42"/>`;
+}
 
-  // Seat tube unit vector
-  const stLen=240;
-  const stUx=(ST.x-BB.x)/stLen, stUy=(ST.y-BB.y)/stLen;
-  // Seatpost: 55px above ST, same direction
-  const POST = {x:311, y:82};
-  const SAD  = {x:315, y:81};
+// Drop bars (road/gravel)
+function dropBars(HT, stemLen = 18) {
+  const SB = {x:HT.x+2, y:HT.y};
+  const ST = {x:HT.x-1, y:HT.y-stemLen};
+  return `
+    <line x1="${SB.x}" y1="${SB.y}" x2="${ST.x}" y2="${ST.y}"
+          stroke-width="6.5" stroke-linecap="round"/>
+    <rect x="${ST.x-11}" y="${ST.y-5}" width="19" height="9" rx="3"
+          fill="var(--bg-elevated)" stroke-width="2.5"/>
+    <line x1="${ST.x-22}" y1="${ST.y-2}" x2="${ST.x+16}" y2="${ST.y-2}"
+          stroke-width="6" stroke-linecap="round"/>
+    <path d="M ${ST.x-22} ${ST.y-2} C ${ST.x-33} ${ST.y+9} ${ST.x-37} ${ST.y+24} ${ST.x-29} ${ST.y+35}"
+          fill="none" stroke-width="5" stroke-linecap="round"/>
+    <path d="M ${ST.x-29} ${ST.y+35} C ${ST.x-26} ${ST.y+43} ${ST.x-17} ${ST.y+48} ${ST.x-9} ${ST.y+48}"
+          fill="none" stroke-width="5" stroke-linecap="round"/>
+    <path d="M ${ST.x+16} ${ST.y-2} C ${ST.x+21} ${ST.y+9} ${ST.x+21} ${ST.y+24} ${ST.x+15} ${ST.y+35}"
+          fill="none" stroke-width="5" stroke-linecap="round"/>
+    <path d="M ${ST.x+15} ${ST.y+35} C ${ST.x+13} ${ST.y+43} ${ST.x+7} ${ST.y+48} ${ST.x+1} ${ST.y+48}"
+          fill="none" stroke-width="5" stroke-linecap="round"/>
+    <rect class="zone-overlay"
+          x="${ST.x-55}" y="${ST.y-18}" width="90" height="82" rx="10" data-zone="handlebar"/>`;
+}
 
-  // Seatstay junction on seat tube t=0.52
-  const SS   = {x:352, y:247};
-  // Swingarm pivot
-  const PIV  = {x:356, y:328};
+// MTB flat bars with brakes/grips
+function flatBars(HT, stemLen = 18) {
+  const SB = {x:HT.x+3, y:HT.y+2};
+  const ST = {x:HT.x-1, y:HT.y-stemLen};
+  return `
+    <line x1="${SB.x}" y1="${SB.y}" x2="${ST.x}" y2="${ST.y}"
+          stroke-width="8" stroke-linecap="round"/>
+    <line x1="${SB.x-6}" y1="${SB.y-1}" x2="${SB.x+7}" y2="${SB.y-1}"
+          stroke-width="4.5" stroke-linecap="round" opacity="0.7"/>
+    <rect x="${ST.x-13}" y="${ST.y-5}" width="22" height="9" rx="3"
+          fill="var(--bg-elevated)" stroke-width="3.5"/>
+    <line x1="${ST.x-68}" y1="${ST.y-2}" x2="${ST.x+62}" y2="${ST.y-2}"
+          stroke-width="8.5" stroke-linecap="round"/>
+    <line x1="${ST.x-64}" y1="${ST.y-2}" x2="${ST.x-76}" y2="${ST.y-4}"
+          stroke-width="17" stroke-linecap="round" opacity="0.54"/>
+    <line x1="${ST.x+58}" y1="${ST.y-2}" x2="${ST.x+70}" y2="${ST.y-4}"
+          stroke-width="17" stroke-linecap="round" opacity="0.54"/>
+    <path d="M ${ST.x-64} ${ST.y-2} Q ${ST.x-71} ${ST.y} ${ST.x-73} ${ST.y+6}"
+          fill="none" stroke-width="7.5" stroke-linecap="round"/>
+    <path d="M ${ST.x+58} ${ST.y-2} Q ${ST.x+65} ${ST.y} ${ST.x+67} ${ST.y+6}"
+          fill="none" stroke-width="7.5" stroke-linecap="round"/>
+    <path d="M ${ST.x-50} ${ST.y-2} C ${ST.x-54} ${ST.y+4} ${ST.x-58} ${ST.y+10} ${ST.x-56} ${ST.y+18}"
+          fill="none" stroke-width="5" stroke-linecap="round" opacity="0.72"/>
+    <path d="M ${ST.x+44} ${ST.y-2} C ${ST.x+48} ${ST.y+4} ${ST.x+52} ${ST.y+10} ${ST.x+50} ${ST.y+18}"
+          fill="none" stroke-width="5" stroke-linecap="round" opacity="0.72"/>
+    <rect x="${ST.x-60}" y="${ST.y-8}" width="11" height="7" rx="2"
+          fill="none" stroke-width="2.5" opacity="0.65"/>
+    <rect x="${ST.x+44}" y="${ST.y-8}" width="11" height="7" rx="2"
+          fill="none" stroke-width="2.5" opacity="0.65"/>
+    <rect class="zone-overlay"
+          x="${ST.x-90}" y="${ST.y-28}" width="184" height="68" rx="10" data-zone="handlebar"/>`;
+}
 
-  // Shock — both mounts inside main triangle (verified)
-  const SHT  = {x:359, y:275};   // on seat tube at t=0.40
-  const SHB  = {x:412, y:318};   // rocker arm tip
-  // Rocker pivot — on chainstay, just above BB
-  const RPIV = {x:396, y:344};
+// Straight fork (MTB suspension: thin stanchions + fat lowers)
+function suspFork(HC, FW, offset=9, splitT=0.44) {
+  const dx=FW.x-HC.x, dy=FW.y-HC.y;
+  const len=Math.sqrt(dx*dx+dy*dy);
+  const ux=dx/len, uy=dy/len, px=uy, py=-ux;
+  const r=n=>Math.round(n);
+  const lT={x:r(HC.x-px*offset),y:r(HC.y-py*offset)};
+  const rT={x:r(HC.x+px*offset),y:r(HC.y+py*offset)};
+  const lB={x:FW.x-8,y:FW.y}, rB={x:FW.x+8,y:FW.y};
+  const lS={x:r(lT.x+(lB.x-lT.x)*splitT),y:r(lT.y+(lB.y-lT.y)*splitT)};
+  const rS={x:r(rT.x+(rB.x-rT.x)*splitT),y:r(rT.y+(rB.y-rT.y)*splitT)};
+  return {lT,rT,lS,rS,lB,rB};
+}
 
-  // Fork legs: mathematically on-line (verified at 63.82°)
-  const F = {
-    lTop:  {x:591, y:234}, lSplit: {x:617, y:285}, lBot: {x:650, y:350},
-    rTop:  {x:607, y:226}, rSplit: {x:633, y:281}, rBot: {x:666, y:350},
-  };
+// Cassette rings
+function cassette(cx, cy) {
+  return `
+    <circle cx="${cx}" cy="${cy}" r="27" fill="none" stroke-width="5.5"/>
+    <circle cx="${cx}" cy="${cy}" r="21" fill="none" stroke-width="3.5" opacity="0.5"/>
+    <circle cx="${cx}" cy="${cy}" r="15" fill="none" stroke-width="2"   opacity="0.28"/>`;
+}
 
-  // Short stem: 18px
-  const STEM_B = {x:HT.x+3, y:HT.y+2};
-  const STEM_T = {x:HT.x-1, y:HT.y-18};
-
-  return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
-  class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
-
-  <!-- WHEELS -->
-  ${mtbWheel(RW.x, RW.y, 'rear-wheel')}
-  ${mtbWheel(FW.x, FW.y, 'front-wheel')}
-
-  <!-- FRAME: full front triangle + rear triangle in one group -->
-  <g id="g-frame" class="bike-zone" data-zone="frame">
-    <!-- Chainstay upper -->
-    <path d="M ${BB.x} ${BB.y} C ${BB.x-55} ${BB.y} ${RW.x+90} ${RW.y-2} ${RW.x} ${RW.y}"
-          fill="none" stroke-width="6.5" stroke-linecap="round"/>
-    <!-- Chainstay lower rail -->
-    <path d="M ${BB.x-3} ${BB.y+9} C ${BB.x-58} ${BB.y+9} ${RW.x+88} ${RW.y+9} ${RW.x} ${RW.y}"
-          fill="none" stroke-width="3" stroke-linecap="round" opacity="0.34"/>
-    <!-- Seatstay: RW → SS -->
-    <line x1="${RW.x}"   y1="${RW.y}"   x2="${SS.x}" y2="${SS.y}" stroke-width="5" stroke-linecap="round"/>
-    <line x1="${RW.x+9}" y1="${RW.y}"   x2="${SS.x+8}" y2="${SS.y}" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
-    <!-- Swingarm pivot -->
-    <circle cx="${PIV.x}" cy="${PIV.y}" r="7.5" fill="var(--bg-base)" stroke-width="3.5"/>
-    <circle cx="${PIV.x}" cy="${PIV.y}" r="3" fill="currentColor" stroke="none"/>
-    <!-- Down tube: BB → HC -->
-    <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="11" stroke-linecap="round"/>
-    <!-- Seat tube: BB → ST (single straight line) -->
-    <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="7.5" stroke-linecap="round"/>
-    <!-- Top tube: ST → HT (slopes 10° downward toward front) -->
-    <line x1="${ST.x}" y1="${ST.y}" x2="${HT.x}" y2="${HT.y}" stroke-width="6.5" stroke-linecap="round"/>
-    <!-- Head tube: HT → HC (short, thick, 63.9°) -->
-    <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="15" stroke-linecap="round"/>
-    ${hasMotor ? `<rect x="${BB.x-38}" y="${BB.y-50}" width="62" height="44" rx="9" fill="none" stroke-width="3" opacity="0.68"/>` : ''}
-    <!-- Hover zones -->
-    <polygon class="zone-overlay"
-      points="${BB.x},${BB.y} ${ST.x},${ST.y} ${HT.x},${HT.y} ${HC.x},${HC.y}"
-      data-zone="frame"/>
-    <polygon class="zone-overlay"
-      points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}"
-      data-zone="frame"/>
-  </g>
-
-  <!-- DRIVETRAIN -->
-  <g id="g-drivetrain" class="bike-zone" data-zone="drivetrain">
-    <circle cx="${BB.x}" cy="${BB.y}" r="33" fill="none" stroke-width="6"/>
-    <circle cx="${BB.x}" cy="${BB.y}" r="22" fill="none" stroke-width="2" opacity="0.3"/>
+// Chainring + cranks
+function drivetrain(BB, RW, r=33) {
+  return `
+    <circle cx="${BB.x}" cy="${BB.y}" r="${r}" fill="none" stroke-width="6"/>
+    <circle cx="${BB.x}" cy="${BB.y}" r="${Math.round(r*0.67)}" fill="none" stroke-width="2" opacity="0.3"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${BB.x+38}" y2="${BB.y+28}" stroke-width="8" stroke-linecap="round"/>
     <line x1="${BB.x+34}" y1="${BB.y+26}" x2="${BB.x+50}" y2="${BB.y+21}" stroke-width="7" stroke-linecap="round" opacity="0.72"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${BB.x-38}" y2="${BB.y-28}" stroke-width="8" stroke-linecap="round"/>
     <line x1="${BB.x-34}" y1="${BB.y-26}" x2="${BB.x-50}" y2="${BB.y-21}" stroke-width="7" stroke-linecap="round" opacity="0.72"/>
-    <path d="M ${BB.x-4} ${BB.y-33} Q ${(BB.x+RW.x)/2} ${BB.y-42} ${RW.x} ${RW.y-24}"
+    <path d="M ${BB.x-4} ${BB.y-${r}} Q ${(BB.x+RW.x)/2} ${BB.y-${r+9}} ${RW.x} ${RW.y-24}"
           fill="none" stroke-width="2.5" stroke-dasharray="8 4" opacity="0.3"/>
-    <path d="M ${BB.x+4} ${BB.y+33} Q ${(BB.x+RW.x)/2+8} ${BB.y+24} ${RW.x} ${RW.y+12}"
+    <path d="M ${BB.x+4} ${BB.y+${r}} Q ${(BB.x+RW.x)/2+8} ${BB.y+24} ${RW.x} ${RW.y+12}"
           fill="none" stroke-width="2.5" stroke-dasharray="8 4" opacity="0.3"/>
-    <circle cx="${RW.x}" cy="${RW.y}" r="27" fill="none" stroke-width="5.5"/>
-    <circle cx="${RW.x}" cy="${RW.y}" r="21" fill="none" stroke-width="3.5" opacity="0.5"/>
-    <circle cx="${RW.x}" cy="${RW.y}" r="15" fill="none" stroke-width="2"   opacity="0.28"/>
-    <circle cx="${BB.x}" cy="${BB.y}" r="12" fill="var(--bg-base)" stroke="currentColor" stroke-width="3.5"/>
+    <circle cx="${BB.x}" cy="${BB.y}" r="12" fill="var(--bg-base)" stroke="currentColor" stroke-width="3.5"/>`;
+}
+
+// ── FULL SUSPENSION MTB ───────────────────────────────────
+// Verified: HC(587,206) HT(563,157) ST(335,179) HA=63.75° TT=5.5°↑
+function svgMTBFS(hasMotor = false) {
+  const RW={x:148,y:350}, FW={x:658,y:350}, BB={x:382,y:368};
+  const ST={x:335,y:179}, HT={x:563,y:157}, HC={x:587,y:206};
+  const stLen=195;
+  const stUx=(ST.x-BB.x)/stLen, stUy=(ST.y-BB.y)/stLen;
+  const POST={x:322,y:125};
+  const SAD={x:326,y:124};
+  const SS={x:357,y:270};
+  const PIV={x:356,y:328};
+  const SHT={x:Math.round(BB.x+stUx*stLen*0.40), y:Math.round(BB.y+stUy*stLen*0.40)};
+  const SHB={x:412,y:318};
+  const RPIV={x:396,y:344};
+  const F=suspFork(HC,FW,9,0.44);
+
+  return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
+  class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
+
+  ${mtbWheel(RW.x,RW.y,'rear-wheel')}
+  ${mtbWheel(FW.x,FW.y,'front-wheel')}
+
+  <!-- FRAME: main triangle + rear triangle -->
+  <g id="g-frame" class="bike-zone" data-zone="frame">
+    <path d="M ${BB.x} ${BB.y} C ${BB.x-55} ${BB.y} ${RW.x+90} ${RW.y-2} ${RW.x} ${RW.y}"
+          fill="none" stroke-width="6.5" stroke-linecap="round"/>
+    <path d="M ${BB.x-3} ${BB.y+9} C ${BB.x-58} ${BB.y+9} ${RW.x+88} ${RW.y+9} ${RW.x} ${RW.y}"
+          fill="none" stroke-width="3" stroke-linecap="round" opacity="0.34"/>
+    <line x1="${RW.x}"   y1="${RW.y}"   x2="${SS.x}" y2="${SS.y}" stroke-width="5" stroke-linecap="round"/>
+    <line x1="${RW.x+9}" y1="${RW.y}"   x2="${SS.x+8}" y2="${SS.y}" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
+    <circle cx="${PIV.x}" cy="${PIV.y}" r="7.5" fill="var(--bg-base)" stroke-width="3.5"/>
+    <circle cx="${PIV.x}" cy="${PIV.y}" r="3" fill="currentColor" stroke="none"/>
+    <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="11" stroke-linecap="round"/>
+    <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="7.5" stroke-linecap="round"/>
+    <line x1="${ST.x}" y1="${ST.y}" x2="${HT.x}" y2="${HT.y}" stroke-width="6.5" stroke-linecap="round"/>
+    <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="15" stroke-linecap="round"/>
+    ${hasMotor?`<rect x="${BB.x-38}" y="${BB.y-50}" width="62" height="44" rx="9" fill="none" stroke-width="3" opacity="0.68"/>`:''}
+    <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${HT.x},${HT.y} ${HC.x},${HC.y}" data-zone="frame"/>
+    <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
+  </g>
+
+  <!-- DRIVETRAIN -->
+  <g id="g-drivetrain" class="bike-zone" data-zone="drivetrain">
+    ${drivetrain(BB,RW,33)}
+    ${cassette(RW.x,RW.y)}
     <circle class="zone-overlay" cx="${BB.x}" cy="${BB.y}" r="58" data-zone="drivetrain"/>
   </g>
 
   <!-- DROPPER / SADDLE -->
   <g id="g-dropper" class="bike-zone" data-zone="dropper">
-    <!-- Seat clamp at ST top -->
-    <rect x="${ST.x-10}" y="${ST.y-6}" width="20" height="12" rx="3"
-          fill="var(--bg-elevated)" stroke-width="3"/>
-    <!-- Seatpost: continues exact seat tube vector -->
-    <line x1="${ST.x}" y1="${ST.y}" x2="${POST.x}" y2="${POST.y}"
-          stroke-width="7" stroke-linecap="round"/>
-    <!-- Saddle rails -->
-    <line x1="${SAD.x-36}" y1="${SAD.y}" x2="${SAD.x+30}" y2="${SAD.y-2}"
-          stroke-width="2.5" stroke-linecap="round" opacity="0.46"/>
-    <!-- Saddle: flat with slight rear rise — tail(left) higher, nose(right) lower -->
-    <path d="M ${SAD.x-38} ${SAD.y-10}
-             C ${SAD.x-20} ${SAD.y-8}
-               ${SAD.x+8}  ${SAD.y-5}
-               ${SAD.x+40} ${SAD.y-2}"
-          fill="none" stroke-width="5.5" stroke-linecap="round"/>
-    <!-- Saddle body fill -->
-    <path d="M ${SAD.x-40} ${SAD.y-8}
-             C ${SAD.x-20} ${SAD.y-6}
-               ${SAD.x+8}  ${SAD.y-3}
-               ${SAD.x+42} ${SAD.y}
-             L ${SAD.x+42} ${SAD.y+5}
-             C ${SAD.x+8}  ${SAD.y+2}
-               ${SAD.x-20} ${SAD.y-1}
-               ${SAD.x-40} ${SAD.y-3} Z"
-          fill="currentColor" stroke="none" opacity="0.42"/>
-    <rect class="zone-overlay"
-          x="${POST.x-54}" y="${POST.y-20}"
-          width="116" height="${ST.y-POST.y+46}" rx="10" data-zone="dropper"/>
+    <rect x="${ST.x-10}" y="${ST.y-6}" width="20" height="12" rx="3" fill="var(--bg-elevated)" stroke-width="3"/>
+    <line x1="${ST.x}" y1="${ST.y}" x2="${POST.x}" y2="${POST.y}" stroke-width="7" stroke-linecap="round"/>
+    ${saddle(SAD)}
+    <rect class="zone-overlay" x="${POST.x-54}" y="${POST.y-20}" width="116" height="${ST.y-POST.y+46}" rx="10" data-zone="dropper"/>
   </g>
 
   <!-- HANDLEBARS -->
   <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
-    <!-- Short stem: 18px -->
-    <line x1="${STEM_B.x}" y1="${STEM_B.y}" x2="${STEM_T.x}" y2="${STEM_T.y}"
-          stroke-width="8" stroke-linecap="round"/>
-    <!-- Stem clamp ring -->
-    <line x1="${STEM_B.x-6}" y1="${STEM_B.y-1}" x2="${STEM_B.x+7}" y2="${STEM_B.y-1}"
-          stroke-width="4.5" stroke-linecap="round" opacity="0.7"/>
-    <!-- Stem faceplate -->
-    <rect x="${STEM_T.x-13}" y="${STEM_T.y-5}" width="22" height="9" rx="3"
-          fill="var(--bg-elevated)" stroke-width="3.5"/>
-    <!-- Handlebar tube -->
-    <line x1="${STEM_T.x-68}" y1="${STEM_T.y-2}" x2="${STEM_T.x+62}" y2="${STEM_T.y-2}"
-          stroke-width="8.5" stroke-linecap="round"/>
-    <!-- Grips (thick rubber sections) -->
-    <line x1="${STEM_T.x-64}" y1="${STEM_T.y-2}" x2="${STEM_T.x-76}" y2="${STEM_T.y-4}"
-          stroke-width="17" stroke-linecap="round" opacity="0.54"/>
-    <line x1="${STEM_T.x+58}" y1="${STEM_T.y-2}" x2="${STEM_T.x+70}" y2="${STEM_T.y-4}"
-          stroke-width="17" stroke-linecap="round" opacity="0.54"/>
-    <!-- Bar end sweep -->
-    <path d="M ${STEM_T.x-64} ${STEM_T.y-2} Q ${STEM_T.x-71} ${STEM_T.y} ${STEM_T.x-73} ${STEM_T.y+6}"
-          fill="none" stroke-width="7.5" stroke-linecap="round"/>
-    <path d="M ${STEM_T.x+58} ${STEM_T.y-2} Q ${STEM_T.x+65} ${STEM_T.y} ${STEM_T.x+67} ${STEM_T.y+6}"
-          fill="none" stroke-width="7.5" stroke-linecap="round"/>
-    <!-- Brake levers (curved blades below bar) -->
-    <path d="M ${STEM_T.x-50} ${STEM_T.y-2} C ${STEM_T.x-54} ${STEM_T.y+4} ${STEM_T.x-58} ${STEM_T.y+10} ${STEM_T.x-56} ${STEM_T.y+18}"
-          fill="none" stroke-width="5" stroke-linecap="round" opacity="0.72"/>
-    <path d="M ${STEM_T.x+44} ${STEM_T.y-2} C ${STEM_T.x+48} ${STEM_T.y+4} ${STEM_T.x+52} ${STEM_T.y+10} ${STEM_T.x+50} ${STEM_T.y+18}"
-          fill="none" stroke-width="5" stroke-linecap="round" opacity="0.72"/>
-    <!-- Brake reservoirs (small body above each lever) -->
-    <rect x="${STEM_T.x-60}" y="${STEM_T.y-8}" width="11" height="7" rx="2"
-          fill="none" stroke-width="2.5" opacity="0.65"/>
-    <rect x="${STEM_T.x+44}" y="${STEM_T.y-8}" width="11" height="7" rx="2"
-          fill="none" stroke-width="2.5" opacity="0.65"/>
-    <rect class="zone-overlay"
-          x="${STEM_T.x-90}" y="${STEM_T.y-28}"
-          width="184" height="68" rx="10" data-zone="handlebar"/>
+    ${flatBars(HT,18)}
   </g>
 
-  <!-- FORK (dead straight, 63.82°, no kink) -->
+  <!-- FORK -->
   <g id="g-fork" class="bike-zone" data-zone="fork">
-    <!-- Crown bridge -->
-    <line x1="${F.lTop.x-2}" y1="${F.lTop.y+1}" x2="${F.rTop.x+2}" y2="${F.rTop.y+1}"
-          stroke-width="10" stroke-linecap="round"/>
-    <!-- Left stanchion -->
-    <line x1="${F.lTop.x}" y1="${F.lTop.y}" x2="${F.lSplit.x}" y2="${F.lSplit.y}"
-          stroke-width="10" stroke-linecap="round"/>
-    <!-- Left lower casting -->
-    <line x1="${F.lSplit.x}" y1="${F.lSplit.y}" x2="${F.lBot.x}" y2="${F.lBot.y}"
-          stroke-width="15" stroke-linecap="round"/>
-    <!-- Right stanchion -->
-    <line x1="${F.rTop.x}" y1="${F.rTop.y}" x2="${F.rSplit.x}" y2="${F.rSplit.y}"
-          stroke-width="10" stroke-linecap="round"/>
-    <!-- Right lower casting -->
-    <line x1="${F.rSplit.x}" y1="${F.rSplit.y}" x2="${F.rBot.x}" y2="${F.rBot.y}"
-          stroke-width="15" stroke-linecap="round"/>
-    <!-- Dust seal band -->
-    <line x1="${F.lSplit.x-3}" y1="${F.lSplit.y}" x2="${F.rSplit.x+3}" y2="${F.rSplit.y}"
-          stroke-width="8" stroke-linecap="round" opacity="0.62"/>
-    <!-- Lower arch brace -->
-    <line x1="${F.lBot.x-2}" y1="${F.lBot.y-22}" x2="${F.rBot.x+2}" y2="${F.rBot.y-22}"
-          stroke-width="6" stroke-linecap="round" opacity="0.64"/>
-    <!-- Brake caliper tab -->
-    <rect x="${F.lBot.x-20}" y="${F.lBot.y-62}" width="14" height="28" rx="3"
-          fill="none" stroke-width="3" opacity="0.58"/>
-    <!-- Axle -->
-    <line x1="${F.lBot.x-10}" y1="${F.lBot.y+2}" x2="${F.rBot.x+10}" y2="${F.rBot.y+2}"
-          stroke-width="7" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="565" y="128" width="136" height="248" rx="14" data-zone="fork"/>
+    <line x1="${F.lT.x-2}" y1="${F.lT.y+1}" x2="${F.rT.x+2}" y2="${F.rT.y+1}" stroke-width="10" stroke-linecap="round"/>
+    <line x1="${F.lT.x}" y1="${F.lT.y}" x2="${F.lS.x}" y2="${F.lS.y}" stroke-width="10" stroke-linecap="round"/>
+    <line x1="${F.rT.x}" y1="${F.rT.y}" x2="${F.rS.x}" y2="${F.rS.y}" stroke-width="10" stroke-linecap="round"/>
+    <line x1="${F.lS.x}" y1="${F.lS.y}" x2="${F.lB.x}" y2="${F.lB.y}" stroke-width="15" stroke-linecap="round"/>
+    <line x1="${F.rS.x}" y1="${F.rS.y}" x2="${F.rB.x}" y2="${F.rB.y}" stroke-width="15" stroke-linecap="round"/>
+    <line x1="${F.lS.x-3}" y1="${F.lS.y}" x2="${F.rS.x+3}" y2="${F.rS.y}" stroke-width="8" stroke-linecap="round" opacity="0.62"/>
+    <line x1="${F.lB.x-2}" y1="${F.lB.y-22}" x2="${F.rB.x+2}" y2="${F.rB.y-22}" stroke-width="6" stroke-linecap="round" opacity="0.64"/>
+    <rect x="${F.lB.x-20}" y="${F.lB.y-62}" width="14" height="28" rx="3" fill="none" stroke-width="3" opacity="0.58"/>
+    <line x1="${F.lB.x-10}" y1="${F.lB.y+2}" x2="${F.rB.x+10}" y2="${F.rB.y+2}" stroke-width="7" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="555" y="118" width="140" height="258" rx="14" data-zone="fork"/>
   </g>
 
-  <!-- REAR SHOCK + LINKAGE (rendered last — always on top) -->
-  <!-- Issue 2 fix: RARM removed — only rocker pivot + single arm to SHB -->
+  <!-- SHOCK + LINKAGE (rendered last) -->
   <g id="g-shock" class="bike-zone" data-zone="shock">
-    <!-- Rocker pivot on chainstay -->
-    <circle cx="${RPIV.x}" cy="${RPIV.y}" r="5.5"
-            fill="var(--bg-base)" stroke-width="3"/>
-    <!-- Single rocker arm: pivot → shock lower mount (stays inside main triangle) -->
-    <line x1="${RPIV.x}" y1="${RPIV.y}" x2="${SHB.x}" y2="${SHB.y}"
-          stroke-width="4.5" stroke-linecap="round"/>
-    <!-- Shock body -->
-    <line x1="${SHT.x}" y1="${SHT.y}" x2="${SHB.x}" y2="${SHB.y}"
-          stroke-width="9" stroke-linecap="round"/>
-    <!-- Shaft (lighter inner, lower portion) -->
+    <circle cx="${RPIV.x}" cy="${RPIV.y}" r="5.5" fill="var(--bg-base)" stroke-width="3"/>
+    <line x1="${RPIV.x}" y1="${RPIV.y}" x2="${SHB.x}" y2="${SHB.y}" stroke-width="4.5" stroke-linecap="round"/>
+    <line x1="${SHT.x}" y1="${SHT.y}" x2="${SHB.x}" y2="${SHB.y}" stroke-width="9" stroke-linecap="round"/>
     <line x1="${SHB.x}" y1="${SHB.y}"
-          x2="${SHB.x+(SHT.x-SHB.x)*0.44}"
-          y2="${SHB.y+(SHT.y-SHB.y)*0.44}"
+          x2="${Math.round(SHB.x+(SHT.x-SHB.x)*0.44)}"
+          y2="${Math.round(SHB.y+(SHT.y-SHB.y)*0.44)}"
           stroke-width="4.5" stroke="var(--bg-elevated)" stroke-linecap="round" opacity="0.75"/>
-    <!-- Spring coil marks -->
     <line x1="${SHT.x}" y1="${SHT.y}" x2="${SHB.x}" y2="${SHB.y}"
-          stroke-width="4" stroke="var(--bg-base)"
-          stroke-dasharray="0 15 5 15 5 15" stroke-linecap="round" opacity="0.4"/>
-    <!-- Piggyback reservoir (small, next to upper mount) -->
-    <line x1="${SHT.x-4}" y1="${SHT.y+6}" x2="${SHT.x-14}" y2="${SHT.y+17}"
-          stroke-width="7" stroke-linecap="round" opacity="0.68"/>
-    <!-- Eyelets -->
+          stroke-width="4" stroke="var(--bg-base)" stroke-dasharray="0 15 5 15 5 15" stroke-linecap="round" opacity="0.4"/>
+    <line x1="${SHT.x-4}" y1="${SHT.y+6}" x2="${SHT.x-14}" y2="${SHT.y+17}" stroke-width="7" stroke-linecap="round" opacity="0.68"/>
     <circle cx="${SHT.x}" cy="${SHT.y}" r="6" fill="var(--bg-base)" stroke-width="3"/>
     <circle cx="${SHT.x}" cy="${SHT.y}" r="2.5" fill="currentColor" stroke="none"/>
     <circle cx="${SHB.x}" cy="${SHB.y}" r="6" fill="var(--bg-base)" stroke-width="3"/>
     <circle cx="${SHB.x}" cy="${SHB.y}" r="2.5" fill="currentColor" stroke="none"/>
-    <!-- Click zone -->
     <ellipse class="zone-overlay"
-      cx="${(SHT.x+SHB.x)/2}" cy="${(SHT.y+SHB.y)/2}"
+      cx="${Math.round((SHT.x+SHB.x)/2)}" cy="${Math.round((SHT.y+SHB.y)/2)}"
       rx="28" ry="50"
-      transform="rotate(20 ${(SHT.x+SHB.x)/2} ${(SHT.y+SHB.y)/2})"
+      transform="rotate(20 ${Math.round((SHT.x+SHB.x)/2)} ${Math.round((SHT.y+SHB.y)/2)})"
       data-zone="shock"/>
   </g>
-
 </svg>`;
 }
 
 // ── HARDTAIL MTB ──────────────────────────────────────────
+// Verified: HC(583,207) HT(561,160) ST(333,183) HA=65.5° TT=5.6°↑
 function svgHardtail(isDJ = false) {
-  const RW={x:148,y:350}, FW={x:658,y:350}, BB={x:382,y:368};
-  // Same geometry as FS for consistency
-  const ST=isDJ?{x:332,y:148}:{x:324,y:135};
-  const HT=isDJ?{x:568,y:190}:{x:575,y:181};
-  const HC=isDJ?{x:594,y:242}:{x:599,y:230};
-  const stLen=isDJ?230:240;
+  // DJ: 71° HA, shorter wheelbase, rigid fork, riser bars
+  // HT: HC(573,215) HT(558,172) ST(326,197)
+  const RW = isDJ ? {x:160,y:350} : {x:148,y:350};
+  const FW = isDJ ? {x:620,y:350} : {x:648,y:350};
+  const BB = isDJ ? {x:374,y:365} : {x:378,y:365};
+  const ST = isDJ ? {x:326,y:197} : {x:333,y:183};
+  const HT = isDJ ? {x:558,y:172} : {x:561,y:160};
+  const HC = isDJ ? {x:573,y:215} : {x:583,y:207};
+
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
-  const stMag=Math.sqrt(stDx*stDx+stDy*stDy);
-  const stUx=stDx/stMag, stUy=stDy/stMag;
+  const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
+  const stUx=stDx/stLen, stUy=stDy/stLen;
   const POST={x:Math.round(ST.x+stUx*55), y:Math.round(ST.y+stUy*55)};
   const SAD={x:POST.x+4, y:POST.y-1};
   const SS={x:Math.round(BB.x+stUx*stLen*0.52), y:Math.round(BB.y+stUy*stLen*0.52)};
-  // Fork: straight from HC to FW
-  const fDx=FW.x-HC.x, fDy=FW.y-HC.y;
-  const fLen=Math.sqrt(fDx*fDx+fDy*fDy);
-  const fUx=fDx/fLen, fUy=fDy/fLen, fPx=fUy, fPy=-fUx;
-  const off=9, sp=0.44;
-  const F={
-    lTop:{x:Math.round(HC.x-fPx*off),y:Math.round(HC.y-fPy*off)},
-    rTop:{x:Math.round(HC.x+fPx*off),y:Math.round(HC.y+fPy*off)},
-    lBot:{x:FW.x-8,y:FW.y}, rBot:{x:FW.x+8,y:FW.y},
+  const F=suspFork(HC, FW, 9, isDJ?1:0.44); // DJ: rigid (no split), HT: susp
+
+  // DJ riser bars
+  const djBars = (HT) => {
+    const SB={x:HT.x+3,y:HT.y+2}, ST2={x:HT.x-1,y:HT.y-18};
+    return `
+    <line x1="${SB.x}" y1="${SB.y}" x2="${ST2.x}" y2="${ST2.y}" stroke-width="8" stroke-linecap="round"/>
+    <line x1="${SB.x-6}" y1="${SB.y-1}" x2="${SB.x+7}" y2="${SB.y-1}" stroke-width="4.5" stroke-linecap="round" opacity="0.7"/>
+    <rect x="${ST2.x-13}" y="${ST2.y-5}" width="22" height="9" rx="3" fill="var(--bg-elevated)" stroke-width="3.5"/>
+    <line x1="${ST2.x-4}" y1="${ST2.y}" x2="${ST2.x-4}" y2="${ST2.y-32}" stroke-width="7" stroke-linecap="round"/>
+    <line x1="${ST2.x-68}" y1="${ST2.y-30}" x2="${ST2.x+60}" y2="${ST2.y-30}" stroke-width="8.5" stroke-linecap="round"/>
+    <line x1="${ST2.x-68}" y1="${ST2.y-30}" x2="${ST2.x-80}" y2="${ST2.y-32}" stroke-width="17" stroke-linecap="round" opacity="0.52"/>
+    <line x1="${ST2.x+60}" y1="${ST2.y-30}" x2="${ST2.x+72}" y2="${ST2.y-32}" stroke-width="17" stroke-linecap="round" opacity="0.52"/>
+    <rect class="zone-overlay" x="${ST2.x-92}" y="${ST2.y-54}" width="184" height="64" rx="10" data-zone="handlebar"/>`;
   };
-  F.lSplit={x:Math.round(F.lTop.x+(F.lBot.x-F.lTop.x)*sp),y:Math.round(F.lTop.y+(F.lBot.y-F.lTop.y)*sp)};
-  F.rSplit={x:Math.round(F.rTop.x+(F.rBot.x-F.rTop.x)*sp),y:Math.round(F.rTop.y+(F.rBot.y-F.rTop.y)*sp)};
-  const PIV={x:Math.round(BB.x+stUx*stLen*0.52-4),y:Math.round(BB.y+stUy*stLen*0.52+16)};
-  const SB={x:HT.x+3,y:HT.y+2}, ST2={x:HT.x-1,y:HT.y-18};
 
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
+
   ${mtbWheel(RW.x,RW.y,'rear-wheel')}
   ${mtbWheel(FW.x,FW.y,'front-wheel')}
 
+  <!-- FRAME: rigid rear triangle + main triangle -->
   <g id="g-frame" class="bike-zone" data-zone="frame">
-    <path d="M ${BB.x} ${BB.y} C ${BB.x-55} ${BB.y} ${RW.x+90} ${RW.y-2} ${RW.x} ${RW.y}" fill="none" stroke-width="6.5" stroke-linecap="round"/>
-    <path d="M ${BB.x-3} ${BB.y+9} C ${BB.x-58} ${BB.y+9} ${RW.x+88} ${RW.y+9} ${RW.x} ${RW.y}" fill="none" stroke-width="3" stroke-linecap="round" opacity="0.32"/>
-    <line x1="${RW.x}" y1="${RW.y}" x2="${SS.x}" y2="${SS.y}" stroke-width="5" stroke-linecap="round"/>
+    <path d="M ${BB.x} ${BB.y} C ${BB.x-55} ${BB.y} ${RW.x+90} ${RW.y-2} ${RW.x} ${RW.y}"
+          fill="none" stroke-width="6.5" stroke-linecap="round"/>
+    <path d="M ${BB.x-3} ${BB.y+9} C ${BB.x-58} ${BB.y+9} ${RW.x+88} ${RW.y+9} ${RW.x} ${RW.y}"
+          fill="none" stroke-width="3" stroke-linecap="round" opacity="0.34"/>
+    <line x1="${RW.x}"   y1="${RW.y}" x2="${SS.x}" y2="${SS.y}" stroke-width="5" stroke-linecap="round"/>
     <line x1="${RW.x+9}" y1="${RW.y}" x2="${SS.x+8}" y2="${SS.y}" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="11" stroke-linecap="round"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="7.5" stroke-linecap="round"/>
@@ -351,133 +321,210 @@ function svgHardtail(isDJ = false) {
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
   </g>
 
-  <g id="g-fork" class="bike-zone" data-zone="fork">
-    <line x1="${F.lTop.x-2}" y1="${F.lTop.y+1}" x2="${F.rTop.x+2}" y2="${F.rTop.y+1}" stroke-width="10" stroke-linecap="round"/>
-    <line x1="${F.lTop.x}" y1="${F.lTop.y}" x2="${F.lSplit.x}" y2="${F.lSplit.y}" stroke-width="10" stroke-linecap="round"/>
-    <line x1="${F.rTop.x}" y1="${F.rTop.y}" x2="${F.rSplit.x}" y2="${F.rSplit.y}" stroke-width="10" stroke-linecap="round"/>
-    ${isDJ
-      ? `<line x1="${F.lSplit.x}" y1="${F.lSplit.y}" x2="${F.lBot.x}" y2="${F.lBot.y}" stroke-width="10" stroke-linecap="round"/>
-         <line x1="${F.rSplit.x}" y1="${F.rSplit.y}" x2="${F.rBot.x}" y2="${F.rBot.y}" stroke-width="10" stroke-linecap="round"/>`
-      : `<line x1="${F.lSplit.x}" y1="${F.lSplit.y}" x2="${F.lBot.x}" y2="${F.lBot.y}" stroke-width="15" stroke-linecap="round"/>
-         <line x1="${F.rSplit.x}" y1="${F.rSplit.y}" x2="${F.rBot.x}" y2="${F.rBot.y}" stroke-width="15" stroke-linecap="round"/>
-         <line x1="${F.lSplit.x-3}" y1="${F.lSplit.y}" x2="${F.rSplit.x+3}" y2="${F.rSplit.y}" stroke-width="8" stroke-linecap="round" opacity="0.6"/>
-         <line x1="${F.lBot.x-2}" y1="${F.lBot.y-22}" x2="${F.rBot.x+2}" y2="${F.rBot.y-22}" stroke-width="6" stroke-linecap="round" opacity="0.62"/>
-         <rect x="${F.lBot.x-20}" y="${F.lBot.y-62}" width="14" height="28" rx="3" fill="none" stroke-width="3" opacity="0.58"/>`}
-    <line x1="${F.lBot.x-10}" y1="${F.lBot.y+2}" x2="${F.rBot.x+10}" y2="${F.rBot.y+2}" stroke-width="7" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="565" y="130" width="136" height="246" rx="14" data-zone="fork"/>
+  <!-- DRIVETRAIN -->
+  <g id="g-drivetrain" class="bike-zone" data-zone="drivetrain">
+    ${drivetrain(BB,RW,33)}
+    ${cassette(RW.x,RW.y)}
+    <circle class="zone-overlay" cx="${BB.x}" cy="${BB.y}" r="58" data-zone="drivetrain"/>
   </g>
 
-  <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
-    <line x1="${SB.x}" y1="${SB.y}" x2="${ST2.x}" y2="${ST2.y}" stroke-width="8" stroke-linecap="round"/>
-    <line x1="${SB.x-6}" y1="${SB.y-1}" x2="${SB.x+7}" y2="${SB.y-1}" stroke-width="4.5" stroke-linecap="round" opacity="0.7"/>
-    <rect x="${ST2.x-13}" y="${ST2.y-5}" width="22" height="9" rx="3" fill="var(--bg-elevated)" stroke-width="3.5"/>
-    ${isDJ
-      ? `<line x1="${ST2.x-4}" y1="${ST2.y}" x2="${ST2.x-4}" y2="${ST2.y-30}" stroke-width="7" stroke-linecap="round"/>
-         <line x1="${ST2.x-70}" y1="${ST2.y-28}" x2="${ST2.x+62}" y2="${ST2.y-28}" stroke-width="8.5" stroke-linecap="round"/>
-         <line x1="${ST2.x-70}" y1="${ST2.y-28}" x2="${ST2.x-82}" y2="${ST2.y-30}" stroke-width="17" stroke-linecap="round" opacity="0.52"/>
-         <line x1="${ST2.x+62}" y1="${ST2.y-28}" x2="${ST2.x+74}" y2="${ST2.y-30}" stroke-width="17" stroke-linecap="round" opacity="0.52"/>`
-      : `<line x1="${ST2.x-68}" y1="${ST2.y-2}" x2="${ST2.x+62}" y2="${ST2.y-2}" stroke-width="8.5" stroke-linecap="round"/>
-         <line x1="${ST2.x-64}" y1="${ST2.y-2}" x2="${ST2.x-76}" y2="${ST2.y-4}" stroke-width="17" stroke-linecap="round" opacity="0.52"/>
-         <line x1="${ST2.x+58}" y1="${ST2.y-2}" x2="${ST2.x+70}" y2="${ST2.y-4}" stroke-width="17" stroke-linecap="round" opacity="0.52"/>
-         <path d="M ${ST2.x-64} ${ST2.y-2} Q ${ST2.x-71} ${ST2.y} ${ST2.x-73} ${ST2.y+6}" fill="none" stroke-width="7.5" stroke-linecap="round"/>
-         <path d="M ${ST2.x+58} ${ST2.y-2} Q ${ST2.x+65} ${ST2.y} ${ST2.x+67} ${ST2.y+6}" fill="none" stroke-width="7.5" stroke-linecap="round"/>
-         <path d="M ${ST2.x-50} ${ST2.y-2} C ${ST2.x-54} ${ST2.y+4} ${ST2.x-58} ${ST2.y+10} ${ST2.x-56} ${ST2.y+18}" fill="none" stroke-width="5" stroke-linecap="round" opacity="0.72"/>
-         <path d="M ${ST2.x+44} ${ST2.y-2} C ${ST2.x+48} ${ST2.y+4} ${ST2.x+52} ${ST2.y+10} ${ST2.x+50} ${ST2.y+18}" fill="none" stroke-width="5" stroke-linecap="round" opacity="0.72"/>
-         <rect x="${ST2.x-60}" y="${ST2.y-8}" width="11" height="7" rx="2" fill="none" stroke-width="2.5" opacity="0.65"/>
-         <rect x="${ST2.x+44}" y="${ST2.y-8}" width="11" height="7" rx="2" fill="none" stroke-width="2.5" opacity="0.65"/>`}
-    <rect class="zone-overlay" x="${ST2.x-92}" y="${ST2.y-32}" width="184" height="72" rx="10" data-zone="handlebar"/>
-  </g>
-
+  <!-- DROPPER / SADDLE -->
   <g id="g-dropper" class="bike-zone" data-zone="dropper">
     <rect x="${ST.x-10}" y="${ST.y-6}" width="20" height="12" rx="3" fill="var(--bg-elevated)" stroke-width="3"/>
     <line x1="${ST.x}" y1="${ST.y}" x2="${POST.x}" y2="${POST.y}" stroke-width="7" stroke-linecap="round"/>
-    <line x1="${SAD.x-36}" y1="${SAD.y}" x2="${SAD.x+30}" y2="${SAD.y-2}" stroke-width="2.5" stroke-linecap="round" opacity="0.44"/>
-    <path d="M ${SAD.x-38} ${SAD.y-10} C ${SAD.x-20} ${SAD.y-8} ${SAD.x+8} ${SAD.y-5} ${SAD.x+40} ${SAD.y-2}" fill="none" stroke-width="5.5" stroke-linecap="round"/>
-    <path d="M ${SAD.x-40} ${SAD.y-8} C ${SAD.x-20} ${SAD.y-6} ${SAD.x+8} ${SAD.y-3} ${SAD.x+42} ${SAD.y} L ${SAD.x+42} ${SAD.y+5} C ${SAD.x+8} ${SAD.y+2} ${SAD.x-20} ${SAD.y-1} ${SAD.x-40} ${SAD.y-3} Z" fill="currentColor" stroke="none" opacity="0.42"/>
-    <rect class="zone-overlay" x="${POST.x-54}" y="${POST.y-18}" width="116" height="${ST.y-POST.y+44}" rx="10" data-zone="dropper"/>
+    ${saddle(SAD)}
+    <rect class="zone-overlay" x="${POST.x-54}" y="${POST.y-20}" width="116" height="${ST.y-POST.y+46}" rx="10" data-zone="dropper"/>
   </g>
 
-  <g id="g-drivetrain" class="bike-zone" data-zone="drivetrain">
-    <circle cx="${BB.x}" cy="${BB.y}" r="33" fill="none" stroke-width="6"/>
-    <circle cx="${BB.x}" cy="${BB.y}" r="22" fill="none" stroke-width="2" opacity="0.3"/>
-    <line x1="${BB.x}" y1="${BB.y}" x2="${BB.x+38}" y2="${BB.y+28}" stroke-width="8" stroke-linecap="round"/>
-    <line x1="${BB.x+34}" y1="${BB.y+26}" x2="${BB.x+50}" y2="${BB.y+21}" stroke-width="7" stroke-linecap="round" opacity="0.72"/>
-    <line x1="${BB.x}" y1="${BB.y}" x2="${BB.x-38}" y2="${BB.y-28}" stroke-width="8" stroke-linecap="round"/>
-    <path d="M ${BB.x-4} ${BB.y-33} Q ${(BB.x+RW.x)/2} ${BB.y-42} ${RW.x} ${RW.y-24}" fill="none" stroke-width="2.5" stroke-dasharray="8 4" opacity="0.3"/>
-    <circle cx="${RW.x}" cy="${RW.y}" r="27" fill="none" stroke-width="5.5"/>
-    <circle cx="${RW.x}" cy="${RW.y}" r="21" fill="none" stroke-width="3.5" opacity="0.5"/>
-    <circle cx="${RW.x}" cy="${RW.y}" r="15" fill="none" stroke-width="2" opacity="0.28"/>
-    <circle cx="${BB.x}" cy="${BB.y}" r="12" fill="var(--bg-base)" stroke="currentColor" stroke-width="3.5"/>
-    <circle class="zone-overlay" cx="${BB.x}" cy="${BB.y}" r="58" data-zone="drivetrain"/>
+  <!-- HANDLEBARS -->
+  <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
+    ${isDJ ? djBars(HT) : flatBars(HT,18)}
+  </g>
+
+  <!-- FORK -->
+  <g id="g-fork" class="bike-zone" data-zone="fork">
+    <line x1="${F.lT.x-2}" y1="${F.lT.y+1}" x2="${F.rT.x+2}" y2="${F.rT.y+1}" stroke-width="10" stroke-linecap="round"/>
+    ${isDJ ? `
+    <!-- Rigid fork: full-length straight legs, same width top to bottom -->
+    <line x1="${F.lT.x}" y1="${F.lT.y}" x2="${F.lB.x}" y2="${F.lB.y}" stroke-width="8" stroke-linecap="round"/>
+    <line x1="${F.rT.x}" y1="${F.rT.y}" x2="${F.rB.x}" y2="${F.rB.y}" stroke-width="8" stroke-linecap="round"/>
+    ` : `
+    <!-- Suspension fork: thin stanchions + fat lowers -->
+    <line x1="${F.lT.x}" y1="${F.lT.y}" x2="${F.lS.x}" y2="${F.lS.y}" stroke-width="10" stroke-linecap="round"/>
+    <line x1="${F.rT.x}" y1="${F.rT.y}" x2="${F.rS.x}" y2="${F.rS.y}" stroke-width="10" stroke-linecap="round"/>
+    <line x1="${F.lS.x}" y1="${F.lS.y}" x2="${F.lB.x}" y2="${F.lB.y}" stroke-width="15" stroke-linecap="round"/>
+    <line x1="${F.rS.x}" y1="${F.rS.y}" x2="${F.rB.x}" y2="${F.rB.y}" stroke-width="15" stroke-linecap="round"/>
+    <line x1="${F.lS.x-3}" y1="${F.lS.y}" x2="${F.rS.x+3}" y2="${F.rS.y}" stroke-width="8" stroke-linecap="round" opacity="0.62"/>
+    <line x1="${F.lB.x-2}" y1="${F.lB.y-22}" x2="${F.rB.x+2}" y2="${F.rB.y-22}" stroke-width="6" stroke-linecap="round" opacity="0.62"/>
+    <rect x="${F.lB.x-20}" y="${F.lB.y-62}" width="14" height="28" rx="3" fill="none" stroke-width="3" opacity="0.58"/>
+    `}
+    <line x1="${F.lB.x-10}" y1="${F.lB.y+2}" x2="${F.rB.x+10}" y2="${F.rB.y+2}" stroke-width="7" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="548" y="118" width="140" height="258" rx="14" data-zone="fork"/>
   </g>
 </svg>`;
 }
 
-// ── GRAVEL / ROAD ─────────────────────────────────────────
-function svgGravelRoad(isRoad = false) {
-  const RW={x:152,y:350}, FW={x:648,y:350}, BB={x:380,y:362};
-  const HT=isRoad?{x:532,y:178}:{x:526,y:172};
-  const HC=isRoad?{x:554,y:228}:{x:560,y:234};
-  const ST={x:330,y:148};
+// ── GRAVEL BIKE ───────────────────────────────────────────
+// Verified: HC(590,205) HT(571,150) ST(321,183) HA=71° TT=7.5°↑
+// Straight fork legs (modern gravel — no curve)
+function svgGravel() {
+  const RW={x:155,y:350}, FW={x:640,y:350}, BB={x:375,y:360};
+  const ST={x:321,y:183}, HT={x:571,y:150}, HC={x:590,y:205};
+
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
-  const stMag=Math.sqrt(stDx*stDx+stDy*stDy);
-  const stUx=stDx/stMag, stUy=stDy/stMag;
-  const POST={x:Math.round(ST.x+stUx*55),y:Math.round(ST.y+stUy*55)};
-  const SAD={x:POST.x+4,y:POST.y-1};
-  const SS={x:Math.round(BB.x+stUx*stMag*0.52),y:Math.round(BB.y+stUy*stMag*0.52)};
-  const tW=isRoad?6:14;
-  const SB={x:HT.x+2,y:HT.y}, ST2={x:HT.x-1,y:HT.y-18};
-  const r=n=>Math.round(n);
+  const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
+  const stUx=stDx/stLen, stUy=stDy/stLen;
+  const POST={x:Math.round(ST.x+stUx*55), y:Math.round(ST.y+stUy*55)};
+  const SAD={x:POST.x+4, y:POST.y-1};
+  const SS={x:Math.round(BB.x+stUx*stLen*0.52), y:Math.round(BB.y+stUy*stLen*0.52)};
+
+  // Straight fork legs (gravel — modern, no rake curve in silhouette)
+  const F=suspFork(HC,FW,7,1); // splitT=1 means no split, legs run full length
+  // Recalc as two full-length straight lines offset ±7px perp
+  const fDx=FW.x-HC.x, fDy=FW.y-HC.y;
+  const fLen=Math.sqrt(fDx*fDx+fDy*fDy);
+  const fux=fDx/fLen, fuy=fDy/fLen, fpx=fuy, fpy=-fux;
+  const off=7;
+  const lT={x:Math.round(HC.x-fpx*off),y:Math.round(HC.y-fpy*off)};
+  const rT={x:Math.round(HC.x+fpx*off),y:Math.round(HC.y+fpy*off)};
+  const lB={x:FW.x-6,y:FW.y}, rB={x:FW.x+6,y:FW.y};
 
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
-  ${roadWheel(RW.x,RW.y,'rear-wheel',tW)}
-  ${roadWheel(FW.x,FW.y,'front-wheel',tW)}
+
+  ${roadWheel(RW.x,RW.y,'rear-wheel',14)}
+  ${roadWheel(FW.x,FW.y,'front-wheel',14)}
+
   <g id="g-frame" class="bike-zone" data-zone="frame">
-    <path d="M ${BB.x} ${BB.y} C ${BB.x-54} ${BB.y} ${RW.x+86} ${RW.y-2} ${RW.x} ${RW.y}" fill="none" stroke-width="${isRoad?4:5}" stroke-linecap="round"/>
-    <line x1="${RW.x}" y1="${RW.y}" x2="${SS.x}" y2="${SS.y}" stroke-width="${isRoad?3.5:4.5}" stroke-linecap="round"/>
-    <line x1="${RW.x+7}" y1="${RW.y}" x2="${SS.x+6}" y2="${SS.y}" stroke-width="${isRoad?2.5:3}" stroke-linecap="round" opacity="0.3"/>
-    <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="${isRoad?7:8}" stroke-linecap="round"/>
-    <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="${isRoad?6:7}" stroke-linecap="round"/>
-    <line x1="${ST.x}" y1="${ST.y}" x2="${HT.x}" y2="${HT.y}" stroke-width="${isRoad?5.5:6.5}" stroke-linecap="round"/>
-    <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="${isRoad?11:12}" stroke-linecap="round"/>
+    <path d="M ${BB.x} ${BB.y} C ${BB.x-52} ${BB.y} ${RW.x+84} ${RW.y-2} ${RW.x} ${RW.y}"
+          fill="none" stroke-width="5.5" stroke-linecap="round"/>
+    <path d="M ${BB.x-3} ${BB.y+8} C ${BB.x-55} ${BB.y+8} ${RW.x+82} ${RW.y+8} ${RW.x} ${RW.y}"
+          fill="none" stroke-width="2.5" stroke-linecap="round" opacity="0.32"/>
+    <line x1="${RW.x}"   y1="${RW.y}" x2="${SS.x}" y2="${SS.y}" stroke-width="4.5" stroke-linecap="round"/>
+    <line x1="${RW.x+8}" y1="${RW.y}" x2="${SS.x+7}" y2="${SS.y}" stroke-width="2.5" stroke-linecap="round" opacity="0.3"/>
+    <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="8" stroke-linecap="round"/>
+    <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="7" stroke-linecap="round"/>
+    <line x1="${ST.x}" y1="${ST.y}" x2="${HT.x}" y2="${HT.y}" stroke-width="6" stroke-linecap="round"/>
+    <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="12" stroke-linecap="round"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${HT.x},${HT.y} ${HC.x},${HC.y}" data-zone="frame"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
   </g>
-  <g id="g-fork" class="bike-zone" data-zone="fork">
-    <path d="M ${HC.x-5} ${HC.y+2} C ${HC.x+14} ${HC.y+52} ${FW.x+12} ${FW.y-65} ${FW.x+6} ${FW.y}" fill="none" stroke-width="${isRoad?5.5:7}" stroke-linecap="round"/>
-    <path d="M ${HC.x+7} ${HC.y+2} C ${HC.x+24} ${HC.y+53} ${FW.x+22} ${FW.y-64} ${FW.x+16} ${FW.y}" fill="none" stroke-width="${isRoad?5.5:7}" stroke-linecap="round"/>
-    <line x1="${HC.x-5}" y1="${HC.y+2}" x2="${HC.x+7}" y2="${HC.y+2}" stroke-width="8" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="518" y="138" width="140" height="238" rx="12" data-zone="fork"/>
+
+  <g id="g-drivetrain" class="bike-zone" data-zone="drivetrain">
+    ${drivetrain(BB,RW,30)}
+    <!-- Gravel: often 1x but show 2x ring -->
+    <circle cx="${BB.x}" cy="${BB.y}" r="22" fill="none" stroke-width="4" opacity="0.45"/>
+    ${cassette(RW.x,RW.y)}
+    <circle class="zone-overlay" cx="${BB.x}" cy="${BB.y}" r="54" data-zone="drivetrain"/>
   </g>
-  <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
-    <line x1="${SB.x}" y1="${SB.y}" x2="${ST2.x}" y2="${ST2.y}" stroke-width="6.5" stroke-linecap="round"/>
-    <rect x="${ST2.x-11}" y="${ST2.y-5}" width="19" height="9" rx="3" fill="var(--bg-elevated)" stroke-width="2.5"/>
-    <line x1="${ST2.x-22}" y1="${ST2.y-2}" x2="${ST2.x+16}" y2="${ST2.y-2}" stroke-width="6" stroke-linecap="round"/>
-    <path d="M ${ST2.x-22} ${ST2.y-2} C ${ST2.x-33} ${ST2.y+9} ${ST2.x-37} ${ST2.y+24} ${ST2.x-29} ${ST2.y+35}" fill="none" stroke-width="5" stroke-linecap="round"/>
-    <path d="M ${ST2.x-29} ${ST2.y+35} C ${ST2.x-26} ${ST2.y+43} ${ST2.x-17} ${ST2.y+48} ${ST2.x-9} ${ST2.y+48}" fill="none" stroke-width="5" stroke-linecap="round"/>
-    <path d="M ${ST2.x+16} ${ST2.y-2} C ${ST2.x+21} ${ST2.y+9} ${ST2.x+21} ${ST2.y+24} ${ST2.x+15} ${ST2.y+35}" fill="none" stroke-width="5" stroke-linecap="round"/>
-    <path d="M ${ST2.x+15} ${ST2.y+35} C ${ST2.x+13} ${ST2.y+43} ${ST2.x+7} ${ST2.y+48} ${ST2.x+1} ${ST2.y+48}" fill="none" stroke-width="5" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="${ST2.x-55}" y="${ST2.y-18}" width="90" height="82" rx="10" data-zone="handlebar"/>
-  </g>
+
   <g id="g-dropper" class="bike-zone" data-zone="dropper">
     <rect x="${ST.x-9}" y="${ST.y-5}" width="18" height="11" rx="3" fill="var(--bg-elevated)" stroke-width="2.5"/>
     <line x1="${ST.x}" y1="${ST.y}" x2="${POST.x}" y2="${POST.y}" stroke-width="6.5" stroke-linecap="round"/>
-    <path d="M ${r(SAD.x-38)} ${r(SAD.y-10)} C ${r(SAD.x-20)} ${r(SAD.y-8)} ${r(SAD.x+8)} ${r(SAD.y-5)} ${r(SAD.x+40)} ${r(SAD.y-2)}" fill="none" stroke-width="5" stroke-linecap="round"/>
-    <path d="M ${r(SAD.x-40)} ${r(SAD.y-8)} C ${r(SAD.x-20)} ${r(SAD.y-6)} ${r(SAD.x+8)} ${r(SAD.y-3)} ${r(SAD.x+42)} ${r(SAD.y)} L ${r(SAD.x+42)} ${r(SAD.y+5)} C ${r(SAD.x+8)} ${r(SAD.y+2)} ${r(SAD.x-20)} ${r(SAD.y-1)} ${r(SAD.x-40)} ${r(SAD.y-3)} Z" fill="currentColor" stroke="none" opacity="0.4"/>
-    <rect class="zone-overlay" x="${r(POST.x-50)}" y="${r(POST.y-18)}" width="112" height="${r(ST.y-POST.y+44)}" rx="10" data-zone="dropper"/>
+    ${saddle(SAD)}
+    <rect class="zone-overlay" x="${POST.x-50}" y="${POST.y-18}" width="112" height="${ST.y-POST.y+44}" rx="10" data-zone="dropper"/>
   </g>
+
+  <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
+    ${dropBars(HT,22)}
+  </g>
+
+  <!-- Straight fork (modern gravel — no curve) -->
+  <g id="g-fork" class="bike-zone" data-zone="fork">
+    <!-- Crown bridge -->
+    <line x1="${lT.x-1}" y1="${lT.y}" x2="${rT.x+1}" y2="${rT.y}" stroke-width="8" stroke-linecap="round"/>
+    <!-- Left leg: straight all the way -->
+    <line x1="${lT.x}" y1="${lT.y}" x2="${lB.x}" y2="${lB.y}" stroke-width="7" stroke-linecap="round"/>
+    <!-- Right leg: straight all the way -->
+    <line x1="${rT.x}" y1="${rT.y}" x2="${rB.x}" y2="${rB.y}" stroke-width="7" stroke-linecap="round"/>
+    <!-- Lower brace near axle -->
+    <line x1="${lB.x-1}" y1="${lB.y-20}" x2="${rB.x+1}" y2="${rB.y-20}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+    <!-- Axle -->
+    <line x1="${lB.x-8}" y1="${lB.y+2}" x2="${rB.x+8}" y2="${rB.y+2}" stroke-width="6" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="555" y="118" width="118" height="258" rx="12" data-zone="fork"/>
+  </g>
+</svg>`;
+}
+
+// ── ROAD BIKE ─────────────────────────────────────────────
+// Verified: HC(591,204) HT(573,145) ST(319,183) HA=73° TT=8.5°↑
+// Curved fork (road bikes still use raked forks)
+function svgRoad() {
+  const RW={x:155,y:350}, FW={x:636,y:350}, BB={x:372,y:355};
+  const ST={x:319,y:183}, HT={x:573,y:145}, HC={x:591,y:204};
+
+  const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
+  const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
+  const stUx=stDx/stLen, stUy=stDy/stLen;
+  const POST={x:Math.round(ST.x+stUx*52), y:Math.round(ST.y+stUy*52)};
+  const SAD={x:POST.x+4, y:POST.y-1};
+  const SS={x:Math.round(BB.x+stUx*stLen*0.52), y:Math.round(BB.y+stUy*stLen*0.52)};
+
+  // Curved fork: two bezier paths from crown to axle
+  const fCx1=HC.x+18, fCy1=HC.y+55, fCx2=FW.x+12, fCy2=FW.y-62;
+  const fCx1r=HC.x+26, fCy1r=HC.y+56, fCx2r=FW.x+20, fCy2r=FW.y-62;
+
+  return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
+  class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
+
+  ${roadWheel(RW.x,RW.y,'rear-wheel',6)}
+  ${roadWheel(FW.x,FW.y,'front-wheel',6)}
+
+  <g id="g-frame" class="bike-zone" data-zone="frame">
+    <path d="M ${BB.x} ${BB.y} C ${BB.x-50} ${BB.y} ${RW.x+80} ${RW.y-2} ${RW.x} ${RW.y}"
+          fill="none" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M ${BB.x-2} ${BB.y+7} C ${BB.x-52} ${BB.y+7} ${RW.x+78} ${RW.y+7} ${RW.x} ${RW.y}"
+          fill="none" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+    <line x1="${RW.x}"   y1="${RW.y}" x2="${SS.x}" y2="${SS.y}" stroke-width="4" stroke-linecap="round"/>
+    <line x1="${RW.x+7}" y1="${RW.y}" x2="${SS.x+6}" y2="${SS.y}" stroke-width="2" stroke-linecap="round" opacity="0.28"/>
+    <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="7" stroke-linecap="round"/>
+    <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="6" stroke-linecap="round"/>
+    <line x1="${ST.x}" y1="${ST.y}" x2="${HT.x}" y2="${HT.y}" stroke-width="5.5" stroke-linecap="round"/>
+    <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="11" stroke-linecap="round"/>
+    <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${HT.x},${HT.y} ${HC.x},${HC.y}" data-zone="frame"/>
+    <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
+  </g>
+
   <g id="g-drivetrain" class="bike-zone" data-zone="drivetrain">
-    <circle cx="${BB.x}" cy="${BB.y}" r="${isRoad?35:30}" fill="none" stroke-width="${isRoad?5.5:6}"/>
-    ${isRoad?`<circle cx="${BB.x}" cy="${BB.y}" r="25" fill="none" stroke-width="4" opacity="0.4"/>`:''}
-    <circle cx="${BB.x}" cy="${BB.y}" r="18" fill="none" stroke-width="1.5" opacity="0.28"/>
-    <line x1="${BB.x}" y1="${BB.y}" x2="${BB.x+36}" y2="${BB.y+26}" stroke-width="7.5" stroke-linecap="round"/>
-    <line x1="${BB.x+32}" y1="${BB.y+24}" x2="${BB.x+48}" y2="${BB.y+19}" stroke-width="6.5" stroke-linecap="round" opacity="0.72"/>
-    <line x1="${BB.x}" y1="${BB.y}" x2="${BB.x-36}" y2="${BB.y-26}" stroke-width="7.5" stroke-linecap="round"/>
-    <circle cx="${RW.x}" cy="${RW.y}" r="22" fill="none" stroke-width="4.5"/>
-    <circle cx="${RW.x}" cy="${RW.y}" r="15" fill="none" stroke-width="3" opacity="0.45"/>
-    <circle cx="${BB.x}" cy="${BB.y}" r="11" fill="var(--bg-base)" stroke="currentColor" stroke-width="3"/>
+    ${drivetrain(BB,RW,34)}
+    <!-- Road: 2x chainrings -->
+    <circle cx="${BB.x}" cy="${BB.y}" r="24" fill="none" stroke-width="4" opacity="0.5"/>
+    <!-- Road cassette: smaller, tighter range -->
+    <circle cx="${RW.x}" cy="${RW.y}" r="20" fill="none" stroke-width="4"/>
+    <circle cx="${RW.x}" cy="${RW.y}" r="15" fill="none" stroke-width="3" opacity="0.5"/>
+    <circle cx="${RW.x}" cy="${RW.y}" r="10" fill="none" stroke-width="2" opacity="0.28"/>
     <circle class="zone-overlay" cx="${BB.x}" cy="${BB.y}" r="52" data-zone="drivetrain"/>
+  </g>
+
+  <g id="g-dropper" class="bike-zone" data-zone="dropper">
+    <rect x="${ST.x-9}" y="${ST.y-5}" width="18" height="11" rx="3" fill="var(--bg-elevated)" stroke-width="2.5"/>
+    <line x1="${ST.x}" y1="${ST.y}" x2="${POST.x}" y2="${POST.y}" stroke-width="6" stroke-linecap="round"/>
+    ${saddle(SAD)}
+    <rect class="zone-overlay" x="${POST.x-48}" y="${POST.y-18}" width="108" height="${ST.y-POST.y+42}" rx="10" data-zone="dropper"/>
+  </g>
+
+  <!-- Road: longer stem than MTB -->
+  <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
+    ${dropBars(HT,32)}
+  </g>
+
+  <!-- Curved fork (road — raked) -->
+  <g id="g-fork" class="bike-zone" data-zone="fork">
+    <!-- Crown -->
+    <line x1="${HC.x-6}" y1="${HC.y+2}" x2="${HC.x+8}" y2="${HC.y+2}" stroke-width="8" stroke-linecap="round"/>
+    <!-- Left leg: curved bezier -->
+    <path d="M ${HC.x-5} ${HC.y+3}
+             C ${fCx1-2} ${fCy1} ${fCx2-2} ${fCy2} ${FW.x+6} ${FW.y}"
+          fill="none" stroke-width="5.5" stroke-linecap="round"/>
+    <!-- Right leg -->
+    <path d="M ${HC.x+7} ${HC.y+3}
+             C ${fCx1r} ${fCy1r} ${fCx2r} ${fCy2r} ${FW.x+16} ${FW.y}"
+          fill="none" stroke-width="5.5" stroke-linecap="round"/>
+    <!-- Lower brace -->
+    <line x1="${FW.x+4}" y1="${FW.y-18}" x2="${FW.x+18}" y2="${FW.y-18}" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+    <!-- Axle -->
+    <line x1="${FW.x-2}" y1="${FW.y+2}" x2="${FW.x+22}" y2="${FW.y+2}" stroke-width="5.5" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="562" y="118" width="112" height="258" rx="12" data-zone="fork"/>
   </g>
 </svg>`;
 }
@@ -489,8 +536,8 @@ export function createSilhouette(bike) {
     case 'mtb':        return isFull?svgMTBFS(false):svgHardtail(false);
     case 'emtb':       return svgMTBFS(true);
     case 'dirtjumper': return svgHardtail(true);
-    case 'gravel':     return svgGravelRoad(false);
-    case 'road':       return svgGravelRoad(true);
+    case 'gravel':     return svgGravel();
+    case 'road':       return svgRoad();
     default:           return svgMTBFS(false);
   }
 }
