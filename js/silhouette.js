@@ -240,6 +240,8 @@ function svgMTBFS(hasMotor = false) {
 
   <!-- SHOCK + LINKAGE (rendered last) -->
   <g id="g-shock" class="bike-zone" data-zone="shock">
+    <circle cx="${RPIV.x}" cy="${RPIV.y}" r="5.5" fill="var(--bg-base)" stroke-width="3"/>
+    <line x1="${RPIV.x}" y1="${RPIV.y}" x2="${SHB.x}" y2="${SHB.y}" stroke-width="4.5" stroke-linecap="round"/>
     <line x1="${SHT.x}" y1="${SHT.y}" x2="${SHB.x}" y2="${SHB.y}" stroke-width="9" stroke-linecap="round"/>
     <line x1="${SHB.x}" y1="${SHB.y}"
           x2="${Math.round(SHB.x+(SHT.x-SHB.x)*0.44)}"
@@ -247,7 +249,6 @@ function svgMTBFS(hasMotor = false) {
           stroke-width="4.5" stroke="var(--bg-elevated)" stroke-linecap="round" opacity="0.75"/>
     <line x1="${SHT.x}" y1="${SHT.y}" x2="${SHB.x}" y2="${SHB.y}"
           stroke-width="4" stroke="var(--bg-base)" stroke-dasharray="0 15 5 15 5 15" stroke-linecap="round" opacity="0.4"/>
-    <line x1="${SHT.x-4}" y1="${SHT.y+6}" x2="${SHT.x-14}" y2="${SHT.y+17}" stroke-width="7" stroke-linecap="round" opacity="0.68"/>
     <circle cx="${SHT.x}" cy="${SHT.y}" r="6" fill="var(--bg-base)" stroke-width="3"/>
     <circle cx="${SHT.x}" cy="${SHT.y}" r="2.5" fill="currentColor" stroke="none"/>
     <circle cx="${SHB.x}" cy="${SHB.y}" r="6" fill="var(--bg-base)" stroke-width="3"/>
