@@ -158,9 +158,9 @@ function drivetrain(BB, RW, r=33) {
     <line x1="${BB.x+34}" y1="${BB.y+26}" x2="${BB.x+50}" y2="${BB.y+21}" stroke-width="7" stroke-linecap="round" opacity="0.72"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${BB.x-38}" y2="${BB.y-28}" stroke-width="8" stroke-linecap="round"/>
     <line x1="${BB.x-34}" y1="${BB.y-26}" x2="${BB.x-50}" y2="${BB.y-21}" stroke-width="7" stroke-linecap="round" opacity="0.72"/>
-    <path d="M ${BB.x-4} ${BB.y-${r}} Q ${(BB.x+RW.x)/2} ${BB.y-${r+9}} ${RW.x} ${RW.y-24}"
+    <path d="M ${BB.x-4} ${BB.y-r} Q ${(BB.x+RW.x)/2} ${BB.y-r-9} ${RW.x} ${RW.y-24}"
           fill="none" stroke-width="2.5" stroke-dasharray="8 4" opacity="0.3"/>
-    <path d="M ${BB.x+4} ${BB.y+${r}} Q ${(BB.x+RW.x)/2+8} ${BB.y+24} ${RW.x} ${RW.y+12}"
+    <path d="M ${BB.x+4} ${BB.y+r} Q ${(BB.x+RW.x)/2+8} ${BB.y+24} ${RW.x} ${RW.y+12}"
           fill="none" stroke-width="2.5" stroke-dasharray="8 4" opacity="0.3"/>
     <circle cx="${BB.x}" cy="${BB.y}" r="12" fill="var(--bg-base)" stroke="currentColor" stroke-width="3.5"/>`;
 }
