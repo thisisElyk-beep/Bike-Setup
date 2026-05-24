@@ -42,6 +42,7 @@
   --shadow-lg:    0 8px 40px rgba(0,0,0,0.55);
   --scrollbar-bg: #111010;
   --scrollbar-thumb: #2e2c2c;
+  --silhouette-stroke: #9a9898;
 }
 
 [data-theme="light"] {
@@ -70,6 +71,7 @@
   --shadow-lg:    0 8px 40px rgba(0,0,0,0.16);
   --scrollbar-bg: #f2f0ef;
   --scrollbar-thumb: #d4d0cd;
+  --silhouette-stroke: #706c6a;
 }
 
 /* ─── RESET ────────────────────────────────────────── */
@@ -414,7 +416,7 @@ svg { display: block; flex-shrink: 0; }
   height: 100%;
   max-height: 380px;
   transition: none;
-  stroke: var(--text-secondary);
+  stroke: var(--silhouette-stroke);
   fill: none;
 }
 
@@ -457,9 +459,121 @@ svg { display: block; flex-shrink: 0; }
 .bike-part path,
 .bike-part line,
 .bike-part circle,
-.bike-part rect { stroke: var(--text-secondary); }
+.bike-part rect { stroke: var(--silhouette-stroke); }
 
-/* Zone tooltip */
+/* Zone population dot */
+.zone-dot {
+  fill: var(--accent);
+  stroke: var(--bg-base);
+  stroke-width: 1.5;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+/* Completeness ring */
+.completeness-ring {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.completeness-svg { transform: rotate(-90deg); }
+.completeness-track { fill: none; stroke: var(--border-md); stroke-width: 2.5; }
+.completeness-fill  { fill: none; stroke: var(--accent); stroke-width: 2.5;
+                      stroke-linecap: round; transition: stroke-dashoffset 0.4s ease; }
+.completeness-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+/* Scratchpad */
+.scratchpad-area {
+  border-top: 1px solid var(--border);
+  padding: 1rem 1.25rem;
+  flex-shrink: 0;
+}
+.scratchpad-label {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+.scratchpad-input {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.65rem;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  resize: none;
+  font-family: var(--font-ui);
+  line-height: 1.5;
+  transition: border-color var(--transition);
+  min-height: 60px;
+}
+.scratchpad-input:focus { border-color: var(--accent); outline: none; }
+.scratchpad-saving {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  min-height: 1em;
+  transition: opacity 0.2s;
+}
+
+/* Preset quick-load */
+.preset-quick-load {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.preset-quick-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 1.8rem 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a7878' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  transition: border-color var(--transition);
+  max-width: 160px;
+}
+.preset-quick-select:focus { border-color: var(--accent); outline: none; }
+
+/* Mobile silhouette collapse */
+.silhouette-collapse-btn {
+  display: none;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  padding: 0.25rem 0.4rem;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition);
+}
+.silhouette-collapse-btn:hover { color: var(--text-primary); }
+.silhouette-collapsed .silhouette-container { display: none; }
+.silhouette-collapsed .silhouette-hint { display: none; }
+
+@media (max-width: 900px) {
+  .silhouette-collapse-btn { display: inline-flex; }
+  .silhouette-collapsed { min-height: auto !important; }
+}
 .zone-tooltip {
   position: absolute;
   background: var(--bg-elevated);
