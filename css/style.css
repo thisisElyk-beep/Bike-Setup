@@ -416,6 +416,7 @@ svg { display: block; flex-shrink: 0; }
   transition: none;
   stroke: var(--text-secondary);
   fill: none;
+  color: var(--text-secondary); /* currentColor used by filled frame paths */
 }
 
 /* Zone interaction */
@@ -432,6 +433,7 @@ svg { display: block; flex-shrink: 0; }
 
 .bike-zone.zone-hovered {
   filter: drop-shadow(0 0 6px var(--accent-glow));
+  color: var(--accent);
 }
 
 .bike-zone.zone-hovered path,
@@ -440,6 +442,19 @@ svg { display: block; flex-shrink: 0; }
 .bike-zone.zone-hovered rect,
 .bike-zone.zone-hovered polyline {
   stroke: var(--accent);
+  fill: currentColor;
+}
+
+/* Preserve transparent overlays on hover/active */
+.bike-zone.zone-hovered .zone-overlay,
+.bike-zone.zone-active .zone-overlay {
+  fill: transparent;
+  stroke: none;
+}
+
+.bike-zone.zone-active {
+  filter: drop-shadow(0 0 10px var(--accent-glow));
+  color: var(--accent);
 }
 
 .bike-zone.zone-active path,
@@ -448,10 +463,7 @@ svg { display: block; flex-shrink: 0; }
 .bike-zone.zone-active rect,
 .bike-zone.zone-active polyline {
   stroke: var(--accent);
-}
-
-.bike-zone.zone-active {
-  filter: drop-shadow(0 0 10px var(--accent-glow));
+  fill: currentColor;
 }
 
 .bike-part path,
