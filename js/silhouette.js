@@ -235,7 +235,7 @@ function svgMTBFS(hasMotor = false) {
     <line x1="${F.lB.x-2}" y1="${F.lB.y-22}" x2="${F.rB.x+2}" y2="${F.rB.y-22}" stroke-width="6" stroke-linecap="round" opacity="0.64"/>
     <rect x="${F.lB.x-20}" y="${F.lB.y-62}" width="14" height="28" rx="3" fill="none" stroke-width="3" opacity="0.58"/>
     <line x1="${F.lB.x-10}" y1="${F.lB.y+2}" x2="${F.rB.x+10}" y2="${F.rB.y+2}" stroke-width="7" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="555" y="118" width="140" height="258" rx="14" data-zone="fork"/>
+    <rect class="zone-overlay" x="563" y="196" width="117" height="164" rx="14" data-zone="fork"/>
   </g>
 
   <!-- SHOCK + LINKAGE (rendered last) -->
@@ -600,14 +600,17 @@ export function setupZoneInteraction(container,bike,onZoneClick){
     overlay.addEventListener('mousemove',e=>positionTooltip(tooltip,e,container));
     overlay.addEventListener('click', e => {
       e.stopPropagation();
-      if(_activeZone){const prev=svg.querySelector(`#g-${_activeZone}`);if(prev)prev.classList.remove('zone-active','zone-hovered');}
+      // Clear ALL active/hovered states (fixes one-at-a-time)
+      svg.querySelectorAll('.zone-active, .zone-hovered').forEach(el => {
+        el.classList.remove('zone-active', 'zone-hovered');
+      });
       if(_activeZone===zoneId){
         _activeZone=null;resetZoom(svg);
         document.getElementById('btn-zoom-reset')?.classList.add('hidden');
         onZoneClick(null);
       } else {
         _activeZone=zoneId;
-        if(group){group.classList.remove('zone-hovered');group.classList.add('zone-active');}
+        if(group)group.classList.add('zone-active');
         const meta=ZONE_META[zoneId];if(meta)animateViewBox(svg,meta.vb);
         document.getElementById('btn-zoom-reset')?.classList.remove('hidden');
         onZoneClick(zoneId);
@@ -615,15 +618,16 @@ export function setupZoneInteraction(container,bike,onZoneClick){
     });
   });
 
-  // Click on empty SVG background → reset zoom
+  // Background click → clear all highlights and reset
   svg.addEventListener('click', () => {
-    if (!_activeZone) return;
-    const prev = svg.querySelector(`#g-${_activeZone}`);
-    if (prev) prev.classList.remove('zone-active', 'zone-hovered');
+    svg.querySelectorAll('.zone-active, .zone-hovered').forEach(el => {
+      el.classList.remove('zone-active', 'zone-hovered');
+    });
+    const wasActive = _activeZone;
     _activeZone = null;
     resetZoom(svg);
     document.getElementById('btn-zoom-reset')?.classList.add('hidden');
-    onZoneClick(null);
+    if (wasActive) onZoneClick(null);
   });
 }
 
@@ -711,6 +715,146 @@ function updateCompletenessRing(bike, available) {
   const offset = circumference - (done / total) * circumference;
   fill.setAttribute('stroke-dashoffset', offset.toFixed(1));
   label.textContent = `${done}/${total}`;
+}
+
+// ── COCKPIT FRONT VIEW ────────────────────────────────────
+const COCKPIT_META = {
+  'cockpit-bars':   { label: 'Handlebar',         key: 'handlebar' },
+  'cockpit-stem':   { label: 'Stem',              key: 'stem' },
+  'cockpit-brakes': { label: 'Brakes & Shifters', key: 'brakes' },
+  'cockpit-grips':  { label: 'Grips',             key: 'grips' },
+  'cockpit-stack':  { label: 'Stack & Headset',   key: 'headset' },
+};
+
+export function createCockpitFrontView(bike) {
+  return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
+  class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
+
+  <!-- ── BARS (both middle sections of bar tube) ── -->
+  <g id="g-cockpit-bars" class="bike-zone" data-zone="cockpit-bars">
+    <line x1="208" y1="248" x2="366" y2="248" stroke-width="8" stroke-linecap="round"/>
+    <line x1="434" y1="248" x2="592" y2="248" stroke-width="8" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="208" y="236" width="158" height="28" rx="4" data-zone="cockpit-bars"/>
+    <rect class="zone-overlay" x="434" y="236" width="158" height="28" rx="4" data-zone="cockpit-bars"/>
+  </g>
+
+  <!-- ── GRIPS (both ends) ── -->
+  <g id="g-cockpit-grips" class="bike-zone" data-zone="cockpit-grips">
+    <line x1="78" y1="248" x2="210" y2="248" stroke-width="22" stroke-linecap="round" opacity="0.75"/>
+    <path d="M 78 248 Q 70 248 68 256" fill="none" stroke-width="20" stroke-linecap="round" opacity="0.75"/>
+    <line x1="108" y1="237" x2="108" y2="259" stroke-width="1.8" stroke-linecap="round" opacity="0.28"/>
+    <line x1="130" y1="236" x2="130" y2="260" stroke-width="1.8" stroke-linecap="round" opacity="0.28"/>
+    <line x1="152" y1="236" x2="152" y2="260" stroke-width="1.8" stroke-linecap="round" opacity="0.28"/>
+    <line x1="174" y1="236" x2="174" y2="260" stroke-width="1.8" stroke-linecap="round" opacity="0.28"/>
+    <line x1="196" y1="237" x2="196" y2="259" stroke-width="1.8" stroke-linecap="round" opacity="0.28"/>
+    <line x1="590" y1="248" x2="722" y2="248" stroke-width="22" stroke-linecap="round" opacity="0.75"/>
+    <path d="M 722 248 Q 730 248 732 256" fill="none" stroke-width="20" stroke-linecap="round" opacity="0.75"/>
+    <line x1="612" y1="236" x2="612" y2="260" stroke-width="1.8" stroke-linecap="round" opacity="0.28"/>
+    <line x1="634" y1="236" x2="634" y2="260" stroke-width="1.8" stroke-linecap="round" opacity="0.28"/>
+    <line x1="656" y1="236" x2="656" y2="260" stroke-width="1.8" stroke-linecap="round" opacity="0.28"/>
+    <line x1="678" y1="236" x2="678" y2="260" stroke-width="1.8" stroke-linecap="round" opacity="0.28"/>
+    <line x1="700" y1="237" x2="700" y2="259" stroke-width="1.8" stroke-linecap="round" opacity="0.28"/>
+    <rect class="zone-overlay" x="60" y="228" width="158" height="40" rx="8" data-zone="cockpit-grips"/>
+    <rect class="zone-overlay" x="582" y="228" width="158" height="40" rx="8" data-zone="cockpit-grips"/>
+  </g>
+
+  <!-- ── BRAKES + SHIFTERS (both sides) ── -->
+  <g id="g-cockpit-brakes" class="bike-zone" data-zone="cockpit-brakes">
+    <!-- Left: reservoir, lever blade, shifter pod -->
+    <rect x="202" y="230" width="48" height="20" rx="5" fill="none" stroke-width="2.5"/>
+    <line x1="202" y1="247" x2="250" y2="247" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+    <path d="M 226 248 C 220 278 214 312 221 346" fill="none" stroke-width="6" stroke-linecap="round"/>
+    <line x1="215" y1="338" x2="228" y2="352" stroke-width="5" stroke-linecap="round"/>
+    <rect x="260" y="230" width="54" height="20" rx="4" fill="none" stroke-width="2.5"/>
+    <line x1="280" y1="248" x2="280" y2="264" stroke-width="2.5" stroke-linecap="round" opacity="0.55"/>
+    <!-- Right: mirror -->
+    <rect x="550" y="230" width="48" height="20" rx="5" fill="none" stroke-width="2.5"/>
+    <line x1="550" y1="247" x2="598" y2="247" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+    <path d="M 574 248 C 580 278 586 312 579 346" fill="none" stroke-width="6" stroke-linecap="round"/>
+    <line x1="585" y1="338" x2="572" y2="352" stroke-width="5" stroke-linecap="round"/>
+    <rect x="486" y="230" width="54" height="20" rx="4" fill="none" stroke-width="2.5"/>
+    <line x1="520" y1="248" x2="520" y2="264" stroke-width="2.5" stroke-linecap="round" opacity="0.55"/>
+    <rect class="zone-overlay" x="194" y="220" width="132" height="148" rx="8" data-zone="cockpit-brakes"/>
+    <rect class="zone-overlay" x="474" y="220" width="132" height="148" rx="8" data-zone="cockpit-brakes"/>
+  </g>
+
+  <!-- ── STEM ── -->
+  <g id="g-cockpit-stem" class="bike-zone" data-zone="cockpit-stem">
+    <rect x="378" y="170" width="44" height="18" rx="5" fill="none" stroke-width="3.5"/>
+    <path d="M 385 188 L 368 218 L 432 218 L 415 188 Z"
+          fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="360" y="216" width="80" height="14" rx="4" fill="none" stroke-width="4"/>
+    <circle cx="376" cy="223" r="3.5" fill="none" stroke-width="2"/>
+    <circle cx="424" cy="223" r="3.5" fill="none" stroke-width="2"/>
+    <rect class="zone-overlay" x="352" y="162" width="96" height="82" rx="10" data-zone="cockpit-stem"/>
+  </g>
+
+  <!-- ── STACK / HEADSET ── -->
+  <g id="g-cockpit-stack" class="bike-zone" data-zone="cockpit-stack">
+    <line x1="400" y1="44" x2="400" y2="168" stroke-width="5" stroke-linecap="round"/>
+    <rect x="385" y="116" width="30" height="10" rx="2.5" fill="none" stroke-width="2.5"/>
+    <rect x="385" y="130" width="30" height="10" rx="2.5" fill="none" stroke-width="2.5"/>
+    <rect x="385" y="144" width="30" height="10" rx="2.5" fill="none" stroke-width="2.5"/>
+    <line x1="380" y1="114" x2="420" y2="114" stroke-width="5" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="378" y="38" width="44" height="132" rx="8" data-zone="cockpit-stack"/>
+  </g>
+
+</svg>`;
+}
+
+export function setupCockpitInteraction(container, bike, onSubZoneClick) {
+  const svg = container.querySelector('#bike-svg');
+  if (!svg) return;
+  const tooltip = document.getElementById('zone-tooltip');
+  let _activeCockpitZone = null;
+
+  svg.querySelectorAll('.zone-overlay').forEach(overlay => {
+    const zoneId = overlay.getAttribute('data-zone');
+    if (!COCKPIT_META[zoneId]) return;
+    const group = svg.querySelector(`#g-${zoneId}`);
+
+    overlay.addEventListener('mouseenter', e => {
+      if (group) group.classList.add('zone-hovered');
+      const meta = COCKPIT_META[zoneId];
+      const bl   = bike.baseline || {};
+      let val = 'Not set';
+      if      (zoneId==='cockpit-bars'   && bl.handlebar?.brand) val=`${bl.handlebar.brand} ${bl.handlebar.width||''}`.trim();
+      else if (zoneId==='cockpit-stem'   && bl.stem?.brand)      val=`${bl.stem.brand} ${bl.stem.length||''}`.trim();
+      else if (zoneId==='cockpit-brakes' && bl.brakes?.brand)    val=`${bl.brakes.brand} ${bl.brakes.model||''}`.trim();
+      else if (zoneId==='cockpit-grips'  && bl.grips?.brand)     val=`${bl.grips.brand} ${bl.grips.model||''}`.trim();
+      else if (zoneId==='cockpit-stack'  && bl.headset?.brand)   val=`${bl.headset.brand} ${bl.headset.model||''}`.trim();
+      tooltip.querySelector('.tooltip-zone-name').textContent  = meta.label;
+      tooltip.querySelector('.tooltip-zone-value').textContent = val;
+      tooltip.classList.remove('hidden');
+      positionTooltip(tooltip, e, container);
+      document.querySelector('.silhouette-hint')?.style.setProperty('opacity','0');
+    });
+    overlay.addEventListener('mouseleave', () => {
+      if (group && _activeCockpitZone !== zoneId) group.classList.remove('zone-hovered');
+      tooltip.classList.add('hidden');
+      document.querySelector('.silhouette-hint')?.style.setProperty('opacity','');
+    });
+    overlay.addEventListener('mousemove', e => positionTooltip(tooltip, e, container));
+    overlay.addEventListener('click', e => {
+      e.stopPropagation();
+      svg.querySelectorAll('.zone-active,.zone-hovered').forEach(el=>el.classList.remove('zone-active','zone-hovered'));
+      if (_activeCockpitZone === zoneId) {
+        _activeCockpitZone = null;
+        onSubZoneClick(null);
+      } else {
+        _activeCockpitZone = zoneId;
+        if (group) group.classList.add('zone-active');
+        onSubZoneClick(zoneId);
+      }
+    });
+  });
+
+  // Background click → signal exit
+  svg.addEventListener('click', () => {
+    svg.querySelectorAll('.zone-active,.zone-hovered').forEach(el=>el.classList.remove('zone-active','zone-hovered'));
+    _activeCockpitZone = null;
+    onSubZoneClick(null);
+  });
 }
 
 export { ZONE_META };
