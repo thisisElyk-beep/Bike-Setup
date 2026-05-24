@@ -195,10 +195,73 @@ function svgMTBFS(hasMotor = false) {
           fill="none" stroke-width="3" stroke-linecap="round" opacity="0.34"/>
     <line x1="${RW.x}"   y1="${RW.y}"   x2="${SS.x}" y2="${SS.y}" stroke-width="5" stroke-linecap="round"/>
     <line x1="${RW.x+9}" y1="${RW.y}"   x2="${SS.x+8}" y2="${SS.y}" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
-    <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="11" stroke-linecap="round"/>
-    <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="7.5" stroke-linecap="round"/>
-    <line x1="342" y1="208" x2="${HT.x}" y2="${HT.y}" stroke-width="6.5" stroke-linecap="round"/>
-    <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="15" stroke-linecap="round"/>
+
+    <!--
+      Carbon frame: filled paths with varying width + bezier blending at junctions.
+      Each tube is a filled shape, wider at junction ends (flare), narrowing mid-tube.
+      Bezier control points create smooth carbon-layup fillet at HT, HC, and BB.
+    -->
+
+    <!-- DOWN TUBE: BB (w=8) flaring to HC (w=12), bezier blend into HT junction -->
+    <path d="
+      M 387 374
+      L 594 215
+      Q 599 206 587 197
+      L 580 197
+      Q 570 196 377 373
+      Z"
+      fill="currentColor" stroke="none"/>
+
+    <!-- HEAD TUBE: fat filled shape, widens slightly at both ends (carbon layup) -->
+    <path d="
+      M 551 163
+      Q 545 157 563 149
+      L 575 145
+      Q 585 148 575 163
+      L 575 218
+      Q 584 214 599 200
+      L 599 200
+      Q 603 208 587 215
+      L 575 212
+      Q 566 220 551 163
+      Z"
+      fill="currentColor" stroke="none"/>
+
+    <!-- Subtle inner highlight on head tube (carbon sheen) -->
+    <path d="
+      M 555 164
+      Q 557 160 563 157
+      Q 573 160 571 168
+      L 569 208
+      Q 580 206 591 198
+      Q 588 208 579 210
+      L 571 208"
+      fill="none" stroke="currentColor" stroke-width="1" opacity="0.18"/>
+
+    <!-- SEAT TUBE: BB (w=7) tapering to top (w=5), slightly curved carbon profile -->
+    <path d="
+      M 389 366
+      Q 393 290 340 174
+      L 330 180
+      Q 328 240 375 375
+      Z"
+      fill="currentColor" stroke="none"/>
+
+    <!-- TOP TUBE: TJ origin (w=5) flaring to HT end (w=8), bezier blend into HT -->
+    <path d="
+      M 343 213
+      Q 430 178 565 155
+      Q 572 155 575 163
+      L 571 168
+      Q 562 162 561 149
+      Q 425 172 341 203
+      Z"
+      fill="currentColor" stroke="none"/>
+
+    <!-- BB junction gusset: filled blob blending DT + ST + chainstay together -->
+    <ellipse cx="382" cy="366" rx="14" ry="10"
+             fill="currentColor" opacity="0.85"/>
+
     ${hasMotor?`<rect x="${BB.x-38}" y="${BB.y-50}" width="62" height="44" rx="9" fill="none" stroke-width="3" opacity="0.68"/>`:''}
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${HT.x},${HT.y} ${HC.x},${HC.y}" data-zone="frame"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
