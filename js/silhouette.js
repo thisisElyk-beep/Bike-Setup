@@ -620,6 +620,7 @@ export function setupZoneInteraction(container,bike,onZoneClick){
     document.getElementById('btn-zoom-reset')?.classList.add('hidden');
     onZoneClick(null);
   });
+}
 
 function getAvailableZones(bike){
   const base=['front-wheel','rear-wheel','fork','handlebar','drivetrain','dropper','frame'];
