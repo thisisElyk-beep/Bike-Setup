@@ -52,7 +52,8 @@ const CATEGORY_META = {
   'Bottom Bracket':   { icon: bbIcon,         group: 'Drivetrain' },
   'Wheels / Rims':    { icon: wheelIcon,      group: 'Wheels & Tires' },
   'Hubs':             { icon: hubIcon,        group: 'Wheels & Tires' },
-  'Tires':            { icon: tireIcon,       group: 'Wheels & Tires' },
+  'Front Tire':       { icon: tireIcon,      group: 'Wheels & Tires' },
+  'Rear Tire':        { icon: tireIcon,      group: 'Wheels & Tires' },
   'Dropper Post':     { icon: dropperIcon,    group: 'Saddle & Post' },
   'Saddle':           { icon: saddleIcon,     group: 'Saddle & Post' },
   'Seatpost':         { icon: seatpostIcon,   group: 'Saddle & Post' },
@@ -281,11 +282,11 @@ function showAddModal(bike) {
     <div class="field-row" style="margin-top:1rem">
       <div class="field-group">
         <label class="field-label" for="new-comp-brand">Brand</label>
-        <input id="new-comp-brand" class="field-input" type="text" placeholder="e.g. Fox, SRAM, Maxxis">
+        <input id="new-comp-brand" class="field-input" type="text" placeholder="Brand">
       </div>
       <div class="field-group">
         <label class="field-label" for="new-comp-model">Model</label>
-        <input id="new-comp-model" class="field-input" type="text" placeholder="e.g. 38 Factory">
+        <input id="new-comp-model" class="field-input" type="text" placeholder="Model">
       </div>
     </div>
     <div class="field-group">
