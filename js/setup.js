@@ -219,6 +219,8 @@ function suspensionForm(key, label, data = {}, isShock = false) {
 function cockpitForm(baseline = {}) {
   const hb = baseline.handlebar || {};
   const st = baseline.stem || {};
+  const br = baseline.brakes || {};
+  const gr = baseline.grips || {};
   return `
     <div class="settings-section-divider">Handlebar</div>
     <div class="field-row">
@@ -241,6 +243,20 @@ function cockpitForm(baseline = {}) {
     <div class="field-row">
       ${field('Length', 'st-length', st.length, 'e.g. 50mm')}
       ${field('Clamp Diameter', 'st-clamp', st.clamp, 'e.g. 31.8mm')}
+    </div>
+    <div class="settings-section-divider">Brakes</div>
+    <div class="field-row">
+      ${field('Brand', 'br-brand', br.brand, 'e.g. SRAM, Shimano')}
+      ${field('Model', 'br-model', br.model, 'e.g. Code RSC')}
+    </div>
+    <div class="field-row">
+      ${field('Lever Reach', 'br-reach', br.reach, 'e.g. 3 clicks')}
+      ${field('Bite Point', 'br-bite', br.bite, 'e.g. 4 clicks')}
+    </div>
+    <div class="settings-section-divider">Grips</div>
+    <div class="field-row">
+      ${field('Brand', 'gr-brand', gr.brand, 'e.g. Ergon, ODI')}
+      ${field('Model', 'gr-model', gr.model, 'e.g. GA2 Fat')}
     </div>
     <div class="field-group">${fieldTextarea('Notes', 'cockpit-notes', baseline.cockpitNotes)}</div>
   `;
@@ -346,7 +362,9 @@ function collectFormData(zoneId, container) {
     case 'shock': return { shock: collectSuspension('shock', container) };
     case 'handlebar': return {
       handlebar: { brand: val('hb-brand'), model: val('hb-model'), width: val('hb-width'), rise: val('hb-rise'), sweep: val('hb-sweep'), material: val('hb-material') },
-      stem: { brand: val('st-brand'), model: val('st-model'), length: val('st-length'), clamp: val('st-clamp') },
+      stem:      { brand: val('st-brand'), model: val('st-model'), length: val('st-length'), clamp: val('st-clamp') },
+      brakes:    { brand: val('br-brand'), model: val('br-model'), reach: val('br-reach'), bite: val('br-bite') },
+      grips:     { brand: val('gr-brand'), model: val('gr-model') },
       cockpitNotes: val('cockpit-notes')
     };
     case 'drivetrain': return { drivetrain: { brand: val('dt-brand'), model: val('dt-model'), cassette: val('dt-cassette'), chainring: val('dt-chainring'), chain: val('dt-chain'), rd: val('dt-rd'), notes: val('dt-notes') } };
