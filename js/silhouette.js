@@ -578,6 +578,11 @@ export function setupZoneInteraction(container,bike,onZoneClick){
   svg.setAttribute('viewBox',VB_DEFAULT.join(' '));
   const tooltip=document.getElementById('zone-tooltip');
   const available=getAvailableZones(bike);
+
+  // Draw population dots + update completeness ring
+  drawZoneDots(svg, bike, available);
+  updateCompletenessRing(bike, available);
+
   svg.querySelectorAll('.zone-overlay').forEach(overlay=>{
     const zoneId=overlay.getAttribute('data-zone');
     if(!available.includes(zoneId)){overlay.style.display='none';return;}
@@ -657,4 +662,55 @@ export function getZoneQuickValue(zoneId,bike){
   }
 }
 
-export {ZONE_META};
+// Zone dot positions (where to place the amber dot for each zone)
+const ZONE_DOT_POS = {
+  'front-wheel': {x:658, y:238}, 'rear-wheel': {x:148, y:238},
+  'fork':        {x:620, y:210}, 'shock':      {x:415, y:298},
+  'handlebar':   {x:575, y:133}, 'drivetrain': {x:415, y:345},
+  'dropper':     {x:340, y:130}, 'frame':      {x:480, y:200},
+};
+
+function zoneHasData(zoneId, bike) {
+  const bl = bike.baseline || {};
+  switch(zoneId) {
+    case 'front-wheel': return !!(bl.frontTire?.brand || bl.frontTire?.psi);
+    case 'rear-wheel':  return !!(bl.rearTire?.brand  || bl.rearTire?.psi);
+    case 'fork':        return !!(bl.fork?.brand);
+    case 'shock':       return !!(bl.shock?.brand);
+    case 'handlebar':   return !!(bl.handlebar?.brand || bl.stem?.brand);
+    case 'drivetrain':  return !!(bl.drivetrain?.brand);
+    case 'dropper':     return !!(bl.dropper?.brand);
+    case 'frame':       return !!(bl.frame?.brand);
+    default: return false;
+  }
+}
+
+function drawZoneDots(svg, bike, available) {
+  // Remove old dots
+  svg.querySelectorAll('.zone-dot').forEach(d => d.remove());
+  available.forEach(zoneId => {
+    if (!zoneHasData(zoneId, bike)) return;
+    const pos = ZONE_DOT_POS[zoneId];
+    if (!pos) return;
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', pos.x);
+    circle.setAttribute('cy', pos.y);
+    circle.setAttribute('r', '5');
+    circle.setAttribute('class', 'zone-dot');
+    svg.appendChild(circle);
+  });
+}
+
+function updateCompletenessRing(bike, available) {
+  const fill  = document.getElementById('completeness-fill');
+  const label = document.getElementById('completeness-label');
+  if (!fill || !label) return;
+  const total = available.length;
+  const done  = available.filter(z => zoneHasData(z, bike)).length;
+  const circumference = 50.3; // 2π×8
+  const offset = circumference - (done / total) * circumference;
+  fill.setAttribute('stroke-dashoffset', offset.toFixed(1));
+  label.textContent = `${done}/${total}`;
+}
+
+export { ZONE_META };
