@@ -1,7 +1,7 @@
 import { getBikes, createBike, updateBike, deleteBike } from './db.js';
 import { getPresets } from './db.js';
-import { createSilhouette, createMiniSilhouette, setupZoneInteraction, resetZoom } from './silhouette.js';
-import { renderZoneSettings, renderSettingsPlaceholder } from './setup.js';
+import { createSilhouette, createMiniSilhouette, setupZoneInteraction, resetZoom, createCockpitFrontView, setupCockpitInteraction } from './silhouette.js';
+import { renderZoneSettings, renderSettingsPlaceholder, renderCockpitSubZone } from './setup.js';
 import { renderComponentsTab } from './components.js';
 import { renderTestingTab } from './testing.js';
 import { renderPresetsTab } from './presets.js';
@@ -11,6 +11,7 @@ import { exportBikePDF } from './export.js';
 let _bikes = [];
 let _bike  = null;
 let _tab   = 'setup';
+let _cockpitMode    = false;
 let _scratchpadTimer = null;
 
 const $ = id => document.getElementById(id);
@@ -115,16 +116,19 @@ function openBike(bike) {
 }
 
 function loadSetupTab(bike) {
-  const container = $('silhouette-container');
+  _cockpitMode = false;
+  const container       = $('silhouette-container');
+  const settingsContent = $('settings-content');
+
   container.innerHTML = createSilhouette(bike);
   container.insertAdjacentHTML('beforeend', '<div class="silhouette-hint">Click a component to inspect &amp; edit</div>');
-
-  const settingsContent = $('settings-content');
   renderSettingsPlaceholder(settingsContent);
 
   setupZoneInteraction(container, bike, (zoneId) => {
     if (!zoneId) {
       renderSettingsPlaceholder(settingsContent);
+    } else if (zoneId === 'handlebar') {
+      enterCockpitMode(bike, container, settingsContent);
     } else {
       renderZoneSettings(zoneId, bike, settingsContent, (cancelled) => {
         if (cancelled) {
@@ -132,28 +136,29 @@ function loadSetupTab(bike) {
           resetZoom(container.querySelector('#bike-svg'));
           $('btn-zoom-reset').classList.add('hidden');
         } else {
-          // Redraw dots after save — re-run zone interaction
-          const svg = container.querySelector('#bike-svg');
-          if (svg) {
-            svg.querySelectorAll('.zone-dot').forEach(d => d.remove());
-            import('./silhouette.js').then(({ setupZoneInteraction: reInit }) => {
-              reInit(container, bike, () => {});
-            });
-          }
+          import('./silhouette.js').then(({ setupZoneInteraction: reInit }) => {
+            reInit(container, bike, () => {});
+          });
         }
       });
     }
   });
 
-  $('btn-zoom-reset').onclick = () => {
-    resetZoom(container.querySelector('#bike-svg'));
-    $('btn-zoom-reset').classList.add('hidden');
-    renderSettingsPlaceholder(settingsContent);
+  const zoomBtn = $('btn-zoom-reset');
+  zoomBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 1h4M1 1v4M12 12h-4M12 12v-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Reset View`;
+  zoomBtn.classList.add('hidden');
+  zoomBtn.onclick = () => {
+    if (_cockpitMode) {
+      exitCockpitMode(bike);
+    } else {
+      resetZoom(container.querySelector('#bike-svg'));
+      zoomBtn.classList.add('hidden');
+      renderSettingsPlaceholder(settingsContent);
+    }
   };
 
-  // Silhouette collapse toggle (mobile)
   const collapseBtn = $('btn-collapse-silhouette');
-  const silPanel    = $('silhouette-container')?.closest('.silhouette-panel');
+  const silPanel    = container.closest('.silhouette-panel');
   if (collapseBtn && silPanel) {
     collapseBtn.onclick = () => {
       const collapsed = silPanel.classList.toggle('silhouette-collapsed');
@@ -162,11 +167,46 @@ function loadSetupTab(bike) {
     };
   }
 
-  // Scratchpad
   initScratchpad(bike);
-
-  // Preset quick-load
   initPresetQuickLoad(bike, container, settingsContent);
+}
+
+function enterCockpitMode(bike, container, settingsContent) {
+  _cockpitMode = true;
+  const currentSvg = container.querySelector('svg');
+  if (currentSvg) { currentSvg.style.transition = 'opacity 0.22s ease'; currentSvg.style.opacity = '0'; }
+
+  const zoomBtn = $('btn-zoom-reset');
+  zoomBtn.classList.remove('hidden');
+  zoomBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M8 2L3 7l5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Bike View`;
+
+  setTimeout(() => {
+    container.innerHTML = createCockpitFrontView(bike);
+    container.insertAdjacentHTML('beforeend', '<div class="silhouette-hint">Click a component to inspect &amp; edit</div>');
+    renderSettingsPlaceholder(settingsContent);
+
+    const newSvg = container.querySelector('svg');
+    if (newSvg) {
+      newSvg.style.opacity = '0';
+      newSvg.style.transition = 'opacity 0.22s ease';
+      requestAnimationFrame(() => { newSvg.style.opacity = '1'; });
+    }
+
+    setupCockpitInteraction(container, bike, (subZone) => {
+      if (!subZone) { exitCockpitMode(bike); return; }
+      renderCockpitSubZone(subZone, bike, settingsContent, () => {
+        renderSettingsPlaceholder(settingsContent);
+      });
+    });
+  }, 240);
+}
+
+function exitCockpitMode(bike) {
+  _cockpitMode = false;
+  const container = $('silhouette-container');
+  const currentSvg = container.querySelector('svg');
+  if (currentSvg) { currentSvg.style.transition = 'opacity 0.22s ease'; currentSvg.style.opacity = '0'; }
+  setTimeout(() => { loadSetupTab(bike); }, 240);
 }
 
 // ── SCRATCHPAD ────────────────────────────────────────────
