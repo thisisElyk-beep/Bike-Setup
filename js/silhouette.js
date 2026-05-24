@@ -10,7 +10,7 @@ const ZONE_META = {
   'front-wheel': { label: 'Front Wheel / Tire', vb: [499, 205, 319, 290], key: 'frontTire' },
   'rear-wheel':  { label: 'Rear Wheel / Tire',  vb: [-11, 205, 319, 290], key: 'rearTire' },
   'fork':        { label: 'Fork',               vb: [479, 148, 286, 260], key: 'fork' },
-  'shock':       { label: 'Rear Shock',         vb: [275, 196, 220, 200], key: 'shock' },
+  'shock':       { label: 'Rear Shock',         vb: [287, 207, 198, 180], key: 'shock' },
   'handlebar':   { label: 'Cockpit / Bars',     vb: [442,  38, 242, 220], key: 'handlebar' },
   'drivetrain':  { label: 'Drivetrain',         vb: [250, 245, 264, 240], key: 'drivetrain' },
   'dropper':     { label: 'Dropper / Saddle',   vb: [215,  50, 231, 210], key: 'dropper' },
