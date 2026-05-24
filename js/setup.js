@@ -29,6 +29,9 @@ export function renderZoneSettings(zoneId, bike, container, onSaved) {
     <form id="zone-form">${html}</form>
   `;
 
+  // Remove any existing save bar before adding a new one
+  container.parentElement.querySelectorAll('.save-bar').forEach(el => el.remove());
+
   // Add save bar
   const saveBar = document.createElement('div');
   saveBar.className = 'save-bar';
