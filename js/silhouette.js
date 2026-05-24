@@ -593,7 +593,8 @@ export function setupZoneInteraction(container,bike,onZoneClick){
       document.querySelector('.silhouette-hint')?.style.setProperty('opacity','');
     });
     overlay.addEventListener('mousemove',e=>positionTooltip(tooltip,e,container));
-    overlay.addEventListener('click',()=>{
+    overlay.addEventListener('click', e => {
+      e.stopPropagation();
       if(_activeZone){const prev=svg.querySelector(`#g-${_activeZone}`);if(prev)prev.classList.remove('zone-active','zone-hovered');}
       if(_activeZone===zoneId){
         _activeZone=null;resetZoom(svg);
@@ -608,7 +609,17 @@ export function setupZoneInteraction(container,bike,onZoneClick){
       }
     });
   });
-}
+
+  // Click on empty SVG background → reset zoom
+  svg.addEventListener('click', () => {
+    if (!_activeZone) return;
+    const prev = svg.querySelector(`#g-${_activeZone}`);
+    if (prev) prev.classList.remove('zone-active', 'zone-hovered');
+    _activeZone = null;
+    resetZoom(svg);
+    document.getElementById('btn-zoom-reset')?.classList.add('hidden');
+    onZoneClick(null);
+  });
 
 function getAvailableZones(bike){
   const base=['front-wheel','rear-wheel','fork','handlebar','drivetrain','dropper','frame'];
