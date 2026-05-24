@@ -1,168 +1,330 @@
 import { getComponents, createComponent, updateComponent, deleteComponent } from './db.js';
 import { showToast, openModal, closeModal } from './app.js';
 
-const CATEGORIES = [
-  'Frame', 'Fork', 'Rear Shock', 'Handlebar', 'Stem', 'Grips / Tape',
-  'Headset', 'Brakes', 'Rotors', 'Drivetrain', 'Cassette', 'Chain',
-  'Chainring / Crank', 'Pedals', 'Wheels / Rims', 'Hubs', 'Tires',
-  'Dropper Post', 'Saddle', 'Seatpost', 'Seat Clamp',
-  'Bottom Bracket', 'Derailleur', 'Shifter', 'Other'
+// Category definitions with icons and sort order
+const CATEGORY_META = {
+  'Frame':            { icon: frameIcon,      group: 'Frame & Contact' },
+  'Fork':             { icon: forkIcon,       group: 'Suspension' },
+  'Rear Shock':       { icon: shockIcon,      group: 'Suspension' },
+  'Handlebar':        { icon: barIcon,        group: 'Frame & Contact' },
+  'Stem':             { icon: stemIcon,       group: 'Frame & Contact' },
+  'Grips / Tape':     { icon: gripIcon,       group: 'Frame & Contact' },
+  'Headset':          { icon: headsetIcon,    group: 'Frame & Contact' },
+  'Brakes':           { icon: brakeIcon,      group: 'Braking' },
+  'Rotors':           { icon: rotorIcon,      group: 'Braking' },
+  'Drivetrain':       { icon: driveIcon,      group: 'Drivetrain' },
+  'Cassette':         { icon: cassetteIcon,   group: 'Drivetrain' },
+  'Chain':            { icon: chainIcon,      group: 'Drivetrain' },
+  'Chainring / Crank':{ icon: crankIcon,      group: 'Drivetrain' },
+  'Derailleur':       { icon: derailleurIcon, group: 'Drivetrain' },
+  'Shifter':          { icon: shifterIcon,    group: 'Drivetrain' },
+  'Pedals':           { icon: pedalIcon,      group: 'Drivetrain' },
+  'Bottom Bracket':   { icon: bbIcon,         group: 'Drivetrain' },
+  'Wheels / Rims':    { icon: wheelIcon,      group: 'Wheels & Tires' },
+  'Hubs':             { icon: hubIcon,        group: 'Wheels & Tires' },
+  'Tires':            { icon: tireIcon,       group: 'Wheels & Tires' },
+  'Dropper Post':     { icon: dropperIcon,    group: 'Saddle & Post' },
+  'Saddle':           { icon: saddleIcon,     group: 'Saddle & Post' },
+  'Seatpost':         { icon: seatpostIcon,   group: 'Saddle & Post' },
+  'Seat Clamp':       { icon: clampIcon,      group: 'Saddle & Post' },
+  'Other':            { icon: otherIcon,      group: 'Other' },
+};
+
+const CATEGORIES = Object.keys(CATEGORY_META);
+
+const GROUP_ORDER = [
+  'Frame & Contact', 'Suspension', 'Braking',
+  'Drivetrain', 'Wheels & Tires', 'Saddle & Post', 'Other'
 ];
 
+// ── ICONS ─────────────────────────────────────────────────
+function icon(path, vb = '0 0 20 20') {
+  return `<svg width="16" height="16" viewBox="${vb}" fill="none" xmlns="http://www.w3.org/2000/svg">${path}</svg>`;
+}
+const frameIcon     = () => icon(`<rect x="2" y="6" width="16" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M6 6L10 2l4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`);
+const forkIcon      = () => icon(`<path d="M7 2v8l-3 6M13 2v8l3 6M7 10h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`);
+const shockIcon     = () => icon(`<line x1="10" y1="2" x2="10" y2="18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="10" y1="2" x2="10" y2="10" stroke="var(--bg-elevated)" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="14" x2="13" y2="14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>`);
+const barIcon       = () => icon(`<path d="M2 10h16M2 10c0-1.5 1-2 2-2M18 10c0-1.5-1-2-2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="10" y1="8" x2="10" y2="6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>`);
+const stemIcon      = () => icon(`<path d="M4 16l4-8h4l4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`);
+const gripIcon      = () => icon(`<rect x="3" y="7" width="14" height="7" rx="3.5" stroke="currentColor" stroke-width="1.4"/><line x1="7" y1="7" x2="7" y2="14" stroke="currentColor" stroke-width="1" opacity="0.5"/><line x1="10" y1="7" x2="10" y2="14" stroke="currentColor" stroke-width="1" opacity="0.5"/><line x1="13" y1="7" x2="13" y2="14" stroke="currentColor" stroke-width="1" opacity="0.5"/>`);
+const headsetIcon   = () => icon(`<circle cx="10" cy="10" r="6" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.4"/>`);
+const brakeIcon     = () => icon(`<path d="M4 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="7" y="13" width="6" height="3" rx="1" stroke="currentColor" stroke-width="1.3"/>`);
+const rotorIcon     = () => icon(`<circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.4"/><line x1="10" y1="3" x2="10" y2="5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="10" y1="14.5" x2="10" y2="17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="3" y1="10" x2="5.5" y2="10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="14.5" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>`);
+const driveIcon     = () => icon(`<circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.4"/>`);
+const cassetteIcon  = () => icon(`<circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="5" stroke="currentColor" stroke-width="1.2" opacity="0.6"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.2" opacity="0.4"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/>`);
+const chainIcon     = () => icon(`<rect x="2" y="7" width="5" height="6" rx="2" stroke="currentColor" stroke-width="1.3"/><rect x="13" y="7" width="5" height="6" rx="2" stroke="currentColor" stroke-width="1.3"/><line x1="7" y1="10" x2="13" y2="10" stroke="currentColor" stroke-width="1.4"/>`);
+const crankIcon     = () => icon(`<circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.4"/><line x1="10" y1="10" x2="16" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="10" y1="10" x2="4" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="15" y1="13" x2="18" y2="13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>`);
+const derailleurIcon= () => icon(`<path d="M4 4l8 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="13" r="3" stroke="currentColor" stroke-width="1.4"/><circle cx="4" cy="4" r="2" stroke="currentColor" stroke-width="1.4"/>`);
+const shifterIcon   = () => icon(`<rect x="5" y="4" width="7" height="12" rx="3" stroke="currentColor" stroke-width="1.4"/><path d="M12 9h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>`);
+const pedalIcon     = () => icon(`<rect x="3" y="8" width="14" height="4" rx="1.5" stroke="currentColor" stroke-width="1.4"/><line x1="6" y1="8" x2="6" y2="12" stroke="currentColor" stroke-width="1" opacity="0.5"/><line x1="10" y1="8" x2="10" y2="12" stroke="currentColor" stroke-width="1" opacity="0.5"/><line x1="14" y1="8" x2="14" y2="12" stroke="currentColor" stroke-width="1" opacity="0.5"/>`);
+const bbIcon        = () => icon(`<circle cx="10" cy="10" r="6" stroke="currentColor" stroke-width="1.4"/><line x1="2" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="10" r="2" fill="currentColor"/>`);
+const wheelIcon     = () => icon(`<circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="2" stroke="currentColor" stroke-width="1.4"/><line x1="10" y1="2" x2="10" y2="8" stroke="currentColor" stroke-width="1.1" opacity="0.5"/><line x1="10" y1="12" x2="10" y2="18" stroke="currentColor" stroke-width="1.1" opacity="0.5"/><line x1="2" y1="10" x2="8" y2="10" stroke="currentColor" stroke-width="1.1" opacity="0.5"/><line x1="12" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.1" opacity="0.5"/>`);
+const hubIcon       = () => icon(`<circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><line x1="2" y1="10" x2="6" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="14" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`);
+const tireIcon      = () => icon(`<circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="3"/><circle cx="10" cy="10" r="5" stroke="var(--bg-base)" stroke-width="1" fill="none"/>`);
+const dropperIcon   = () => icon(`<line x1="10" y1="2" x2="10" y2="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><rect x="6" y="12" width="8" height="3" rx="1.5" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M6 18h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>`);
+const saddleIcon    = () => icon(`<path d="M2 12c2-3 5-4 8-4s6 1 8 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2 12c2 1 5 1.5 8 1.5S16 13 18 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>`);
+const seatpostIcon  = () => icon(`<line x1="10" y1="2" x2="10" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><rect x="7" y="8" width="6" height="3" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/>`);
+const clampIcon     = () => icon(`<circle cx="10" cy="10" r="6" stroke="currentColor" stroke-width="1.4"/><line x1="10" y1="4" x2="10" y2="2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="8" y="1" width="4" height="2" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/>`);
+const otherIcon     = () => icon(`<circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M10 7v1.5a2 2 0 010 3V13M10 14.5v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`);
+
+// ── RENDER ─────────────────────────────────────────────────
 export async function renderComponentsTab(bike) {
-  const grid = document.getElementById('components-grid');
+  const list  = document.getElementById('components-grid');
   const empty = document.getElementById('components-empty');
-  grid.innerHTML = '<div class="loading-row">Loading...</div>';
+  list.innerHTML = '<div style="padding:2rem;color:var(--text-muted);font-size:.85rem">Loading...</div>';
 
   try {
     const components = await getComponents(bike.id);
-    grid.innerHTML = '';
+    list.innerHTML = '';
 
     if (components.length === 0) {
-      grid.classList.add('hidden');
+      list.classList.add('hidden');
       empty.classList.remove('hidden');
     } else {
-      grid.classList.remove('hidden');
+      list.classList.remove('hidden');
       empty.classList.add('hidden');
-
-      // Group by category
-      const grouped = {};
-      components.forEach(c => {
-        const cat = c.category || 'Other';
-        if (!grouped[cat]) grouped[cat] = [];
-        grouped[cat].push(c);
-      });
-
-      Object.keys(grouped).sort().forEach(cat => {
-        grouped[cat].forEach(comp => {
-          grid.appendChild(buildComponentCard(comp, bike));
-        });
-      });
+      renderComponentList(list, components, bike);
     }
   } catch (e) {
-    grid.innerHTML = `<p style="color:var(--danger);padding:1rem">Error loading components: ${e.message}</p>`;
+    list.innerHTML = `<p style="color:var(--danger);padding:1rem 2rem">Error: ${e.message}</p>`;
   }
 
-  // Add component button
-  document.getElementById('btn-add-component').onclick = () => showComponentModal(null, bike);
+  document.getElementById('btn-add-component').onclick = () => showAddModal(bike);
 }
 
-function buildComponentCard(comp, bike) {
-  const card = document.createElement('div');
-  card.className = 'component-card';
-  card.dataset.id = comp.id;
+function renderComponentList(container, components, bike) {
+  // Group by category group, then category
+  const byGroup = {};
+  GROUP_ORDER.forEach(g => byGroup[g] = {});
 
+  components.forEach(c => {
+    const cat  = c.category || 'Other';
+    const meta = CATEGORY_META[cat] || CATEGORY_META['Other'];
+    const grp  = meta.group;
+    if (!byGroup[grp]) byGroup[grp] = {};
+    if (!byGroup[grp][cat]) byGroup[grp][cat] = [];
+    byGroup[grp][cat].push(c);
+  });
+
+  GROUP_ORDER.forEach(grp => {
+    const cats = byGroup[grp];
+    if (!cats || Object.keys(cats).length === 0) return;
+
+    // Group header
+    const header = document.createElement('div');
+    header.className = 'comp-group-header';
+    header.textContent = grp;
+    container.appendChild(header);
+
+    // Items within group, sorted by category name
+    Object.keys(cats).sort().forEach(cat => {
+      cats[cat].forEach(comp => {
+        container.appendChild(buildRow(comp, bike));
+      });
+    });
+  });
+}
+
+function buildRow(comp, bike) {
+  const row = document.createElement('div');
+  row.className = 'comp-row';
+  row.dataset.id = comp.id;
+
+  const meta = CATEGORY_META[comp.category] || CATEGORY_META['Other'];
   const installDate = comp.installDate
     ? new Date(comp.installDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : null;
 
-  card.innerHTML = `
-    <div class="component-card-category">${escHtml(comp.category || 'Other')}</div>
-    <div class="component-card-brand">${escHtml(comp.brand || '')}</div>
-    <div class="component-card-model">${escHtml(comp.model || '—')}</div>
-    <div class="component-card-meta">
-      ${installDate ? `<span>Installed ${installDate}</span>` : ''}
-      ${comp.notes ? `<span title="${escHtml(comp.notes)}">Has notes</span>` : ''}
+  row.innerHTML = `
+    <div class="comp-row-summary">
+      <span class="comp-row-icon">${meta.icon()}</span>
+      <span class="comp-row-cat">${escHtml(comp.category || 'Other')}</span>
+      <span class="comp-row-name">${escHtml([comp.brand, comp.model].filter(Boolean).join(' ') || '—')}</span>
+      ${installDate ? `<span class="comp-row-date">${installDate}</span>` : '<span class="comp-row-date"></span>'}
+      <svg class="comp-row-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
     </div>
-    <div class="component-card-actions">
-      <button class="btn-icon-sm btn-edit-comp" title="Edit">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-      </button>
-      <button class="btn-icon-sm btn-delete-comp" title="Delete" style="color:var(--danger)">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V2.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V4M5.5 6.5v4M8.5 6.5v4M3 4l.75 7.5a.5.5 0 00.5.5h5.5a.5.5 0 00.5-.5L11 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+    <div class="comp-row-detail hidden">
+      <div class="comp-edit-form">
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Brand</label>
+            <input class="field-input comp-field-brand" type="text" value="${escHtml(comp.brand || '')}" placeholder="Brand">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Model</label>
+            <input class="field-input comp-field-model" type="text" value="${escHtml(comp.model || '')}" placeholder="Model">
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Install Date</label>
+          <input class="field-input comp-field-date" type="date" value="${comp.installDate ? comp.installDate.slice(0,10) : ''}">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Notes</label>
+          <textarea class="field-input comp-field-notes" rows="2">${escHtml(comp.notes || '')}</textarea>
+        </div>
+        <div class="comp-edit-actions">
+          <button class="btn-danger btn-comp-delete">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 3.5h9M4.5 3.5V2.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5v1M5 5.5v4M8 5.5v4M2.5 3.5l.75 7a.5.5 0 00.5.5h5.5a.5.5 0 00.5-.5l.75-7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Delete
+          </button>
+          <div style="display:flex;gap:.5rem">
+            <button class="btn-secondary btn-comp-cancel">Cancel</button>
+            <button class="btn-primary btn-comp-save">Save</button>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
-  card.querySelector('.btn-edit-comp').onclick = (e) => {
+  const summary = row.querySelector('.comp-row-summary');
+  const detail  = row.querySelector('.comp-row-detail');
+  const chevron = row.querySelector('.comp-row-chevron');
+
+  // Toggle expand on summary click
+  summary.addEventListener('click', () => {
+    const isOpen = !detail.classList.contains('hidden');
+    // Close any other open rows
+    document.querySelectorAll('.comp-row-detail:not(.hidden)').forEach(d => {
+      d.classList.add('hidden');
+      d.closest('.comp-row')?.querySelector('.comp-row-chevron')?.style.removeProperty('transform');
+      d.closest('.comp-row')?.classList.remove('comp-row-open');
+    });
+    if (!isOpen) {
+      detail.classList.remove('hidden');
+      chevron.style.transform = 'rotate(180deg)';
+      row.classList.add('comp-row-open');
+      row.querySelector('.comp-field-brand')?.focus();
+    }
+  });
+
+  // Save inline
+  row.querySelector('.btn-comp-save').onclick = async (e) => {
     e.stopPropagation();
-    showComponentModal(comp, bike);
+    const brand       = row.querySelector('.comp-field-brand').value.trim();
+    const model       = row.querySelector('.comp-field-model').value.trim();
+    const installDate = row.querySelector('.comp-field-date').value || null;
+    const notes       = row.querySelector('.comp-field-notes').value.trim();
+    try {
+      await updateComponent(bike.id, comp.id, { category: comp.category, brand, model, installDate, notes });
+      // Update local comp data and collapse
+      comp.brand = brand; comp.model = model;
+      comp.installDate = installDate; comp.notes = notes;
+      row.querySelector('.comp-row-name').textContent = [brand, model].filter(Boolean).join(' ') || '—';
+      if (installDate) {
+        row.querySelector('.comp-row-date').textContent = new Date(installDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+      detail.classList.add('hidden');
+      chevron.style.removeProperty('transform');
+      row.classList.remove('comp-row-open');
+      showToast('Saved', 'success');
+    } catch (err) {
+      showToast('Save failed: ' + err.message, 'error');
+    }
   };
 
-  card.querySelector('.btn-delete-comp').onclick = async (e) => {
+  // Cancel
+  row.querySelector('.btn-comp-cancel').onclick = (e) => {
     e.stopPropagation();
-    if (!confirm(`Delete ${comp.model || 'this component'}?`)) return;
+    // Reset fields
+    row.querySelector('.comp-field-brand').value = comp.brand || '';
+    row.querySelector('.comp-field-model').value = comp.model || '';
+    row.querySelector('.comp-field-date').value  = comp.installDate ? comp.installDate.slice(0,10) : '';
+    row.querySelector('.comp-field-notes').value = comp.notes || '';
+    detail.classList.add('hidden');
+    chevron.style.removeProperty('transform');
+    row.classList.remove('comp-row-open');
+  };
+
+  // Delete
+  row.querySelector('.btn-comp-delete').onclick = async (e) => {
+    e.stopPropagation();
+    if (!confirm(`Delete ${comp.model || comp.brand || 'this component'}?`)) return;
     try {
       await deleteComponent(bike.id, comp.id);
+      row.style.overflow = 'hidden';
+      row.style.transition = 'max-height .22s ease, opacity .18s ease';
+      row.style.maxHeight = row.offsetHeight + 'px';
+      requestAnimationFrame(() => { row.style.maxHeight = '0'; row.style.opacity = '0'; });
+      setTimeout(() => row.remove(), 240);
       showToast('Component removed', 'success');
-      renderComponentsTab(bike);
     } catch (err) {
       showToast('Delete failed', 'error');
     }
   };
 
-  return card;
+  return row;
 }
 
-function showComponentModal(comp, bike) {
-  const isEdit = !!comp;
-  const data = comp || {};
-
-  const categoryOptions = CATEGORIES.map(c =>
-    `<option value="${c}" ${data.category === c ? 'selected' : ''}>${c}</option>`
-  ).join('');
+// ── ADD MODAL ─────────────────────────────────────────────
+function showAddModal(bike) {
+  // Icon grid for category selection
+  const iconGrid = CATEGORIES.map(cat => {
+    const meta = CATEGORY_META[cat];
+    return `
+      <label class="comp-cat-option">
+        <input type="radio" name="comp-cat-pick" value="${escHtml(cat)}">
+        <span class="comp-cat-label">
+          <span class="comp-cat-icon">${meta.icon()}</span>
+          <span class="comp-cat-name">${escHtml(cat)}</span>
+        </span>
+      </label>`;
+  }).join('');
 
   const body = `
     <div class="field-group">
-      <label class="field-label" for="comp-category">Category</label>
-      <select id="comp-category" class="field-select">
-        <option value="">Select category...</option>
-        ${categoryOptions}
-      </select>
+      <label class="field-label">Category</label>
+      <div class="comp-cat-grid">${iconGrid}</div>
     </div>
-    <div class="field-row">
+    <div class="field-row" style="margin-top:1rem">
       <div class="field-group">
-        <label class="field-label" for="comp-brand">Brand</label>
-        <input id="comp-brand" class="field-input" type="text" value="${escHtml(data.brand || '')}" placeholder="e.g. Fox, SRAM">
+        <label class="field-label" for="new-comp-brand">Brand</label>
+        <input id="new-comp-brand" class="field-input" type="text" placeholder="e.g. Fox, SRAM, Maxxis">
       </div>
       <div class="field-group">
-        <label class="field-label" for="comp-model">Model</label>
-        <input id="comp-model" class="field-input" type="text" value="${escHtml(data.model || '')}" placeholder="e.g. 38 Factory">
+        <label class="field-label" for="new-comp-model">Model</label>
+        <input id="new-comp-model" class="field-input" type="text" placeholder="e.g. 38 Factory">
       </div>
     </div>
     <div class="field-group">
-      <label class="field-label" for="comp-install-date">Install Date</label>
-      <input id="comp-install-date" class="field-input" type="date" value="${data.installDate ? data.installDate.slice(0,10) : ''}">
+      <label class="field-label" for="new-comp-date">Install Date</label>
+      <input id="new-comp-date" class="field-input" type="date">
     </div>
     <div class="field-group">
-      <label class="field-label" for="comp-notes">Notes</label>
-      <textarea id="comp-notes" class="field-input" rows="3">${escHtml(data.notes || '')}</textarea>
+      <label class="field-label" for="new-comp-notes">Notes</label>
+      <textarea id="new-comp-notes" class="field-input" rows="2" placeholder="Optional notes"></textarea>
     </div>
   `;
 
   const footer = `
     <button class="btn-secondary" id="modal-cancel">Cancel</button>
-    <button class="btn-primary" id="modal-save">${isEdit ? 'Save Changes' : 'Add Component'}</button>
+    <button class="btn-primary" id="modal-save">Add Component</button>
   `;
 
-  openModal(isEdit ? 'Edit Component' : 'Add Component', body, footer);
+  openModal('Add Component', body, footer);
 
   document.getElementById('modal-cancel').onclick = closeModal;
   document.getElementById('modal-save').onclick = async () => {
-    const category   = document.getElementById('comp-category').value;
-    const brand      = document.getElementById('comp-brand').value.trim();
-    const model      = document.getElementById('comp-model').value.trim();
-    const installDate = document.getElementById('comp-install-date').value || null;
-    const notes      = document.getElementById('comp-notes').value.trim();
+    const category    = document.querySelector('input[name="comp-cat-pick"]:checked')?.value;
+    const brand       = document.getElementById('new-comp-brand').value.trim();
+    const model       = document.getElementById('new-comp-model').value.trim();
+    const installDate = document.getElementById('new-comp-date').value || null;
+    const notes       = document.getElementById('new-comp-notes').value.trim();
 
-    if (!category) { showToast('Select a category', 'error'); return; }
-
+    if (!category) { showToast('Pick a category', 'error'); return; }
     try {
-      if (isEdit) {
-        await updateComponent(bike.id, comp.id, { category, brand, model, installDate, notes });
-        showToast('Component updated', 'success');
-      } else {
-        await createComponent(bike.id, { category, brand, model, installDate, notes });
-        showToast('Component added', 'success');
-      }
+      await createComponent(bike.id, { category, brand, model, installDate, notes });
+      showToast('Component added', 'success');
       closeModal();
       renderComponentsTab(bike);
     } catch (err) {
-      showToast('Save failed: ' + err.message, 'error');
+      showToast('Failed: ' + err.message, 'error');
     }
   };
 }
 
 function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
