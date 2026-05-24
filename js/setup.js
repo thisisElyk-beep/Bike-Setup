@@ -418,7 +418,7 @@ function zoneName(id) {
     'handlebar':   'Cockpit & Bars',
     'drivetrain':  'Drivetrain',
     'dropper':     'Dropper / Saddle',
-    'frame':       'Frame & Wheels',
+    'frame':       'Frame',
   };
   return names[id] || id;
 }
