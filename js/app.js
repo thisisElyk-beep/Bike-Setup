@@ -132,12 +132,13 @@ function loadSetupTab(bike) {
           resetZoom(container.querySelector('#bike-svg'));
           $('btn-zoom-reset').classList.add('hidden');
         } else {
-          // Redraw dots after save
+          // Redraw dots after save — re-run zone interaction
           const svg = container.querySelector('#bike-svg');
           if (svg) {
-            const { drawZoneDots, updateCompletenessRing, getAvailableZones } = {};
-            // Re-run zone interaction to refresh dots
-            setupZoneInteraction(container, bike, arguments.callee);
+            svg.querySelectorAll('.zone-dot').forEach(d => d.remove());
+            import('./silhouette.js').then(({ setupZoneInteraction: reInit }) => {
+              reInit(container, bike, () => {});
+            });
           }
         }
       });
