@@ -434,3 +434,92 @@ export function baselineSummary(bike) {
   const sk = bl.shock;     if (sk?.brand) lines.push(`Shock: ${sk.brand} ${sk.model||''} ${sk.type==='air'?`@ ${sk.psi||'?'}psi`:'(coil)'} | LSR:${sk.lsr??'?'} HSR:${sk.hsr??'?'} LSC:${sk.lsc??'?'} HSC:${sk.hsc??'?'}`);
   return lines;
 }
+
+// ── COCKPIT SUB-ZONE FORMS ────────────────────────────────
+export function renderCockpitSubZone(subZone, bike, container, onSaved) {
+  const bl = bike.baseline || {};
+  let html = '', title = '';
+
+  switch(subZone) {
+    case 'cockpit-bars': {
+      title = 'Handlebar';
+      const hb = bl.handlebar || {};
+      html = `
+        <div class="field-row">${field('Brand','hb-brand',hb.brand)}${field('Model','hb-model',hb.model)}</div>
+        <div class="field-row">${field('Width','hb-width',hb.width,'e.g. 780mm')}${field('Rise','hb-rise',hb.rise,'e.g. 20mm')}</div>
+        <div class="field-row">${field('Backsweep','hb-sweep',hb.sweep,'e.g. 9°')}${field('Material','hb-material',hb.material,'e.g. Carbon, Alloy')}</div>`;
+      break;
+    }
+    case 'cockpit-stem': {
+      title = 'Stem';
+      const st = bl.stem || {};
+      html = `
+        <div class="field-row">${field('Brand','st-brand',st.brand)}${field('Model','st-model',st.model)}</div>
+        <div class="field-row">${field('Length','st-length',st.length,'e.g. 50mm')}${field('Clamp','st-clamp',st.clamp,'e.g. 31.8mm')}</div>`;
+      break;
+    }
+    case 'cockpit-brakes': {
+      title = 'Brakes & Shifters';
+      const br = bl.brakes || {};
+      html = `
+        <div class="field-row">${field('Brand','br-brand',br.brand,'e.g. SRAM, Shimano')}${field('Model','br-model',br.model,'e.g. Code RSC')}</div>
+        <div class="field-row">${field('Lever Reach','br-reach',br.reach,'e.g. 3 clicks')}${field('Bite Point','br-bite',br.bite,'e.g. 4 clicks')}</div>`;
+      break;
+    }
+    case 'cockpit-grips': {
+      title = 'Grips';
+      const gr = bl.grips || {};
+      html = `<div class="field-row">${field('Brand','gr-brand',gr.brand,'e.g. Ergon, ODI')}${field('Model','gr-model',gr.model,'e.g. GA2 Fat')}</div>`;
+      break;
+    }
+    case 'cockpit-stack': {
+      title = 'Stack & Headset';
+      const hs = bl.headset || {};
+      html = `
+        <div class="field-row">${field('Headset Brand','hs-brand',hs.brand,'e.g. Cane Creek')}${field('Headset Model','hs-model',hs.model,'e.g. 40 Series')}</div>
+        <div class="field-row">${field('Stack Height','hs-stack',hs.stack,'e.g. 25mm')}${field('Spacers','hs-spacers',hs.spacers,'e.g. 3× 5mm')}</div>`;
+      break;
+    }
+    default: return;
+  }
+
+  container.innerHTML = `
+    <div class="zone-settings-header">
+      <div>
+        <div class="zone-settings-title">${title}</div>
+        <div class="zone-settings-sub">Cockpit detail</div>
+      </div>
+    </div>
+    <form id="zone-form">${html}</form>`;
+
+  container.parentElement.querySelectorAll('.save-bar').forEach(el => el.remove());
+  const saveBar = document.createElement('div');
+  saveBar.className = 'save-bar';
+  saveBar.innerHTML = `
+    <button type="button" class="btn-secondary" id="btn-cancel-zone">Cancel</button>
+    <button type="button" class="btn-primary"   id="btn-save-zone">Save</button>`;
+  container.parentElement.appendChild(saveBar);
+
+  document.getElementById('btn-save-zone').addEventListener('click', async () => {
+    const val = id => container.querySelector(`#${id}`)?.value?.trim() || '';
+    let data = {};
+    switch(subZone) {
+      case 'cockpit-bars':   data = { handlebar: {...(bl.handlebar||{}), brand:val('hb-brand'), model:val('hb-model'), width:val('hb-width'), rise:val('hb-rise'), sweep:val('hb-sweep'), material:val('hb-material') }}; break;
+      case 'cockpit-stem':   data = { stem:      {...(bl.stem||{}),      brand:val('st-brand'), model:val('st-model'), length:val('st-length'), clamp:val('st-clamp') }}; break;
+      case 'cockpit-brakes': data = { brakes:    {...(bl.brakes||{}),    brand:val('br-brand'), model:val('br-model'), reach:val('br-reach'), bite:val('br-bite') }}; break;
+      case 'cockpit-grips':  data = { grips:     {...(bl.grips||{}),     brand:val('gr-brand'), model:val('gr-model') }}; break;
+      case 'cockpit-stack':  data = { headset:   { brand:val('hs-brand'), model:val('hs-model'), stack:val('hs-stack'), spacers:val('hs-spacers') }}; break;
+    }
+    const updatedBaseline = {...(bike.baseline||{}), ...data};
+    try {
+      await updateBike(bike.id, { baseline: updatedBaseline });
+      bike.baseline = updatedBaseline;
+      showToast('Saved', 'success');
+      onSaved && onSaved();
+    } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+  });
+
+  document.getElementById('btn-cancel-zone').addEventListener('click', () => {
+    onSaved && onSaved(true);
+  });
+}
