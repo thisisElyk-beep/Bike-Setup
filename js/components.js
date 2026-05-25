@@ -177,6 +177,46 @@ function buildRow(comp, bike) {
           </div>
         </div>
       </div>
+
+      <!-- SERVICE LOG -->
+      <div class="service-log">
+        <div class="service-log-header">
+          <span class="service-log-title">Service History</span>
+          <button class="btn-text btn-log-service">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            Log Service
+          </button>
+        </div>
+        <div class="service-log-add hidden">
+          <div class="field-row" style="margin-bottom:.5rem">
+            <div class="field-group">
+              <label class="field-label">Date</label>
+              <input class="field-input svc-date" type="date" value="${new Date().toISOString().slice(0,10)}">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Type</label>
+              <select class="field-select svc-type">
+                <option>Full Service</option>
+                <option>Seal Kit</option>
+                <option>Oil Change</option>
+                <option>Brake Bleed</option>
+                <option>Chain Replaced</option>
+                <option>Cable / Housing</option>
+                <option>Cleaned</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:.5rem">
+            <input class="field-input svc-notes" type="text" placeholder="Notes (optional)">
+          </div>
+          <div style="display:flex;gap:.5rem;justify-content:flex-end">
+            <button class="btn-secondary btn-svc-cancel" style="font-size:.72rem;padding:.3rem .65rem">Cancel</button>
+            <button class="btn-primary btn-svc-save" style="font-size:.72rem;padding:.3rem .65rem">Add Entry</button>
+          </div>
+        </div>
+        <div class="service-log-entries"></div>
+      </div>
     </div>
   `;
 
@@ -256,7 +296,86 @@ function buildRow(comp, bike) {
     }
   };
 
+  // Service log
+  renderServiceLog(row, comp, bike);
+  row.querySelector('.btn-log-service').onclick = e => {
+    e.stopPropagation();
+    const addForm = row.querySelector('.service-log-add');
+    addForm.classList.toggle('hidden');
+    if (!addForm.classList.contains('hidden')) row.querySelector('.svc-notes')?.focus();
+  };
+  row.querySelector('.btn-svc-cancel').onclick = e => {
+    e.stopPropagation();
+    row.querySelector('.service-log-add').classList.add('hidden');
+  };
+  row.querySelector('.btn-svc-save').onclick = async e => {
+    e.stopPropagation();
+    const date  = row.querySelector('.svc-date').value;
+    const type  = row.querySelector('.svc-type').value;
+    const notes = row.querySelector('.svc-notes').value.trim();
+    if (!date) { showToast('Pick a date', 'error'); return; }
+    const entry = { id: Date.now().toString(), date, type, notes };
+    comp.serviceLog = [...(comp.serviceLog || []), entry];
+    comp.serviceLog.sort((a,b) => b.date.localeCompare(a.date));
+    try {
+      await updateComponent(bike.id, comp.id, { serviceLog: comp.serviceLog });
+      row.querySelector('.service-log-add').classList.add('hidden');
+      row.querySelector('.svc-notes').value = '';
+      renderServiceLog(row, comp, bike);
+      updateLastServiceDate(row, comp);
+      showToast('Service logged', 'success');
+    } catch(err) { showToast('Failed: ' + err.message, 'error'); }
+  };
+
   return row;
+}
+
+// ── SERVICE LOG HELPERS ───────────────────────────────────
+function renderServiceLog(row, comp, bike) {
+  const entriesEl = row.querySelector('.service-log-entries');
+  if (!entriesEl) return;
+  const log = comp.serviceLog || [];
+  if (log.length === 0) {
+    entriesEl.innerHTML = `<div class="service-log-empty">No service history yet</div>`;
+    return;
+  }
+  entriesEl.innerHTML = log.map(e => `
+    <div class="service-entry" data-id="${e.id}">
+      <div class="service-entry-left">
+        <span class="service-entry-type">${escHtml(e.type)}</span>
+        <span class="service-entry-date">${formatDate(e.date)}</span>
+        ${e.notes ? `<span class="service-entry-notes">${escHtml(e.notes)}</span>` : ''}
+      </div>
+      <button class="btn-icon-sm service-entry-delete" title="Delete entry">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4.5 3V2a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v1M4.5 5v4M7.5 5v4M2.5 3l.6 6.5a.5.5 0 00.5.5h5a.5.5 0 00.5-.5L9.5 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>`).join('');
+
+  entriesEl.querySelectorAll('.service-entry-delete').forEach(btn => {
+    btn.onclick = async e => {
+      e.stopPropagation();
+      const id = btn.closest('.service-entry').dataset.id;
+      comp.serviceLog = (comp.serviceLog || []).filter(e => e.id !== id);
+      try {
+        await updateComponent(bike.id, comp.id, { serviceLog: comp.serviceLog });
+        renderServiceLog(row, comp, bike);
+        updateLastServiceDate(row, comp);
+      } catch(err) { showToast('Delete failed', 'error'); }
+    };
+  });
+}
+
+function updateLastServiceDate(row, comp) {
+  const log = comp.serviceLog || [];
+  if (log.length === 0) return;
+  const latest = log[0]; // sorted descending
+  const dateEl = row.querySelector('.comp-row-date');
+  if (dateEl) dateEl.textContent = `Svc: ${formatDate(latest.date)}`;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 // ── ADD MODAL ─────────────────────────────────────────────
