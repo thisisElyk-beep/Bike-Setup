@@ -461,15 +461,6 @@ svg { display: block; flex-shrink: 0; }
 .bike-part circle,
 .bike-part rect { stroke: var(--silhouette-stroke); }
 
-/* Zone population dot */
-.zone-dot {
-  fill: var(--accent);
-  stroke: var(--bg-base);
-  stroke-width: 1.5;
-  pointer-events: none;
-  opacity: 0.9;
-}
-
 /* Completeness ring */
 .completeness-ring {
   display: flex;
