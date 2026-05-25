@@ -3,6 +3,7 @@ import { getPresets } from './db.js';
 import { createSilhouette, createMiniSilhouette, setupZoneInteraction, resetZoom, createCockpitFrontView, setupCockpitInteraction } from './silhouette.js';
 import { renderZoneSettings, renderSettingsPlaceholder, renderCockpitSubZone } from './setup.js';
 import { renderComponentsTab } from './components.js';
+import { renderQuickAdjustTab } from './quickadjust.js';
 import { renderTestingTab } from './testing.js';
 import { renderPresetsTab } from './presets.js';
 import { exportBikePDF } from './export.js';
@@ -278,9 +279,10 @@ function activateTab(tab) {
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${tab}`));
   if (!_bike) return;
   switch (tab) {
-    case 'components': renderComponentsTab(_bike); break;
-    case 'testing':    renderTestingTab(_bike);    break;
-    case 'presets':    renderPresetsTab(_bike);    break;
+    case 'components': renderComponentsTab(_bike);    break;
+    case 'adjust':     renderQuickAdjustTab(_bike);   break;
+    case 'testing':    renderTestingTab(_bike);       break;
+    case 'presets':    renderPresetsTab(_bike);       break;
   }
 }
 
