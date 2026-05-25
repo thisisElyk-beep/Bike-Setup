@@ -579,8 +579,7 @@ export function setupZoneInteraction(container,bike,onZoneClick){
   const tooltip=document.getElementById('zone-tooltip');
   const available=getAvailableZones(bike);
 
-  // Draw population dots + update completeness ring
-  drawZoneDots(svg, bike, available);
+  // Update completeness ring
   updateCompletenessRing(bike, available);
 
   svg.querySelectorAll('.zone-overlay').forEach(overlay=>{
