@@ -78,6 +78,10 @@ function renderFilteredList(rides, bike) {
   el.querySelectorAll('.ride-card').forEach(card => {
     const id = card.dataset.id;
     const ride = rides.find(r => r.id === id);
+    card.querySelector('.ride-card-compare')?.addEventListener('click', e => {
+      e.stopPropagation();
+      showCompareView(container, rides, bike, id);
+    });
     card.querySelector('.ride-card-delete')?.addEventListener('click', async e => {
       e.stopPropagation();
       if (!confirm('Delete this ride?')) return;
@@ -112,6 +116,9 @@ function rideCard(r) {
         </div>
         ${cond ? `<div class="ride-card-cond">${escHtml(cond)}</div>` : ''}
       </div>
+      <button class="btn-icon-sm ride-card-compare" title="Compare with another ride" style="margin-right:.25rem">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5h9M8 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
       <button class="btn-icon-sm ride-card-delete" title="Delete ride">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4.5 3V2a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v1M4.5 5v4M7.5 5v4M2.5 3l.6 6.5a.5.5 0 00.5.5h5a.5.5 0 00.5-.5L9.5 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -123,6 +130,18 @@ function showNewRideModal(bike, existingRides, onSaved) {
   const bl = bike.baseline || {};
   const routes = [...new Set(existingRides.map(r => r.routeName).filter(Boolean))];
   const today = new Date().toISOString().slice(0, 10);
+
+  // Prefer most recent ride's settings as defaults (rider rarely changes all at once)
+  // Fall back to baseline for any field not in prior ride
+  const lastRide = existingRides.length > 0
+    ? [...existingRides].sort((a,b) => b.date.localeCompare(a.date))[0]
+    : null;
+  const prev = lastRide?.settings || {};
+
+  const settingVal = (rideKey, blVal) => {
+    const v = prev[rideKey];
+    return v != null ? v : (blVal || '');
+  };
 
   const body = `
     <div class="ride-modal-tabs">
@@ -178,42 +197,42 @@ function showNewRideModal(bike, existingRides, onSaved) {
       </div>
     </div>
 
-    <div class="settings-section-divider">Settings Used</div>
+    <div class="settings-section-divider">Settings Used ${lastRide ? `<span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0;font-size:.75rem">— pre-filled from ${fmtDate(lastRide.date)}</span>` : ''}</div>
     <div class="field-row">
       <div class="field-group">
         <label class="field-label">Seat Height (mm)</label>
-        <input id="rs-seatHeight" class="field-input" type="number" value="${bl.seatHeight||''}">
+        <input id="rs-seatHeight" class="field-input" type="number" value="${settingVal('seatHeight', bl.seatHeight)}">
       </div>
       <div class="field-group">
         <label class="field-label">Stack / Spacers (mm)</label>
-        <input id="rs-stackHeight" class="field-input" type="number" value="${bl.headset?.spacers||''}">
+        <input id="rs-stackHeight" class="field-input" type="number" value="${settingVal('stackHeight', bl.headset?.stack)}">
       </div>
     </div>
     <div class="field-row">
       <div class="field-group">
         <label class="field-label">Crank Length (mm)</label>
-        <input id="rs-crankLength" class="field-input" type="number" value="${bl.crankLength||''}">
+        <input id="rs-crankLength" class="field-input" type="number" value="${settingVal('crankLength', bl.crankLength)}">
       </div>
       <div class="field-group">
         <label class="field-label">Seat Offset (mm)</label>
-        <input id="rs-seatOffset" class="field-input" type="number" value="${bl.seatOffset||''}">
+        <input id="rs-seatOffset" class="field-input" type="number" value="${settingVal('seatOffset', bl.seatpost?.setback)}">
       </div>
     </div>
     <div class="field-row">
       <div class="field-group">
         <label class="field-label">Reach (mm)</label>
-        <input id="rs-reach" class="field-input" type="number" value="${bl.handlebar?.reach||''}">
+        <input id="rs-reach" class="field-input" type="number" value="${settingVal('reach', bl.handlebar?.reach)}">
       </div>
       <div class="field-group"></div>
     </div>
     <div class="field-row">
       <div class="field-group">
         <label class="field-label">Tire PSI — Front</label>
-        <input id="rs-tirePsiF" class="field-input" type="number" step="0.5" value="${bl.frontTire?.psi||''}">
+        <input id="rs-tirePsiF" class="field-input" type="number" step="0.5" value="${settingVal('tirePsiF', bl.frontTire?.psi)}">
       </div>
       <div class="field-group">
         <label class="field-label">Tire PSI — Rear</label>
-        <input id="rs-tirePsiR" class="field-input" type="number" step="0.5" value="${bl.rearTire?.psi||''}">
+        <input id="rs-tirePsiR" class="field-input" type="number" step="0.5" value="${settingVal('tirePsiR', bl.rearTire?.psi)}">
       </div>
     </div>
 
@@ -395,8 +414,12 @@ function showGPXPreview(data) {
 }
 
 // ── COMPARE VIEW ──────────────────────────────────────────
-function showCompareView(container, rides, bike) {
-  const routes = [...new Set(rides.map(r => r.routeName).filter(Boolean))];
+function showCompareView(container, rides, bike, preselectedBaseId = null) {
+  const sorted = [...rides].sort((a,b) => b.date.localeCompare(a.date));
+
+  const rideOpts = sorted.map(r =>
+    `<option value="${r.id}">${fmtDate(r.date)}${r.routeName ? ' — ' + escHtml(r.routeName) : ''} · ${r.avgSpeed?.toFixed(1) ?? '?'} km/h</option>`
+  ).join('');
 
   container.innerHTML = `
     <div class="rides-toolbar">
@@ -405,54 +428,58 @@ function showCompareView(container, rides, bike) {
       <div></div>
     </div>
 
-    <div class="compare-setup">
-      <div class="field-group" style="max-width:260px;margin:1.5rem 2rem .5rem">
-        <label class="field-label">Route</label>
-        <select id="cmp-route" class="field-select">
-          <option value="">Select route…</option>
-          ${routes.map(r => `<option value="${escHtml(r)}">${escHtml(r)}</option>`).join('')}
-        </select>
-      </div>
-      <div id="cmp-ride-pickers" class="compare-pickers hidden">
+    <div class="compare-setup" style="padding:1rem 2rem">
+      <div class="compare-pickers" style="display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap">
         <div class="compare-picker">
-          <label class="field-label">Base ride</label>
-          <select id="cmp-base" class="field-select"></select>
+          <label class="field-label">Base ride <span style="font-weight:400;color:var(--text-muted)">(reference)</span></label>
+          <select id="cmp-base" class="field-select" style="min-width:260px">
+            ${rideOpts}
+          </select>
         </div>
         <div class="compare-vs">vs</div>
         <div class="compare-picker">
-          <label class="field-label">Test ride</label>
-          <select id="cmp-test" class="field-select"></select>
+          <label class="field-label">Test ride <span style="font-weight:400;color:var(--text-muted)">(newer / different setup)</span></label>
+          <select id="cmp-test" class="field-select" style="min-width:260px">
+            ${rideOpts}
+          </select>
         </div>
-        <button class="btn-primary" id="btn-run-compare">Compare</button>
+        <button class="btn-primary" id="btn-run-compare">Compare →</button>
       </div>
+      <div id="cmp-error" style="font-size:.8rem;color:var(--danger);margin-top:.5rem;display:none">Pick two different rides to compare.</div>
     </div>
 
     <div id="compare-result"></div>`;
 
-  document.getElementById('btn-back-to-rides').onclick = () => renderRidesList(container, rides, bike);
+  // Default: base = oldest, test = most recent; or use preselected
+  const baseEl = document.getElementById('cmp-base');
+  const testEl = document.getElementById('cmp-test');
+  if (sorted.length >= 2) {
+    testEl.value = sorted[0].id;
+    baseEl.value = preselectedBaseId || sorted[sorted.length - 1].id;
+    // If preselected is the most recent, make it the test instead
+    if (preselectedBaseId === sorted[0].id && sorted.length >= 2) {
+      baseEl.value = sorted[1].id;
+      testEl.value = preselectedBaseId;
+    }
+  }
 
-  document.getElementById('cmp-route').onchange = function() {
-    const route = this.value;
-    const routeRides = rides.filter(r => r.routeName === route).sort((a,b) => b.date.localeCompare(a.date));
-    const pickers = document.getElementById('cmp-ride-pickers');
-    if (routeRides.length < 2) { pickers.classList.add('hidden'); return; }
-    pickers.classList.remove('hidden');
-    const opts = routeRides.map(r => `<option value="${r.id}">${fmtDate(r.date)} — ${r.avgSpeed?.toFixed(1) ?? '?'} km/h</option>`).join('');
-    document.getElementById('cmp-base').innerHTML = opts;
-    document.getElementById('cmp-test').innerHTML = opts;
-    // Default: base = oldest selected, test = most recent
-    document.getElementById('cmp-test').value = routeRides[0].id;
-    document.getElementById('cmp-base').value = routeRides[routeRides.length-1].id;
-  };
+  document.getElementById('btn-back-to-rides').onclick = () => renderRidesTab(bike);
 
   document.getElementById('btn-run-compare').onclick = () => {
-    const baseId = document.getElementById('cmp-base').value;
-    const testId = document.getElementById('cmp-test').value;
-    if (baseId === testId) { showToast('Pick two different rides', 'error'); return; }
+    const baseId = baseEl.value;
+    const testId = testEl.value;
+    const errEl = document.getElementById('cmp-error');
+    if (baseId === testId) { errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
     const base = rides.find(r => r.id === baseId);
     const test = rides.find(r => r.id === testId);
     renderCompareResult(document.getElementById('compare-result'), base, test);
   };
+
+  // Auto-run if two rides already selected
+  if (sorted.length >= 2) {
+    document.getElementById('btn-run-compare').click();
+  }
 }
 
 function renderCompareResult(el, base, test) {
