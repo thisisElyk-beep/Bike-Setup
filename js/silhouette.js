@@ -270,14 +270,14 @@ function svgHardtail(isDJ = false) {
   // so seatstay and top tube share the same 23.3° angle — continuous visual line
   // DJ: PBJ wheelbase 422px (vs 460px old) — short chainstay 158px, HA=69.5° maintained
   const RW = isDJ ? {x:216,y:350} : {x:148,y:350};
-  const FW = isDJ ? {x:638,y:350} : {x:648,y:350};
+  const FW = isDJ ? {x:598,y:350} : {x:648,y:350};
   const BB = isDJ ? {x:374,y:362} : {x:378,y:365};
   const ST = isDJ ? {x:331,y:255} : {x:333,y:183};
-  const HT = isDJ ? {x:583,y:202} : {x:561,y:160};
-  const HC = isDJ ? {x:589,y:219} : {x:583,y:207};
-  const TT_JOIN = isDJ ? {x:348,y:297} : {x:340,y:212};
-  // DJ_SS collinear with RW→HT on seat tube (21.9° ≈ 22.0° — continuous line)
-  const DJ_SS = isDJ ? {x:348,y:297} : {x:0,y:0};
+  const HT = isDJ ? {x:543,y:202} : {x:561,y:160};
+  const HC = isDJ ? {x:549,y:219} : {x:583,y:207};
+  const TT_JOIN = isDJ ? {x:346,y:291} : {x:340,y:212};
+  // DJ_SS collinear with RW→HT on seat tube (24.4° ≈ 24.3° — continuous line)
+  const DJ_SS = isDJ ? {x:346,y:291} : {x:0,y:0};
 
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
   const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
@@ -376,14 +376,15 @@ function svgHardtail(isDJ = false) {
 function svgGravel() {
   const RW={x:155,y:350}, FW={x:640,y:350}, BB={x:375,y:360};
   const ST={x:315,y:164}, HT={x:585,y:183}, HC={x:604,y:240};
-  const TT_JOIN={x:324,y:197}; // 30px below ST along seat tube
+  const TT_JOIN={x:324,y:203}; // 4.4° downward slope from HT // 30px below ST along seat tube
 
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
   const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
   const stUx=stDx/stLen, stUy=stDy/stLen;
   const POST={x:299, y:111};
   const SAD={x:POST.x+4, y:POST.y-1};
-  const SS={x:344, y:258};
+  // SS: just below TT_JOIN (~12px down seat tube) for tight high rear triangle
+  const SS={x:328, y:214};
 
   // Straight fork: perp offsets ±7px from HC→FW line
   const fDx=FW.x-HC.x, fDy=FW.y-HC.y;
@@ -497,7 +498,8 @@ function svgRoad() {
   const stUx=stDx/stLen, stUy=stDy/stLen;
   const POST={x:Math.round(ST.x+stUx*52), y:Math.round(ST.y+stUy*52)};
   const SAD={x:POST.x+4, y:POST.y-1};
-  const SS={x:Math.round(BB.x+stUx*stLen*0.52), y:Math.round(BB.y+stUy*stLen*0.52)};
+  // SS: just below TT_JOIN (~12px down seat tube) for high tight rear triangle
+  const SS={x:331, y:238};
 
   // Curved fork: two bezier paths from crown to axle
   const fCx1=HC.x+10, fCy1=HC.y+45, fCx2=FW.x+10, fCy2=FW.y-35;
@@ -519,8 +521,8 @@ function svgRoad() {
     <!-- Down tube: thicker than top tube (road frame character) -->
     <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="10" stroke-linecap="round"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="6" stroke-linecap="round"/>
-    <!-- Top tube: 1.9° upward toward head tube -->
-    <line x1="327" y1="216" x2="${HT.x}" y2="${HT.y}" stroke-width="5.5" stroke-linecap="round"/>
+    <!-- Top tube: 4.3° slope, dropping from HT toward seat tube -->
+    <line x1="327" y1="227" x2="${HT.x}" y2="${HT.y}" stroke-width="5.5" stroke-linecap="round"/>
     <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="11" stroke-linecap="round"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${HT.x},${HT.y} ${HC.x},${HC.y}" data-zone="frame"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
