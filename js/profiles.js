@@ -187,9 +187,12 @@ export function renderProfileChip(profileId, onSwitch) {
     showProfileDropdown(profileId, chip, onSwitch);
   };
 
-  // Insert after logo area
-  const header = document.querySelector('.app-header');
-  if (header) header.insertBefore(chip, header.querySelector('.header-actions'));
+  const header = document.querySelector('#app-header');
+  if (header) {
+    const headerRight = header.querySelector('.header-right');
+    if (headerRight) header.insertBefore(chip, headerRight);
+    else header.appendChild(chip);
+  }
 
   return chip;
 }
@@ -211,6 +214,10 @@ function showProfileDropdown(activeId, anchor, onSwitch) {
     <button class="profile-drop-new" id="profile-drop-new">
       <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       New Profile
+    </button>
+    <button class="profile-drop-new" id="profile-drop-switch">
+      <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 5.5h9M7 2.5l3 3-3 3M4 8.5L1 5.5l3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Switch Profile
     </button>`;
 
   // Position below chip
@@ -230,6 +237,16 @@ function showProfileDropdown(activeId, anchor, onSwitch) {
   document.getElementById('profile-drop-new').onclick = () => {
     drop.remove();
     showNewProfileInline(onSwitch);
+  };
+
+  document.getElementById('profile-drop-switch').onclick = () => {
+    drop.remove();
+    // Clear active profile so picker shows fresh
+    localStorage.removeItem(STORAGE_KEY_ACTIVE);
+    showProfilePicker(newId => {
+      renderProfileChip(newId, onSwitch);
+      onSwitch(newId);
+    });
   };
 
   // Close on outside click
