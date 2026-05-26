@@ -265,19 +265,20 @@ function svgMTBFS(hasMotor = false) {
 // ── HARDTAIL MTB ──────────────────────────────────────────
 // Verified: HC(583,207) HT(561,160) ST(333,183) HA=65.5° TT=5.6°↑
 function svgHardtail(isDJ = false) {
-  // DJ: 71° HA, shorter wheelbase, rigid fork, riser bars
-  // HT: HC(573,215) HT(558,172) ST(326,197)
+  // DJ: PBJ-inspired geometry — HA=69.6°, SA actual=68.3°, short seat tube
   const RW = isDJ ? {x:160,y:350} : {x:148,y:350};
   const FW = isDJ ? {x:620,y:350} : {x:648,y:350};
-  const BB = isDJ ? {x:374,y:365} : {x:378,y:365};
-  const ST = isDJ ? {x:326,y:197} : {x:333,y:183};
-  const HT = isDJ ? {x:558,y:172} : {x:561,y:160};
-  const HC = isDJ ? {x:573,y:215} : {x:583,y:207};
+  const BB = isDJ ? {x:374,y:362} : {x:378,y:365};
+  const ST = isDJ ? {x:337,y:269} : {x:333,y:183};
+  const HT = isDJ ? {x:556,y:179} : {x:561,y:160};
+  const HC = isDJ ? {x:572,y:221} : {x:583,y:207};
+  const TT_JOIN = isDJ ? {x:348,y:297} : {x:340,y:212};
 
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
   const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
   const stUx=stDx/stLen, stUy=stDy/stLen;
-  const POST={x:Math.round(ST.x+stUx*55), y:Math.round(ST.y+stUy*55)};
+  const postExt = isDJ ? 18 : 55; // DJ: short post at minimum insertion
+  const POST={x:Math.round(ST.x+stUx*postExt), y:Math.round(ST.y+stUy*postExt)};
   const SAD={x:POST.x+4, y:POST.y-1};
   const SS={x:Math.round(BB.x+stUx*stLen*0.52), y:Math.round(BB.y+stUy*stLen*0.52)};
   const F=suspFork(HC, FW, 9, isDJ?1:0.44); // DJ: rigid (no split), HT: susp
@@ -312,7 +313,7 @@ function svgHardtail(isDJ = false) {
     <line x1="${RW.x+9}" y1="${RW.y}" x2="${SS.x+8}" y2="${SS.y}" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="11" stroke-linecap="round"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="7.5" stroke-linecap="round"/>
-    <line x1="${isDJ?334:340}" y1="${isDJ?226:212}" x2="${HT.x}" y2="${HT.y}" stroke-width="6.5" stroke-linecap="round"/>
+    <line x1="${TT_JOIN.x}" y1="${TT_JOIN.y}" x2="${HT.x}" y2="${HT.y}" stroke-width="6.5" stroke-linecap="round"/>
     <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="15" stroke-linecap="round"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${HT.x},${HT.y} ${HC.x},${HC.y}" data-zone="frame"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
@@ -919,9 +920,11 @@ export function setupCockpitInteraction(container, bike, onSubZoneClick) {
       if      (zoneId==='cockpit-bars'   && bl.handlebar?.brand) val=`${bl.handlebar.brand} ${bl.handlebar.width||''}`.trim();
       else if (zoneId==='cockpit-stem'   && bl.stem?.brand)      val=`${bl.stem.brand} ${bl.stem.length||''}`.trim();
       else if (zoneId==='cockpit-brakes' && bl.brakes?.brand)    val=`${bl.brakes.brand} ${bl.brakes.model||''}`.trim();
-      else if (zoneId==='cockpit-grips'  && bl.grips?.brand)     val=`${bl.grips.brand} ${bl.grips.model||''}`.trim();
+      else if (zoneId==='cockpit-grips'  && (bl.grips?.brand || bl.bartape?.brand)) val=`${bl.grips?.brand || bl.bartape?.brand || ''} ${bl.grips?.model || bl.bartape?.model || ''}`.trim();
       else if (zoneId==='cockpit-stack'  && bl.headset?.brand)   val=`${bl.headset.brand} ${bl.headset.model||''}`.trim();
-      tooltip.querySelector('.tooltip-zone-name').textContent  = meta.label;
+      const isDropBike = ['gravel','road'].includes(bike.type);
+      const gripsLabel = zoneId === 'cockpit-grips' ? (isDropBike ? 'Bar Tape' : 'Grips') : meta.label;
+      tooltip.querySelector('.tooltip-zone-name').textContent  = gripsLabel;
       tooltip.querySelector('.tooltip-zone-value').textContent = val;
       tooltip.classList.remove('hidden');
       positionTooltip(tooltip, e, container);
