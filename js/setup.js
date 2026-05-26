@@ -8,8 +8,8 @@ export function renderZoneSettings(zoneId, bike, container, onSaved) {
   let html = '';
 
   switch (zoneId) {
-    case 'front-wheel': html = tireForm('frontTire', 'Front Tire', baseline.frontTire); break;
-    case 'rear-wheel':  html = tireForm('rearTire',  'Rear Tire',  baseline.rearTire);  break;
+    case 'front-wheel': html = tireForm('frontTire', 'Front Tire', baseline.frontTire, baseline.frontWheel || {}); break;
+    case 'rear-wheel':  html = tireForm('rearTire',  'Rear Tire',  baseline.rearTire,  baseline.rearWheel  || {}); break;
     case 'fork':  html = suspensionForm('fork',  'Fork',        baseline.fork,  false); break;
     case 'shock': html = suspensionForm('shock', 'Rear Shock',  baseline.shock, true);  break;
     case 'handlebar':  html = cockpitForm(baseline); break;
@@ -91,31 +91,41 @@ export function renderSettingsPlaceholder(container) {
 
 // ── FORM BUILDERS ─────────────────────────────────────────
 
-function tireForm(key, label, data = {}) {
+function tireForm(key, label, tireData = {}, wheelData = {}) {
+  const wKey = key === 'frontTire' ? 'frontWheel' : 'rearWheel';
   return `
-    <div class="settings-section-divider">Tire Info</div>
+    <div class="settings-section-divider">Wheel</div>
     <div class="field-row">
-      ${field('Brand', `${key}-brand`, data.brand, 'e.g. Maxxis')}
-      ${field('Model', `${key}-model`, data.model, 'e.g. Minion DHF')}
+      ${field('Brand', `${wKey}-brand`, wheelData.brand)}
+      ${field('Model', `${wKey}-model`, wheelData.model)}
     </div>
     <div class="field-row">
-      ${field('Size', `${key}-size`, data.size, 'e.g. 29x2.5 WT')}
-      ${field('Compound', `${key}-compound`, data.compound, 'e.g. 3C MaxxTerra')}
+      ${field('Size', `${wKey}-size`, wheelData.size, 'e.g. 29"')}
+      ${field('Hub Standard', `${wKey}-hub`, wheelData.hub, 'e.g. Boost 148')}
+    </div>
+    <div class="settings-section-divider">Tire</div>
+    <div class="field-row">
+      ${field('Brand', `${key}-brand`, tireData.brand)}
+      ${field('Model', `${key}-model`, tireData.model)}
+    </div>
+    <div class="field-row">
+      ${field('Size', `${key}-size`, tireData.size, 'e.g. 29x2.5 WT')}
+      ${field('Compound', `${key}-compound`, tireData.compound, 'e.g. 3C MaxxTerra')}
     </div>
     <div class="settings-section-divider">Pressure</div>
     <div class="field-group">
       <label class="field-label">Pressure (PSI)</label>
       <div class="range-container">
-        <input type="range" id="${key}-psi" min="10" max="60" step="0.5" value="${data.psi ?? 25}" class="range-slider"/>
-        <span class="range-val"><span id="val-${key}-psi">${data.psi ?? 25}</span> psi</span>
+        <input type="range" id="${key}-psi" min="10" max="60" step="0.5" value="${tireData.psi ?? 25}" class="range-slider"/>
+        <span class="range-val"><span id="val-${key}-psi">${tireData.psi ?? 25}</span> psi</span>
       </div>
     </div>
     <div class="field-row">
-      ${field('Casing', `${key}-casing`, data.casing, 'e.g. EXO+, DD')}
-      ${field('Inserts', `${key}-inserts`, data.inserts, 'e.g. Cushcore, none')}
+      ${field('Casing', `${key}-casing`, tireData.casing, 'e.g. EXO+, DD')}
+      ${field('Inserts', `${key}-inserts`, tireData.inserts, 'e.g. Cushcore, none')}
     </div>
     <div class="field-group">
-      ${fieldTextarea('Notes', `${key}-notes`, data.notes)}
+      ${fieldTextarea('Notes', `${key}-notes`, tireData.notes)}
     </div>
   `;
 }
@@ -301,9 +311,7 @@ function dropperForm(bikeType, baseline = {}) {
 }
 
 function frameForm(baseline = {}) {
-  const fr = baseline.frame  || {};
-  const fw = baseline.frontWheel || {};
-  const rw = baseline.rearWheel  || {};
+  const fr = baseline.frame || {};
   return `
     <div class="settings-section-divider">Frame</div>
     <div class="field-row">
@@ -317,24 +325,6 @@ function frameForm(baseline = {}) {
     <div class="field-row">
       ${field('Material', 'fr-material', fr.material, 'e.g. Carbon, Alloy')}
       ${field('Color', 'fr-color', fr.color)}
-    </div>
-    <div class="settings-section-divider">Front Wheel</div>
-    <div class="field-row">
-      ${field('Brand', 'fw-brand', fw.brand)}
-      ${field('Model', 'fw-model', fw.model)}
-    </div>
-    <div class="field-row">
-      ${field('Size', 'fw-size', fw.size, 'e.g. 29"')}
-      ${field('Hub Standard', 'fw-hub', fw.hub, 'e.g. 110×15')}
-    </div>
-    <div class="settings-section-divider">Rear Wheel</div>
-    <div class="field-row">
-      ${field('Brand', 'rw-brand', rw.brand)}
-      ${field('Model', 'rw-model', rw.model)}
-    </div>
-    <div class="field-row">
-      ${field('Size', 'rw-size', rw.size, 'e.g. 29"')}
-      ${field('Hub Standard', 'rw-hub', rw.hub, 'e.g. Boost 148')}
     </div>
     <div class="field-group">${fieldTextarea('Notes', 'fr-notes', fr.notes)}</div>
   `;
@@ -366,8 +356,14 @@ function collectFormData(zoneId, container) {
   const radio = name => container.querySelector(`input[name="${name}"]:checked`)?.value;
 
   switch (zoneId) {
-    case 'front-wheel': return { frontTire: { brand: val('frontTire-brand'), model: val('frontTire-model'), size: val('frontTire-size'), compound: val('frontTire-compound'), casing: val('frontTire-casing'), inserts: val('frontTire-inserts'), psi: num('frontTire-psi'), notes: val('frontTire-notes') } };
-    case 'rear-wheel':  return { rearTire:  { brand: val('rearTire-brand'),  model: val('rearTire-model'),  size: val('rearTire-size'),  compound: val('rearTire-compound'),  casing: val('rearTire-casing'),  inserts: val('rearTire-inserts'),  psi: num('rearTire-psi'),  notes: val('rearTire-notes') } };
+    case 'front-wheel': return {
+      frontTire:  { brand: val('frontTire-brand'), model: val('frontTire-model'), size: val('frontTire-size'), compound: val('frontTire-compound'), casing: val('frontTire-casing'), inserts: val('frontTire-inserts'), psi: num('frontTire-psi'), notes: val('frontTire-notes') },
+      frontWheel: { brand: val('frontWheel-brand'), model: val('frontWheel-model'), size: val('frontWheel-size'), hub: val('frontWheel-hub') },
+    };
+    case 'rear-wheel': return {
+      rearTire:   { brand: val('rearTire-brand'), model: val('rearTire-model'), size: val('rearTire-size'), compound: val('rearTire-compound'), casing: val('rearTire-casing'), inserts: val('rearTire-inserts'), psi: num('rearTire-psi'), notes: val('rearTire-notes') },
+      rearWheel:  { brand: val('rearWheel-brand'), model: val('rearWheel-model'), size: val('rearWheel-size'), hub: val('rearWheel-hub') },
+    };
     case 'fork': return { fork: collectSuspension('fork', container) };
     case 'shock': return { shock: collectSuspension('shock', container) };
     case 'handlebar': return {
@@ -380,9 +376,7 @@ function collectFormData(zoneId, container) {
     case 'drivetrain': return { drivetrain: { brand: val('dt-brand'), model: val('dt-model'), cassette: val('dt-cassette'), chainring: val('dt-chainring'), chain: val('dt-chain'), rd: val('dt-rd'), notes: val('dt-notes') } };
     case 'dropper': return { dropper: { brand: val('dp-brand'), model: val('dp-model'), travel: val('dp-travel'), length: val('dp-length'), diameter: val('dp-diameter'), notes: val('dp-notes') } };
     case 'frame': return {
-      frame:       { brand: val('fr-brand'), model: val('fr-model'), year: val('fr-year'), size: val('fr-size'), material: val('fr-material'), color: val('fr-color'), notes: val('fr-notes') },
-      frontWheel:  { brand: val('fw-brand'), model: val('fw-model'), size: val('fw-size'), hub: val('fw-hub') },
-      rearWheel:   { brand: val('rw-brand'), model: val('rw-model'), size: val('rw-size'), hub: val('rw-hub') },
+      frame: { brand: val('fr-brand'), model: val('fr-model'), year: val('fr-year'), size: val('fr-size'), material: val('fr-material'), color: val('fr-color'), notes: val('fr-notes') },
     };
     default: return {};
   }
