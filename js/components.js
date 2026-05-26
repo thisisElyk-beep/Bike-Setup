@@ -272,12 +272,12 @@ function buildRow(comp, bike) {
         </div>
       </div>
 
-      <!-- SERVICE LOG -->
+      <!-- SERVICE LOG — shown above edit form for easy access -->
       <div class="service-log">
         <div class="service-log-header">
           <span class="service-log-title">Service History</span>
-          <button class="btn-text btn-log-service">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          <button class="btn-primary btn-log-service" style="font-size:.72rem;padding:.3rem .7rem;display:flex;align-items:center;gap:.35rem">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             Log Service
           </button>
         </div>
