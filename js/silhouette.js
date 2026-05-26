@@ -362,29 +362,38 @@ function svgHardtail(isDJ = false) {
 }
 
 // ── GRAVEL BIKE ───────────────────────────────────────────
-// Verified: HC(590,205) HT(571,150) ST(321,183) HA=71° TT=7.5°↑
-// Straight fork legs (modern gravel — no curve)
+// 72° HA, 73° SA, nearly flat top tube (2.2°) — Giordano Trieste / endurance style
+// HC(604,240) HT(585,183) ST(315,164) TT_JOIN(324,193)
+// Top tube: (324,193)→(585,183) — 2.2° slope, visually flat ✓
+// Straight fork legs (modern gravel)
 function svgGravel() {
   const RW={x:155,y:350}, FW={x:640,y:350}, BB={x:375,y:360};
-  const ST={x:321,y:183}, HT={x:571,y:150}, HC={x:590,y:205};
+  const ST={x:315,y:164}, HT={x:585,y:183}, HC={x:604,y:240};
+  const TT_JOIN={x:324,y:193}; // 30px below ST along seat tube
 
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
   const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
   const stUx=stDx/stLen, stUy=stDy/stLen;
-  const POST={x:Math.round(ST.x+stUx*55), y:Math.round(ST.y+stUy*55)};
+  const POST={x:299, y:111};
   const SAD={x:POST.x+4, y:POST.y-1};
-  const SS={x:Math.round(BB.x+stUx*stLen*0.52), y:Math.round(BB.y+stUy*stLen*0.52)};
+  const SS={x:344, y:258};
 
-  // Straight fork legs (gravel — modern, no rake curve in silhouette)
-  const F=suspFork(HC,FW,7,1); // splitT=1 means no split, legs run full length
-  // Recalc as two full-length straight lines offset ±7px perp
+  // Straight fork: perp offsets ±7px from HC→FW line
   const fDx=FW.x-HC.x, fDy=FW.y-HC.y;
   const fLen=Math.sqrt(fDx*fDx+fDy*fDy);
   const fux=fDx/fLen, fuy=fDy/fLen, fpx=fuy, fpy=-fux;
-  const off=7;
-  const lT={x:Math.round(HC.x-fpx*off),y:Math.round(HC.y-fpy*off)};
-  const rT={x:Math.round(HC.x+fpx*off),y:Math.round(HC.y+fpy*off)};
+  const lT={x:597,y:242}, rT={x:611,y:238};
   const lB={x:FW.x-6,y:FW.y}, rB={x:FW.x+6,y:FW.y};
+
+  // Drop bars — side-view profile
+  // Stem: from HT going forward (right) and very slightly down
+  const StemTip={x:631,y:179};
+  // Bar top: extends rearward (left) from stem tip
+  const BarRear={x:603,y:174};
+  // Drop: bezier from BarRear down and slight curl forward at bottom
+  const DropBot={x:617,y:222};
+  // Hood body (brake hood area, near stem)
+  const HoodX=607, HoodY=171;
 
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
@@ -393,15 +402,21 @@ function svgGravel() {
   ${roadWheel(FW.x,FW.y,'front-wheel',14)}
 
   <g id="g-frame" class="bike-zone" data-zone="frame">
+    <!-- Chainstay -->
     <path d="M ${BB.x} ${BB.y} C ${BB.x-52} ${BB.y} ${RW.x+84} ${RW.y-2} ${RW.x} ${RW.y}"
           fill="none" stroke-width="5.5" stroke-linecap="round"/>
     <path d="M ${BB.x-3} ${BB.y+8} C ${BB.x-55} ${BB.y+8} ${RW.x+82} ${RW.y+8} ${RW.x} ${RW.y}"
           fill="none" stroke-width="2.5" stroke-linecap="round" opacity="0.32"/>
+    <!-- Seatstay -->
     <line x1="${RW.x}"   y1="${RW.y}" x2="${SS.x}" y2="${SS.y}" stroke-width="4.5" stroke-linecap="round"/>
     <line x1="${RW.x+8}" y1="${RW.y}" x2="${SS.x+7}" y2="${SS.y}" stroke-width="2.5" stroke-linecap="round" opacity="0.3"/>
+    <!-- Down tube -->
     <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="8" stroke-linecap="round"/>
+    <!-- Seat tube -->
     <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="7" stroke-linecap="round"/>
-    <line x1="330" y1="212" x2="${HT.x}" y2="${HT.y}" stroke-width="6" stroke-linecap="round"/>
+    <!-- Top tube: nearly flat (2.2°) -->
+    <line x1="${TT_JOIN.x}" y1="${TT_JOIN.y}" x2="${HT.x}" y2="${HT.y}" stroke-width="6" stroke-linecap="round"/>
+    <!-- Head tube -->
     <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="12" stroke-linecap="round"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${HT.x},${HT.y} ${HC.x},${HC.y}" data-zone="frame"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
@@ -409,8 +424,8 @@ function svgGravel() {
 
   <g id="g-drivetrain" class="bike-zone" data-zone="drivetrain">
     ${drivetrain(BB,RW,30)}
-    <!-- Gravel: often 1x but show 2x ring -->
-    <circle cx="${BB.x}" cy="${BB.y}" r="22" fill="none" stroke-width="4" opacity="0.45"/>
+    <!-- Gravel 1x or 2x — show inner ring -->
+    <circle cx="${BB.x}" cy="${BB.y}" r="22" fill="none" stroke-width="3.5" opacity="0.42"/>
     ${cassette(RW.x,RW.y)}
     <circle class="zone-overlay" cx="${BB.x}" cy="${BB.y}" r="54" data-zone="drivetrain"/>
   </g>
@@ -422,23 +437,43 @@ function svgGravel() {
     <rect class="zone-overlay" x="${POST.x-50}" y="${POST.y-18}" width="112" height="${ST.y-POST.y+44}" rx="10" data-zone="dropper"/>
   </g>
 
+  <!-- Drop bars — side-view profile -->
   <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
-    ${dropBars(HT,22)}
+    <!-- Stem: forward from HT, nearly horizontal -->
+    <line x1="${HT.x}" y1="${HT.y}" x2="${StemTip.x}" y2="${StemTip.y}"
+          stroke-width="6.5" stroke-linecap="round"/>
+    <!-- Stem faceplate -->
+    <rect x="${StemTip.x-5}" y="${StemTip.y-9}" width="8" height="16" rx="3"
+          fill="var(--bg-elevated)" stroke-width="3"/>
+    <!-- Bar top section: extends rearward from stem tip -->
+    <line x1="${StemTip.x}" y1="${StemTip.y}"
+          x2="${BarRear.x}" y2="${BarRear.y}"
+          stroke-width="6.5" stroke-linecap="round"/>
+    <!-- Brake hood body (silicone hood over lever) -->
+    <path d="M ${HoodX} ${HoodY} Q ${HoodX-8} ${HoodY+8} ${HoodX-4} ${HoodY+18}"
+          fill="none" stroke-width="9" stroke-linecap="round" opacity="0.55"/>
+    <!-- Drop: bezier from bar rear, curves down and slightly forward at bottom -->
+    <path d="M ${BarRear.x} ${BarRear.y}
+             C ${BarRear.x-6} ${BarRear.y+18}
+               ${BarRear.x+4} ${BarRear.y+36}
+               ${DropBot.x} ${DropBot.y}"
+          fill="none" stroke-width="6.5" stroke-linecap="round"/>
+    <!-- Bottom curl: curves forward (toward front of bike) -->
+    <path d="M ${DropBot.x} ${DropBot.y}
+             Q ${DropBot.x+14} ${DropBot.y+3}
+               ${DropBot.x+18} ${DropBot.y-6}"
+          fill="none" stroke-width="6.5" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="${BarRear.x-16}" y="${HT.y-24}" width="120" height="108" rx="10" data-zone="handlebar"/>
   </g>
 
   <!-- Straight fork (modern gravel — no curve) -->
   <g id="g-fork" class="bike-zone" data-zone="fork">
-    <!-- Crown bridge -->
     <line x1="${lT.x-1}" y1="${lT.y}" x2="${rT.x+1}" y2="${rT.y}" stroke-width="8" stroke-linecap="round"/>
-    <!-- Left leg: straight all the way -->
     <line x1="${lT.x}" y1="${lT.y}" x2="${lB.x}" y2="${lB.y}" stroke-width="7" stroke-linecap="round"/>
-    <!-- Right leg: straight all the way -->
     <line x1="${rT.x}" y1="${rT.y}" x2="${rB.x}" y2="${rB.y}" stroke-width="7" stroke-linecap="round"/>
-    <!-- Lower brace near axle -->
     <line x1="${lB.x-1}" y1="${lB.y-20}" x2="${rB.x+1}" y2="${rB.y-20}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
-    <!-- Axle -->
     <line x1="${lB.x-8}" y1="${lB.y+2}" x2="${rB.x+8}" y2="${rB.y+2}" stroke-width="6" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="555" y="118" width="118" height="258" rx="12" data-zone="fork"/>
+    <rect class="zone-overlay" x="572" y="195" width="106" height="172" rx="12" data-zone="fork"/>
   </g>
 </svg>`;
 }
