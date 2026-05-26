@@ -29,12 +29,15 @@ export function renderZoneSettings(zoneId, bike, container, onSaved) {
     default: html = '<p style="color:var(--text-muted);font-size:.85rem">No settings for this zone.</p>';
   }
 
+  // Check if this zone has any existing data
+  const hasData = zoneHasData(zoneId, baseline, type);
   container.innerHTML = `
     <div class="zone-settings-header">
-      <div>
+      <div style="display:flex;align-items:center;gap:.5rem">
         <div class="zone-settings-title">${zoneName(zoneId, type)}</div>
-        <div class="zone-settings-sub">Editing baseline</div>
+        ${hasData ? '<span class="zone-filled-badge">Saved</span>' : '<span class="zone-empty-badge">Empty</span>'}
       </div>
+      <div class="zone-settings-sub">Editing baseline</div>
     </div>
     <form id="zone-form">${html}</form>
   `;
@@ -525,6 +528,21 @@ function updateSuspensionFields(container, type) {
   const isCoil = type === 'coil';
   container.querySelectorAll('[id$="-air-fields"]').forEach(el => { el.style.display = isCoil ? 'none' : ''; });
   container.querySelectorAll('[id$="-coil-fields"]').forEach(el => { el.style.display = isCoil ? '' : 'none'; });
+}
+
+function zoneHasData(zoneId, baseline, bikeType) {
+  const bl = baseline || {};
+  switch(zoneId) {
+    case 'front-wheel': return !!(bl.frontTire?.brand || bl.frontTire?.psi);
+    case 'rear-wheel':  return !!(bl.rearTire?.brand  || bl.rearTire?.psi);
+    case 'fork':        return !!(bl.fork?.brand       || bl.fork?.psi);
+    case 'shock':       return !!(bl.shock?.brand      || bl.shock?.psi);
+    case 'handlebar':   return !!(bl.handlebar?.brand  || bl.stem?.brand);
+    case 'drivetrain':  return !!(bl.drivetrain?.brand || bl.drivetrain?.model);
+    case 'dropper':     return !!(bl.dropper?.brand    || bl.seatpost?.brand);
+    case 'frame':       return !!(bl.frame?.brand      || bl.frame?.model);
+    default: return false;
+  }
 }
 
 function zoneName(id, bikeType = 'mtb') {
