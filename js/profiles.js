@@ -187,11 +187,14 @@ export function renderProfileChip(profileId, onSwitch) {
     showProfileDropdown(profileId, chip, onSwitch);
   };
 
-  const header = document.querySelector('#app-header');
-  if (header) {
-    const headerRight = header.querySelector('.header-right');
-    if (headerRight) header.insertBefore(chip, headerRight);
-    else header.appendChild(chip);
+  // Insert as LAST item in header-right so theme toggle stays leftmost
+  const headerRight = document.querySelector('#app-header .header-right');
+  if (headerRight) {
+    // Remove any existing chip first
+    const old = headerRight.querySelector('#profile-chip');
+    if (old) old.remove();
+    // Append after the theme button so theme remains leftmost
+    headerRight.appendChild(chip);
   }
 
   return chip;
@@ -205,11 +208,16 @@ function showProfileDropdown(activeId, anchor, onSwitch) {
   drop.innerHTML = `
     <div class="profile-drop-header">Profiles</div>
     ${profiles.map(p => `
-      <button class="profile-drop-item ${p.id === activeId ? 'active' : ''}" data-id="${p.id}">
-        <div class="profile-drop-avatar">${p.name.charAt(0).toUpperCase()}</div>
-        <span>${escHtml(p.name)}</span>
-        ${p.id === activeId ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
-      </button>`).join('')}
+      <div class="profile-drop-row">
+        <button class="profile-drop-item ${p.id === activeId ? 'active' : ''}" data-id="${p.id}">
+          <div class="profile-drop-avatar">${p.name.charAt(0).toUpperCase()}</div>
+          <span>${escHtml(p.name)}</span>
+          ${p.id === activeId ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+        </button>
+        <button class="profile-drop-rename" data-id="${p.id}" title="Rename">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7 1.5l2.5 2.5L3 10H.5V7.5L7 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        </button>
+      </div>`).join('')}
     <div class="profile-drop-divider"></div>
     <button class="profile-drop-new" id="profile-drop-new">
       <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
@@ -231,6 +239,42 @@ function showProfileDropdown(activeId, anchor, onSwitch) {
       activateProfile(btn.dataset.id);
       drop.remove();
       onSwitch(btn.dataset.id);
+    };
+  });
+
+  drop.querySelectorAll('.profile-drop-rename').forEach(btn => {
+    btn.onclick = e => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const profile = profiles.find(p => p.id === id);
+      const row = btn.closest('.profile-drop-row');
+      // Replace the row with an inline rename input
+      row.innerHTML = `
+        <input class="field-input profile-rename-input" type="text"
+               value="${escHtml(profile.name)}" maxlength="32"
+               style="flex:1;font-size:.85rem;padding:.3rem .5rem;height:auto">
+        <button class="profile-drop-rename profile-rename-save" title="Save">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 5.5l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>`;
+      const input = row.querySelector('.profile-rename-input');
+      input.focus();
+      input.select();
+      const save = () => {
+        const newName = input.value.trim();
+        if (!newName) return;
+        renameProfile(id, newName);
+        // If renaming the active profile, update the chip
+        if (id === activeId) {
+          const chip = document.getElementById('profile-chip');
+          if (chip) {
+            chip.querySelector('.profile-chip-avatar').textContent = newName.charAt(0).toUpperCase();
+            chip.querySelector('.profile-chip-name').textContent = newName;
+          }
+        }
+        drop.remove();
+      };
+      row.querySelector('.profile-rename-save').onclick = e => { e.stopPropagation(); save(); };
+      input.onkeydown = e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') drop.remove(); };
     };
   });
 
