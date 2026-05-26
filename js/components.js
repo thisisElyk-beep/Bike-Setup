@@ -90,7 +90,8 @@ export async function renderComponentsTab(bike) {
     list.innerHTML = `<p style="color:var(--danger);padding:1rem 2rem">Error: ${e.message}</p>`;
   }
 
-  document.getElementById('btn-add-component').onclick = () => showAddModal(bike);
+  document.getElementById('btn-add-component').onclick    = () => showAddModal(bike);
+  document.getElementById('btn-import-setup').onclick = () => showImportModal(bike);
 }
 
 function renderComponentList(container, components, bike) {
@@ -376,6 +377,99 @@ function updateLastServiceDate(row, comp) {
 function formatDate(dateStr) {
   if (!dateStr) return '';
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// ── IMPORT FROM SETUP ─────────────────────────────────────
+// Maps baseline keys to component categories
+const IMPORT_MAP = [
+  { key: 'frame',      category: 'Frame',          label: 'Frame' },
+  { key: 'fork',       category: 'Fork',           label: 'Fork' },
+  { key: 'shock',      category: 'Rear Shock',     label: 'Rear Shock' },
+  { key: 'handlebar',  category: 'Handlebar',      label: 'Handlebar' },
+  { key: 'stem',       category: 'Stem',           label: 'Stem' },
+  { key: 'brakes',     category: 'Brakes',         label: 'Brakes' },
+  { key: 'shifters',   category: 'Shifter',        label: 'Shifter' },
+  { key: 'drivetrain', category: 'Drivetrain',     label: 'Drivetrain' },
+  { key: 'dropper',    category: 'Dropper Post',   label: 'Dropper Post' },
+  { key: 'grips',      category: 'Grips / Tape',   label: 'Grips' },
+  { key: 'headset',    category: 'Headset',        label: 'Headset' },
+  { key: 'frontWheel', category: 'Wheels / Rims',  label: 'Front Wheel' },
+  { key: 'rearWheel',  category: 'Wheels / Rims',  label: 'Rear Wheel' },
+  { key: 'frontTire',  category: 'Front Tire',     label: 'Front Tire' },
+  { key: 'rearTire',   category: 'Rear Tire',      label: 'Rear Tire' },
+];
+
+function showImportModal(bike) {
+  const bl = bike.baseline || {};
+
+  // Build candidates — only baseline entries that have a brand
+  const candidates = IMPORT_MAP.filter(({ key }) => bl[key]?.brand);
+
+  if (candidates.length === 0) {
+    showToast('No component data found in Setup. Fill in brands in the Setup tab first.', 'info');
+    return;
+  }
+
+  const rows = candidates.map(({ key, category, label }) => {
+    const d = bl[key];
+    const name = [d.brand, d.model].filter(Boolean).join(' ');
+    return `
+      <label class="import-row">
+        <input type="checkbox" class="import-check" value="${key}" checked>
+        <div class="import-row-info">
+          <span class="import-row-cat">${escHtml(category)}</span>
+          <span class="import-row-name">${escHtml(name)}</span>
+        </div>
+      </label>`;
+  }).join('');
+
+  const body = `
+    <p style="font-size:.83rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.5">
+      Select which components to import. Each will appear in the Components tab with brand and model pre-filled.
+    </p>
+    <div class="import-list">${rows}</div>
+    <label class="import-select-all" style="margin-top:.75rem;display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--text-secondary);cursor:pointer">
+      <input type="checkbox" id="import-toggle-all" checked>
+      Select all
+    </label>`;
+
+  const footer = `
+    <button class="btn-secondary" id="modal-cancel">Cancel</button>
+    <button class="btn-primary"   id="modal-import">Import Selected</button>`;
+
+  openModal('Import from Setup', body, footer);
+
+  // Toggle all
+  document.getElementById('import-toggle-all').onchange = function() {
+    document.querySelectorAll('.import-check').forEach(cb => cb.checked = this.checked);
+  };
+
+  document.getElementById('modal-cancel').onclick = closeModal;
+  document.getElementById('modal-import').onclick = async () => {
+    const selected = [...document.querySelectorAll('.import-check:checked')].map(cb => cb.value);
+    if (selected.length === 0) { showToast('Nothing selected', 'error'); return; }
+
+    let imported = 0;
+    for (const key of selected) {
+      const { category } = IMPORT_MAP.find(m => m.key === key);
+      const d = bl[key];
+      try {
+        await createComponent(bike.id, {
+          category,
+          brand:  d.brand  || '',
+          model:  d.model  || '',
+          notes:  d.notes  || '',
+          installDate: null,
+          serviceLog: [],
+        });
+        imported++;
+      } catch(e) { /* skip failures silently */ }
+    }
+
+    showToast(`${imported} component${imported !== 1 ? 's' : ''} imported`, 'success');
+    closeModal();
+    renderComponentsTab(bike);
+  };
 }
 
 // ── ADD MODAL ─────────────────────────────────────────────
