@@ -84,6 +84,29 @@ export async function renderComponentsTab(bike) {
     } else {
       list.classList.remove('hidden');
       empty.classList.add('hidden');
+
+      // Service summary banner
+      const overdue = components.filter(c => getServiceStatus(c)?.status === 'overdue').length;
+      const soon    = components.filter(c => getServiceStatus(c)?.status === 'soon').length;
+      let banner = document.getElementById('svc-summary-banner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'svc-summary-banner';
+        list.parentElement.insertBefore(banner, list);
+      }
+      if (overdue || soon) {
+        const parts = [];
+        if (overdue) parts.push(`<span style="color:var(--danger);font-weight:600">${overdue} overdue</span>`);
+        if (soon)    parts.push(`<span style="color:var(--accent);font-weight:600">${soon} coming up</span>`);
+        banner.innerHTML = `
+          <div class="svc-summary-banner">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M7 4v3.5M7 9.5v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            ${parts.join(' · ')} for service
+          </div>`;
+      } else {
+        banner.innerHTML = '';
+      }
+
       renderComponentList(list, components, bike);
     }
   } catch (e) {
@@ -127,22 +150,73 @@ function renderComponentList(container, components, bike) {
   });
 }
 
+// ── SERVICE STATUS ────────────────────────────────────────
+function getServiceStatus(comp) {
+  const intervalMonths = comp.serviceIntervalMonths ? parseFloat(comp.serviceIntervalMonths) : null;
+  const intervalHours  = comp.serviceIntervalHours  ? parseFloat(comp.serviceIntervalHours)  : null;
+  if (!intervalMonths && !intervalHours) return null;
+
+  // Use most recent service log entry, fall back to install date
+  const log      = comp.serviceLog || [];
+  const lastDate = log[0]?.date || comp.installDate || null;
+  if (!lastDate) return { status: 'unknown', label: 'No service date' };
+
+  if (intervalMonths) {
+    const last    = new Date(lastDate + 'T00:00:00');
+    const due     = new Date(last);
+    due.setMonth(due.getMonth() + intervalMonths);
+    const today   = new Date();
+    today.setHours(0, 0, 0, 0);
+    const daysLeft = Math.round((due - today) / 86400000);
+    const totalDays = intervalMonths * 30.44;
+
+    if (daysLeft < 0) {
+      return { status: 'overdue', label: `Overdue ${Math.abs(daysLeft)}d`, dueDate: due };
+    } else if (daysLeft <= 30 || daysLeft <= totalDays * 0.2) {
+      return { status: 'soon', label: `Due ${formatDate(due.toISOString().slice(0,10))}`, dueDate: due };
+    }
+    return { status: 'ok', label: `Due ${formatDate(due.toISOString().slice(0,10))}`, dueDate: due };
+  }
+
+  // Hours only — can't calculate due date without ride hours tracking
+  // Show interval as reference only
+  return { status: 'ok', label: `Every ${intervalHours}h` };
+}
+
+function serviceStatusBadge(status) {
+  if (!status || status.status === 'ok') return '';
+  const color = status.status === 'overdue' ? 'var(--danger)' : 'var(--accent)';
+  return `<span class="svc-status-dot" style="background:${color}" title="${status.label}"></span>`;
+}
+
+// ── BUILD ROW ─────────────────────────────────────────────
 function buildRow(comp, bike) {
   const row = document.createElement('div');
   row.className = 'comp-row';
   row.dataset.id = comp.id;
 
-  const meta = CATEGORY_META[comp.category] || CATEGORY_META['Other'];
-  const installDate = comp.installDate
-    ? new Date(comp.installDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : null;
+  const meta      = CATEGORY_META[comp.category] || CATEGORY_META['Other'];
+  const svcStatus = getServiceStatus(comp);
+  if (svcStatus?.status === 'overdue') row.classList.add('comp-row-overdue');
+  if (svcStatus?.status === 'soon')    row.classList.add('comp-row-soon');
+
+  // Date column: show service info if due/overdue, else install date
+  let dateDisplay = '';
+  if (svcStatus && (svcStatus.status === 'overdue' || svcStatus.status === 'soon')) {
+    dateDisplay = `<span class="comp-row-date svc-${svcStatus.status}">${svcStatus.label}</span>`;
+  } else if (comp.installDate) {
+    dateDisplay = `<span class="comp-row-date">${formatDate(comp.installDate.slice(0,10))}</span>`;
+  } else {
+    dateDisplay = `<span class="comp-row-date"></span>`;
+  }
 
   row.innerHTML = `
     <div class="comp-row-summary">
       <span class="comp-row-icon">${meta.icon()}</span>
       <span class="comp-row-cat">${escHtml(comp.category || 'Other')}</span>
       <span class="comp-row-name">${escHtml([comp.brand, comp.model].filter(Boolean).join(' ') || '—')}</span>
-      ${installDate ? `<span class="comp-row-date">${installDate}</span>` : '<span class="comp-row-date"></span>'}
+      ${dateDisplay}
+      ${serviceStatusBadge(svcStatus)}
       <svg class="comp-row-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none">
         <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
@@ -159,9 +233,28 @@ function buildRow(comp, bike) {
             <input class="field-input comp-field-model" type="text" value="${escHtml(comp.model || '')}" placeholder="Model">
           </div>
         </div>
-        <div class="field-group">
-          <label class="field-label">Install Date</label>
-          <input class="field-input comp-field-date" type="date" value="${comp.installDate ? comp.installDate.slice(0,10) : ''}">
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Install Date</label>
+            <input class="field-input comp-field-date" type="date" value="${comp.installDate ? comp.installDate.slice(0,10) : ''}">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Service Interval
+              <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0;margin-left:.3rem">(months)</span>
+            </label>
+            <input class="field-input comp-field-interval-months" type="number" min="1" max="120"
+                   value="${comp.serviceIntervalMonths || ''}" placeholder="e.g. 6">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Service Interval
+              <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0;margin-left:.3rem">(hours)</span>
+            </label>
+            <input class="field-input comp-field-interval-hours" type="number" min="1" max="5000"
+                   value="${comp.serviceIntervalHours || ''}" placeholder="e.g. 200">
+          </div>
+          <div class="field-group"></div>
         </div>
         <div class="field-group">
           <label class="field-label">Notes</label>
@@ -245,18 +338,39 @@ function buildRow(comp, bike) {
   // Save inline
   row.querySelector('.btn-comp-save').onclick = async (e) => {
     e.stopPropagation();
-    const brand       = row.querySelector('.comp-field-brand').value.trim();
-    const model       = row.querySelector('.comp-field-model').value.trim();
-    const installDate = row.querySelector('.comp-field-date').value || null;
-    const notes       = row.querySelector('.comp-field-notes').value.trim();
+    const brand          = row.querySelector('.comp-field-brand').value.trim();
+    const model          = row.querySelector('.comp-field-model').value.trim();
+    const installDate    = row.querySelector('.comp-field-date').value || null;
+    const notes          = row.querySelector('.comp-field-notes').value.trim();
+    const intMonthsEl    = row.querySelector('.comp-field-interval-months');
+    const intHoursEl     = row.querySelector('.comp-field-interval-hours');
+    const intervalMonths = intMonthsEl?.value ? parseFloat(intMonthsEl.value) : null;
+    const intervalHours  = intHoursEl?.value  ? parseFloat(intHoursEl.value)  : null;
     try {
-      await updateComponent(bike.id, comp.id, { category: comp.category, brand, model, installDate, notes });
-      // Update local comp data and collapse
+      await updateComponent(bike.id, comp.id, {
+        category: comp.category, brand, model, installDate, notes,
+        serviceIntervalMonths: intervalMonths,
+        serviceIntervalHours:  intervalHours,
+      });
       comp.brand = brand; comp.model = model;
       comp.installDate = installDate; comp.notes = notes;
+      comp.serviceIntervalMonths = intervalMonths;
+      comp.serviceIntervalHours  = intervalHours;
+      // Refresh status display
       row.querySelector('.comp-row-name').textContent = [brand, model].filter(Boolean).join(' ') || '—';
-      if (installDate) {
-        row.querySelector('.comp-row-date').textContent = new Date(installDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const newStatus = getServiceStatus(comp);
+      row.classList.remove('comp-row-overdue','comp-row-soon');
+      if (newStatus?.status === 'overdue') row.classList.add('comp-row-overdue');
+      if (newStatus?.status === 'soon')    row.classList.add('comp-row-soon');
+      const dateEl = row.querySelector('.comp-row-date');
+      if (dateEl) {
+        if (newStatus && (newStatus.status === 'overdue' || newStatus.status === 'soon')) {
+          dateEl.textContent  = newStatus.label;
+          dateEl.className    = `comp-row-date svc-${newStatus.status}`;
+        } else if (installDate) {
+          dateEl.textContent  = formatDate(installDate.slice(0,10));
+          dateEl.className    = 'comp-row-date';
+        }
       }
       detail.classList.add('hidden');
       chevron.style.removeProperty('transform');
