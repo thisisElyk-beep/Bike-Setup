@@ -184,8 +184,8 @@ function svgMTBFS(hasMotor = false) {
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
 
-  ${mtbWheel(RW.x,RW.y,'rear-wheel')}
-  ${mtbWheel(FW.x,FW.y,'front-wheel')}
+  ${roadWheel(RW.x,RW.y,'rear-wheel',14)}
+  ${roadWheel(FW.x,FW.y,'front-wheel',14)}
 
   <!-- FRAME: main triangle + rear triangle -->
   <g id="g-frame" class="bike-zone" data-zone="frame">
@@ -305,8 +305,8 @@ function svgHardtail(isDJ = false) {
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
 
-  ${mtbWheel(RW.x,RW.y,'rear-wheel')}
-  ${mtbWheel(FW.x,FW.y,'front-wheel')}
+  ${isDJ ? roadWheel(RW.x,RW.y,'rear-wheel',12) : mtbWheel(RW.x,RW.y,'rear-wheel')}
+  ${isDJ ? roadWheel(FW.x,FW.y,'front-wheel',12) : mtbWheel(FW.x,FW.y,'front-wheel')}
 
   <!-- FRAME: rigid rear triangle + main triangle -->
   <g id="g-frame" class="bike-zone" data-zone="frame">
@@ -373,14 +373,15 @@ function svgHardtail(isDJ = false) {
 // HC(560,226) HT(548,188) ST(315,164) TT_JOIN(324,203)
 function svgGravel() {
   const RW={x:155,y:350}, FW={x:600,y:350}, BB={x:375,y:360};
-  const ST={x:315,y:164}, HT={x:548,y:188}, HC={x:560,y:226};
+  const ST={x:315,y:164}, HT={x:544,y:177}, HC={x:560,y:226};
+  const TT_TOP={x:548,y:188}; // TT meets head tube 12px below HT
   const TT_JOIN={x:324,y:203}; // 4.4° downward slope from HT // 30px below ST along seat tube
 
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
   const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
   const stUx=stDx/stLen, stUy=stDy/stLen;
-  const POST={x:299, y:111};
-  const SAD={x:POST.x+4, y:POST.y-1};
+  const POST={x:311, y:150};
+  const SAD={x:315, y:149};
   // SS: just below TT_JOIN (~12px down seat tube) for tight high rear triangle
   const SS={x:328, y:214};
 
@@ -393,13 +394,13 @@ function svgGravel() {
 
   // Drop bars — side-view profile
   // Stem: from HT going forward (right) and very slightly down
-  const StemTip={x:594,y:184};
+  const StemTip={x:590,y:173};
   // Bar top: extends rearward (left) from stem tip
-  const BarRear={x:566,y:179};
+  const BarRear={x:562,y:168};
   // Drop: bezier from BarRear down and slight curl forward at bottom
-  const DropBot={x:580,y:227};
+  const DropBot={x:576,y:216};
   // Hood body (brake hood area, near stem)
-  const HoodX=570, HoodY=177;
+  const HoodX=566, HoodY=166;
 
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
@@ -420,11 +421,11 @@ function svgGravel() {
     <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="8" stroke-linecap="round"/>
     <!-- Seat tube -->
     <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="7" stroke-linecap="round"/>
-    <!-- Top tube: 3.1° upward toward head tube (road/endurance style) -->
-    <line x1="${TT_JOIN.x}" y1="${TT_JOIN.y}" x2="${HT.x}" y2="${HT.y}" stroke-width="6" stroke-linecap="round"/>
-    <!-- Head tube -->
+    <!-- Top tube: connects to TT_TOP (stub above exposed above) -->
+    <line x1="${TT_JOIN.x}" y1="${TT_JOIN.y}" x2="${TT_TOP.x}" y2="${TT_TOP.y}" stroke-width="6" stroke-linecap="round"/>
+    <!-- Head tube: HT is top stub, TT_TOP is where top tube meets, HC is crown -->
     <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="12" stroke-linecap="round"/>
-    <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${HT.x},${HT.y} ${HC.x},${HC.y}" data-zone="frame"/>
+    <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${TT_TOP.x},${TT_TOP.y} ${HC.x},${HC.y}" data-zone="frame"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
   </g>
 
@@ -489,13 +490,14 @@ function svgGravel() {
 // Curved fork (road bikes still use raked forks)
 function svgRoad() {
   const RW={x:155,y:350}, FW={x:598,y:350}, BB={x:372,y:355};
-  const ST={x:318,y:178}, HT={x:556,y:214}, HC={x:567,y:250};
+  const ST={x:318,y:178}, HT={x:552,y:203}, HC={x:567,y:250};
+  const TT_TOP={x:556,y:214}; // TT meets head tube here, stub extends above
 
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
   const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
   const stUx=stDx/stLen, stUy=stDy/stLen;
-  const POST={x:Math.round(ST.x+stUx*52), y:Math.round(ST.y+stUy*52)};
-  const SAD={x:POST.x+4, y:POST.y-1};
+  const POST={x:314, y:164};
+  const SAD={x:318, y:163};
   // SS: just below TT_JOIN (~12px down seat tube) for high tight rear triangle
   const SS={x:331, y:238};
 
@@ -519,10 +521,10 @@ function svgRoad() {
     <!-- Down tube: thicker than top tube (road frame character) -->
     <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="10" stroke-linecap="round"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="6" stroke-linecap="round"/>
-    <!-- Top tube: 4.3° slope, dropping from HT toward seat tube -->
-    <line x1="327" y1="227" x2="${HT.x}" y2="${HT.y}" stroke-width="5.5" stroke-linecap="round"/>
+    <!-- Top tube: connects to TT_TOP, HT stub extends above -->
+    <line x1="327" y1="227" x2="${TT_TOP.x}" y2="${TT_TOP.y}" stroke-width="5.5" stroke-linecap="round"/>
     <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="11" stroke-linecap="round"/>
-    <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${HT.x},${HT.y} ${HC.x},${HC.y}" data-zone="frame"/>
+    <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${TT_TOP.x},${TT_TOP.y} ${HC.x},${HC.y}" data-zone="frame"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
   </g>
 
@@ -547,24 +549,24 @@ function svgRoad() {
   <!-- Drop bars — side-view profile (matching gravel style) -->
   <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
     <!-- Stem: forward from HT, nearly horizontal -->
-    <line x1="${HT.x}" y1="${HT.y}" x2="611" y2="210"
+    <line x1="${HT.x}" y1="${HT.y}" x2="607" y2="199"
           stroke-width="6.5" stroke-linecap="round"/>
     <!-- Stem faceplate -->
-    <rect x="606" y="201" width="8" height="16" rx="3"
+    <rect x="602" y="190" width="8" height="16" rx="3"
           fill="var(--bg-elevated)" stroke-width="3"/>
     <!-- Bar top section: extends rearward from stem tip -->
-    <line x1="611" y1="210" x2="581" y2="205"
+    <line x1="607" y1="199" x2="577" y2="194"
           stroke-width="6.5" stroke-linecap="round"/>
     <!-- Brake hood body -->
-    <path d="M 587 203 Q 579 211 583 221"
+    <path d="M 583 192 Q 575 200 579 210"
           fill="none" stroke-width="9" stroke-linecap="round" opacity="0.55"/>
     <!-- Drop: bezier from bar rear, curves down and slightly forward -->
-    <path d="M 581 205 C 575 223 585 241 595 257"
+    <path d="M 577 194 C 571 212 581 230 591 246"
           fill="none" stroke-width="6.5" stroke-linecap="round"/>
     <!-- Bottom curl: curves forward toward front of bike -->
-    <path d="M 595 257 Q 609 260 613 251"
+    <path d="M 591 246 Q 605 249 609 240"
           fill="none" stroke-width="6.5" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="565" y="190" width="106" height="116" rx="10" data-zone="handlebar"/>
+    <rect class="zone-overlay" x="561" y="180" width="106" height="112" rx="10" data-zone="handlebar"/>
   </g>
 
   <!-- Curved fork (road — raked) -->
