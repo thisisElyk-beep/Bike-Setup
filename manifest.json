@@ -2,7 +2,8 @@
   "name": "Dialed — Bike Setup",
   "short_name": "Dialed",
   "description": "Mountain bike setup tracker and tuning log",
-  "start_url": "/",
+  "start_url": "/Bike-Setup/",
+  "scope": "/Bike-Setup/",
   "display": "standalone",
   "background_color": "#0a0909",
   "theme_color": "#0a0909",
@@ -27,7 +28,7 @@
       "name": "Add Bike",
       "short_name": "Add",
       "description": "Add a new bike to your fleet",
-      "url": "/?action=add-bike"
+      "url": "/Bike-Setup/?action=add-bike"
     }
   ]
 }
