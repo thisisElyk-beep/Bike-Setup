@@ -8,7 +8,7 @@ import { renderQuickAdjustTab } from './quickadjust.js';
 import { renderRidesTab } from './rides.js';
 import { renderTestingTab } from './testing.js';
 import { renderPresetsTab } from './presets.js';
-import { exportBikePDF } from './export.js';
+import { exportBikePDF, copySetupSummary } from './export.js';
 
 // ── STATE ─────────────────────────────────────────────────
 let _bikes = [];
@@ -416,10 +416,11 @@ function showOnboarding(bike) {
       <div class="field-group"><label class="field-label">Model</label><input id="ob-fork-model" class="field-input" type="text" placeholder="e.g. 38 Factory"></div>
     </div>
     <div class="field-group">
-      <label class="field-label">Air Pressure (PSI)</label>
-      <div class="range-container">
-        <input type="range" id="ob-fork-psi" min="50" max="300" step="1" value="80" class="range-slider"/>
-        <span class="range-val"><span id="val-ob-fork-psi">80</span> psi</span>
+      <label class="field-label">Air Pressure <span class="field-unit">psi</span></label>
+      <div class="spinner-row">
+        <button type="button" class="spinner-btn spinner-minus" data-id="ob-fork-psi" data-step="1" data-min="20" data-max="350">−</button>
+        <input type="number" id="ob-fork-psi" class="field-input spinner-input" value="80" min="20" max="350" step="1">
+        <button type="button" class="spinner-btn spinner-plus" data-id="ob-fork-psi" data-step="1" data-min="20" data-max="350">+</button>
       </div>
     </div>
     ` : ''}
@@ -430,10 +431,11 @@ function showOnboarding(bike) {
       <div class="field-group"><label class="field-label">Model</label><input id="ob-shock-model" class="field-input" type="text" placeholder="e.g. Float X2"></div>
     </div>
     <div class="field-group">
-      <label class="field-label">Air Pressure (PSI)</label>
-      <div class="range-container">
-        <input type="range" id="ob-shock-psi" min="50" max="350" step="1" value="140" class="range-slider"/>
-        <span class="range-val"><span id="val-ob-shock-psi">140</span> psi</span>
+      <label class="field-label">Air Pressure <span class="field-unit">psi</span></label>
+      <div class="spinner-row">
+        <button type="button" class="spinner-btn spinner-minus" data-id="ob-shock-psi" data-step="1" data-min="20" data-max="350">−</button>
+        <input type="number" id="ob-shock-psi" class="field-input spinner-input" value="140" min="20" max="350" step="1">
+        <button type="button" class="spinner-btn spinner-plus" data-id="ob-shock-psi" data-step="1" data-min="20" data-max="350">+</button>
       </div>
     </div>
     ` : ''}
@@ -441,16 +443,18 @@ function showOnboarding(bike) {
     <div class="field-row">
       <div class="field-group">
         <label class="field-label">Front PSI</label>
-        <div class="range-container">
-          <input type="range" id="ob-ft-psi" min="10" max="60" step="0.5" value="25" class="range-slider"/>
-          <span class="range-val"><span id="val-ob-ft-psi">25</span> psi</span>
+        <div class="spinner-row">
+          <button type="button" class="spinner-btn spinner-minus" data-id="ob-ft-psi" data-step="0.5" data-min="10" data-max="160">−</button>
+          <input type="number" id="ob-ft-psi" class="field-input spinner-input" value="25" min="10" max="160" step="0.5">
+          <button type="button" class="spinner-btn spinner-plus" data-id="ob-ft-psi" data-step="0.5" data-min="10" data-max="160">+</button>
         </div>
       </div>
       <div class="field-group">
         <label class="field-label">Rear PSI</label>
-        <div class="range-container">
-          <input type="range" id="ob-rt-psi" min="10" max="60" step="0.5" value="27" class="range-slider"/>
-          <span class="range-val"><span id="val-ob-rt-psi">27</span> psi</span>
+        <div class="spinner-row">
+          <button type="button" class="spinner-btn spinner-minus" data-id="ob-rt-psi" data-step="0.5" data-min="10" data-max="160">−</button>
+          <input type="number" id="ob-rt-psi" class="field-input spinner-input" value="27" min="10" max="160" step="0.5">
+          <button type="button" class="spinner-btn spinner-plus" data-id="ob-rt-psi" data-step="0.5" data-min="10" data-max="160">+</button>
         </div>
       </div>
     </div>
@@ -463,10 +467,19 @@ function showOnboarding(bike) {
 
   openModal(`Quick Setup — ${bike.name}`, body, footer);
 
-  // Range live update
-  document.querySelectorAll('#modal-body input[type="range"]').forEach(r => {
-    const valEl = document.getElementById(`val-${r.id}`);
-    r.addEventListener('input', () => { if (valEl) valEl.textContent = r.value; });
+  // Bind onboarding spinner buttons
+  document.querySelectorAll('#modal-body .spinner-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.id);
+      if (!input) return;
+      const step = parseFloat(btn.dataset.step || 1);
+      const min  = parseFloat(btn.dataset.min ?? 0);
+      const max  = parseFloat(btn.dataset.max ?? 9999);
+      const cur  = parseFloat(input.value) || 0;
+      input.value = btn.classList.contains('spinner-minus')
+        ? Math.max(min, parseFloat((cur - step).toFixed(3)))
+        : Math.min(max, parseFloat((cur + step).toFixed(3)));
+    });
   });
 
   const finish = async (save) => {
