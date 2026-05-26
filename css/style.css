@@ -1987,3 +1987,17 @@ textarea.field-input {
   transition: background var(--transition), color var(--transition);
 }
 .profile-drop-new:hover { background: var(--bg-elevated); color: var(--accent); }
+
+/* Profile rename row */
+.profile-drop-row { display: flex; align-items: center; gap: .25rem; }
+.profile-drop-row .profile-drop-item { flex: 1; }
+.profile-drop-rename {
+  width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm); color: var(--text-muted);
+  background: none; border: none; cursor: pointer;
+  opacity: 0; transition: opacity var(--transition), color var(--transition);
+}
+.profile-drop-row:hover .profile-drop-rename { opacity: 1; }
+.profile-drop-rename:hover { color: var(--text-primary); background: var(--bg-elevated); }
+.profile-rename-input { flex: 1; }
