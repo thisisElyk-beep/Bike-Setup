@@ -761,10 +761,14 @@ const COCKPIT_META = {
 };
 
 export function createCockpitFrontView(bike) {
+  const isDropBar = ['gravel','road'].includes(bike.type);
+  return isDropBar ? cockpitDropBars() : cockpitFlatBars();
+}
+
+function cockpitFlatBars() {
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
 
-  <!-- ── BARS (both middle sections of bar tube) ── -->
   <g id="g-cockpit-bars" class="bike-zone" data-zone="cockpit-bars">
     <line x1="208" y1="248" x2="366" y2="248" stroke-width="8" stroke-linecap="round"/>
     <line x1="434" y1="248" x2="592" y2="248" stroke-width="8" stroke-linecap="round"/>
@@ -772,7 +776,6 @@ export function createCockpitFrontView(bike) {
     <rect class="zone-overlay" x="434" y="236" width="158" height="28" rx="4" data-zone="cockpit-bars"/>
   </g>
 
-  <!-- ── GRIPS (both ends) ── -->
   <g id="g-cockpit-grips" class="bike-zone" data-zone="cockpit-grips">
     <line x1="78" y1="248" x2="210" y2="248" stroke-width="22" stroke-linecap="round" opacity="0.75"/>
     <path d="M 78 248 Q 70 248 68 256" fill="none" stroke-width="20" stroke-linecap="round" opacity="0.75"/>
@@ -792,16 +795,13 @@ export function createCockpitFrontView(bike) {
     <rect class="zone-overlay" x="582" y="228" width="158" height="40" rx="8" data-zone="cockpit-grips"/>
   </g>
 
-  <!-- ── BRAKES + SHIFTERS (both sides) ── -->
   <g id="g-cockpit-brakes" class="bike-zone" data-zone="cockpit-brakes">
-    <!-- Left: reservoir, lever blade, shifter pod -->
     <rect x="202" y="230" width="48" height="20" rx="5" fill="none" stroke-width="2.5"/>
     <line x1="202" y1="247" x2="250" y2="247" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
     <path d="M 226 248 C 220 278 214 312 221 346" fill="none" stroke-width="6" stroke-linecap="round"/>
     <line x1="215" y1="338" x2="228" y2="352" stroke-width="5" stroke-linecap="round"/>
     <rect x="260" y="230" width="54" height="20" rx="4" fill="none" stroke-width="2.5"/>
     <line x1="280" y1="248" x2="280" y2="264" stroke-width="2.5" stroke-linecap="round" opacity="0.55"/>
-    <!-- Right: mirror -->
     <rect x="550" y="230" width="48" height="20" rx="5" fill="none" stroke-width="2.5"/>
     <line x1="550" y1="247" x2="598" y2="247" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
     <path d="M 574 248 C 580 278 586 312 579 346" fill="none" stroke-width="6" stroke-linecap="round"/>
@@ -812,18 +812,15 @@ export function createCockpitFrontView(bike) {
     <rect class="zone-overlay" x="474" y="220" width="132" height="148" rx="8" data-zone="cockpit-brakes"/>
   </g>
 
-  <!-- ── STEM ── -->
   <g id="g-cockpit-stem" class="bike-zone" data-zone="cockpit-stem">
     <rect x="378" y="170" width="44" height="18" rx="5" fill="none" stroke-width="3.5"/>
-    <path d="M 385 188 L 368 218 L 432 218 L 415 188 Z"
-          fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 385 188 L 368 218 L 432 218 L 415 188 Z" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
     <rect x="360" y="216" width="80" height="14" rx="4" fill="none" stroke-width="4"/>
     <circle cx="376" cy="223" r="3.5" fill="none" stroke-width="2"/>
     <circle cx="424" cy="223" r="3.5" fill="none" stroke-width="2"/>
     <rect class="zone-overlay" x="352" y="162" width="96" height="82" rx="10" data-zone="cockpit-stem"/>
   </g>
 
-  <!-- ── STACK / HEADSET ── -->
   <g id="g-cockpit-stack" class="bike-zone" data-zone="cockpit-stack">
     <line x1="400" y1="44" x2="400" y2="168" stroke-width="5" stroke-linecap="round"/>
     <rect x="385" y="116" width="30" height="10" rx="2.5" fill="none" stroke-width="2.5"/>
@@ -832,7 +829,74 @@ export function createCockpitFrontView(bike) {
     <line x1="380" y1="114" x2="420" y2="114" stroke-width="5" stroke-linecap="round"/>
     <rect class="zone-overlay" x="378" y="38" width="44" height="132" rx="8" data-zone="cockpit-stack"/>
   </g>
+</svg>`;
+}
 
+// Drop bars front view (Gravel / Road)
+// Layout: steerer top center → stem → flat bar sections L+R → drops curving down
+function cockpitDropBars() {
+  return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
+  class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
+
+  <!-- Flat top sections of the bar (either side of stem) -->
+  <g id="g-cockpit-bars" class="bike-zone" data-zone="cockpit-bars">
+    <line x1="178" y1="232" x2="368" y2="232" stroke-width="7" stroke-linecap="round"/>
+    <line x1="432" y1="232" x2="622" y2="232" stroke-width="7" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="178" y="220" width="190" height="26" rx="4" data-zone="cockpit-bars"/>
+    <rect class="zone-overlay" x="432" y="220" width="190" height="26" rx="4" data-zone="cockpit-bars"/>
+  </g>
+
+  <!-- Bottom of drops — hands in drop position -->
+  <g id="g-cockpit-grips" class="bike-zone" data-zone="cockpit-grips">
+    <!-- Left drop bottom curl -->
+    <path d="M 156 336 Q 166 358 188 362 Q 204 365 216 358"
+          fill="none" stroke-width="7" stroke-linecap="round"/>
+    <!-- Right drop bottom curl -->
+    <path d="M 644 336 Q 634 358 612 362 Q 596 365 584 358"
+          fill="none" stroke-width="7" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="148" y="318" width="88" height="62" rx="10" data-zone="cockpit-grips"/>
+    <rect class="zone-overlay" x="564" y="318" width="88" height="62" rx="10" data-zone="cockpit-grips"/>
+  </g>
+
+  <!-- Brake hoods + lever blades + drop curves -->
+  <g id="g-cockpit-brakes" class="bike-zone" data-zone="cockpit-brakes">
+    <!-- Left hood silhouette -->
+    <path d="M 230 232 Q 218 226 212 236 Q 206 248 214 258 Q 222 266 236 264 L 248 260 Q 258 254 258 244 Q 258 232 248 228 Z"
+          fill="none" stroke-width="2.8"/>
+    <!-- Left drop curve -->
+    <path d="M 178 232 C 170 272 158 304 156 336" fill="none" stroke-width="7" stroke-linecap="round"/>
+    <!-- Left lever blade (hangs down from inside of drop) -->
+    <path d="M 226 258 C 228 284 224 314 218 342" fill="none" stroke-width="5.5" stroke-linecap="round"/>
+    <!-- Right hood silhouette (mirrored) -->
+    <path d="M 570 232 Q 582 226 588 236 Q 594 248 586 258 Q 578 266 564 264 L 552 260 Q 542 254 542 244 Q 542 232 552 228 Z"
+          fill="none" stroke-width="2.8"/>
+    <!-- Right drop curve -->
+    <path d="M 622 232 C 630 272 642 304 644 336" fill="none" stroke-width="7" stroke-linecap="round"/>
+    <!-- Right lever blade -->
+    <path d="M 574 258 C 572 284 576 314 582 342" fill="none" stroke-width="5.5" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="148" y="218" width="128" height="134" rx="10" data-zone="cockpit-brakes"/>
+    <rect class="zone-overlay" x="524" y="218" width="128" height="134" rx="10" data-zone="cockpit-brakes"/>
+  </g>
+
+  <!-- Stem + faceplate -->
+  <g id="g-cockpit-stem" class="bike-zone" data-zone="cockpit-stem">
+    <rect x="378" y="168" width="44" height="18" rx="5" fill="none" stroke-width="3.5"/>
+    <path d="M 384 186 L 366 216 L 434 216 L 416 186 Z" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="358" y="214" width="84" height="14" rx="4" fill="none" stroke-width="4"/>
+    <circle cx="374" cy="221" r="3.5" fill="none" stroke-width="2"/>
+    <circle cx="426" cy="221" r="3.5" fill="none" stroke-width="2"/>
+    <rect class="zone-overlay" x="350" y="160" width="100" height="82" rx="10" data-zone="cockpit-stem"/>
+  </g>
+
+  <!-- Stack + spacers + headset -->
+  <g id="g-cockpit-stack" class="bike-zone" data-zone="cockpit-stack">
+    <line x1="400" y1="44" x2="400" y2="166" stroke-width="5" stroke-linecap="round"/>
+    <rect x="385" y="114" width="30" height="10" rx="2.5" fill="none" stroke-width="2.5"/>
+    <rect x="385" y="128" width="30" height="10" rx="2.5" fill="none" stroke-width="2.5"/>
+    <rect x="385" y="142" width="30" height="10" rx="2.5" fill="none" stroke-width="2.5"/>
+    <line x1="380" y1="112" x2="420" y2="112" stroke-width="5" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="378" y="38" width="44" height="130" rx="8" data-zone="cockpit-stack"/>
+  </g>
 </svg>`;
 }
 
