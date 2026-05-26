@@ -266,13 +266,17 @@ function svgMTBFS(hasMotor = false) {
 // Verified: HC(583,207) HT(561,160) ST(333,183) HA=65.5° TT=5.6°↑
 function svgHardtail(isDJ = false) {
   // DJ: PBJ-inspired geometry — HA=69.6°, SA actual=68.3°, short seat tube
+  // SS=TT_JOIN=(338,273) lies on both the seat tube AND the RW→HT line,
+  // so seatstay and top tube share the same 23.3° angle — continuous visual line
   const RW = isDJ ? {x:160,y:350} : {x:148,y:350};
   const FW = isDJ ? {x:620,y:350} : {x:648,y:350};
   const BB = isDJ ? {x:374,y:362} : {x:378,y:365};
-  const ST = isDJ ? {x:337,y:269} : {x:333,y:183};
+  const ST = isDJ ? {x:331,y:255} : {x:333,y:183};
   const HT = isDJ ? {x:556,y:179} : {x:561,y:160};
   const HC = isDJ ? {x:572,y:221} : {x:583,y:207};
-  const TT_JOIN = isDJ ? {x:348,y:297} : {x:340,y:212};
+  const TT_JOIN = isDJ ? {x:338,y:273} : {x:340,y:212};
+  // For DJ: seatstay meets seat tube at TT_JOIN (same point), giving continuous line
+  const DJ_SS = {x:338, y:273};
 
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
   const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
@@ -309,14 +313,15 @@ function svgHardtail(isDJ = false) {
           fill="none" stroke-width="6.5" stroke-linecap="round"/>
     <path d="M ${BB.x-3} ${BB.y+9} C ${BB.x-58} ${BB.y+9} ${RW.x+88} ${RW.y+9} ${RW.x} ${RW.y}"
           fill="none" stroke-width="3" stroke-linecap="round" opacity="0.34"/>
-    <line x1="${RW.x}"   y1="${RW.y}" x2="${SS.x}" y2="${SS.y}" stroke-width="5" stroke-linecap="round"/>
-    <line x1="${RW.x+9}" y1="${RW.y}" x2="${SS.x+8}" y2="${SS.y}" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
+    <!-- Seatstay: for DJ meets at TT_JOIN (collinear with top tube) -->
+    <line x1="${RW.x}"   y1="${RW.y}" x2="${isDJ?DJ_SS.x:SS.x}" y2="${isDJ?DJ_SS.y:SS.y}" stroke-width="5" stroke-linecap="round"/>
+    <line x1="${RW.x+9}" y1="${RW.y}" x2="${isDJ?DJ_SS.x+8:SS.x+8}" y2="${isDJ?DJ_SS.y:SS.y}" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="11" stroke-linecap="round"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="7.5" stroke-linecap="round"/>
     <line x1="${TT_JOIN.x}" y1="${TT_JOIN.y}" x2="${HT.x}" y2="${HT.y}" stroke-width="6.5" stroke-linecap="round"/>
     <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="15" stroke-linecap="round"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${HT.x},${HT.y} ${HC.x},${HC.y}" data-zone="frame"/>
-    <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
+    <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${isDJ?DJ_SS.x:SS.x},${isDJ?DJ_SS.y:SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
   </g>
 
   <!-- DRIVETRAIN -->
