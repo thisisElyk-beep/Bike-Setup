@@ -1,18 +1,21 @@
-const CACHE_NAME = 'dialed-v1';
+const CACHE_NAME = 'dialed-v2';
+const BASE = '/Bike-Setup';
 const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/app.js',
-  '/js/config.js',
-  '/js/db.js',
-  '/js/silhouette.js',
-  '/js/setup.js',
-  '/js/components.js',
-  '/js/testing.js',
-  '/js/presets.js',
-  '/js/export.js',
-  '/manifest.json',
+  `${BASE}/`,
+  `${BASE}/index.html`,
+  `${BASE}/css/style.css`,
+  `${BASE}/js/app.js`,
+  `${BASE}/js/config.js`,
+  `${BASE}/js/db.js`,
+  `${BASE}/js/silhouette.js`,
+  `${BASE}/js/setup.js`,
+  `${BASE}/js/components.js`,
+  `${BASE}/js/quickadjust.js`,
+  `${BASE}/js/rides.js`,
+  `${BASE}/js/testing.js`,
+  `${BASE}/js/presets.js`,
+  `${BASE}/js/export.js`,
+  `${BASE}/manifest.json`,
   'https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap'
 ];
 
@@ -33,7 +36,6 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Firebase and font requests: network first
   if (event.request.url.includes('firestore') ||
       event.request.url.includes('googleapis') ||
       event.request.url.includes('gstatic')) {
@@ -43,7 +45,6 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // App shell: cache first
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
