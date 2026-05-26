@@ -167,7 +167,26 @@ svg { display: block; flex-shrink: 0; }
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 200px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color var(--transition), background var(--transition);
 }
+.bike-name-header:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+.bike-name-header .rename-icon {
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity var(--transition);
+}
+.bike-name-header:hover .rename-icon { opacity: 1; }
 
 /* ─── MAIN ─────────────────────────────────────────── */
 #main-content {
