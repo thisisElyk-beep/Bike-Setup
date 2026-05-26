@@ -532,10 +532,14 @@ function svgRoad() {
     ${drivetrain(BB,RW,34)}
     <!-- Road: 2x chainrings -->
     <circle cx="${BB.x}" cy="${BB.y}" r="24" fill="none" stroke-width="4" opacity="0.5"/>
-    <!-- Road cassette: smaller, tighter range -->
-    <circle cx="${RW.x}" cy="${RW.y}" r="20" fill="none" stroke-width="4"/>
-    <circle cx="${RW.x}" cy="${RW.y}" r="15" fill="none" stroke-width="3" opacity="0.5"/>
-    <circle cx="${RW.x}" cy="${RW.y}" r="10" fill="none" stroke-width="2" opacity="0.28"/>
+    <!-- Road cassette: tight cog cluster (7 rings, small to large) -->
+    <circle cx="${RW.x}" cy="${RW.y}" r="24" fill="none" stroke-width="3.5"/>
+    <circle cx="${RW.x}" cy="${RW.y}" r="21" fill="none" stroke-width="2.5" opacity="0.75"/>
+    <circle cx="${RW.x}" cy="${RW.y}" r="18" fill="none" stroke-width="2" opacity="0.6"/>
+    <circle cx="${RW.x}" cy="${RW.y}" r="15.5" fill="none" stroke-width="2" opacity="0.5"/>
+    <circle cx="${RW.x}" cy="${RW.y}" r="13" fill="none" stroke-width="1.8" opacity="0.4"/>
+    <circle cx="${RW.x}" cy="${RW.y}" r="11" fill="none" stroke-width="1.5" opacity="0.32"/>
+    <circle cx="${RW.x}" cy="${RW.y}" r="9" fill="none" stroke-width="2.5" opacity="0.55"/>
     <circle class="zone-overlay" cx="${BB.x}" cy="${BB.y}" r="52" data-zone="drivetrain"/>
   </g>
 
