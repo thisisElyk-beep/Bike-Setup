@@ -61,6 +61,16 @@ function buildPresetCard(preset, bike) {
     confirmLoadPreset(preset, bike);
   });
 
+  card.querySelector('.btn-apply-preset')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (!confirm(`Apply "${preset.name}" to your current baseline? This will overwrite your existing setup.`)) return;
+    try {
+      await updateBike(bike.id, { baseline: preset.data });
+      bike.baseline = preset.data;
+      showToast(`"${preset.name}" applied to baseline`, 'success');
+    } catch(err) { showToast('Failed to apply preset', 'error'); }
+  });
+
   card.querySelector('.btn-delete-preset').onclick = (e) => {
     e.stopPropagation();
     confirmDeletePreset(preset, bike);
