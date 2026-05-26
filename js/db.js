@@ -9,6 +9,43 @@ import { firebaseConfig } from './config.js';
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
+// ── Profile-aware path helpers ────────────────────────────
+// "default" profile uses root /bikes/ (existing data, no migration)
+// Other profiles use /profiles/{id}/bikes/
+let _activeProfileId = 'default';
+
+export function setActiveProfile(profileId) {
+  _activeProfileId = profileId || 'default';
+}
+
+export function getActiveProfileId() {
+  return _activeProfileId;
+}
+
+function bikesCol() {
+  return _activeProfileId === 'default'
+    ? collection(db, 'bikes')
+    : collection(db, 'profiles', _activeProfileId, 'bikes');
+}
+
+function bikeDoc(bikeId) {
+  return _activeProfileId === 'default'
+    ? doc(db, 'bikes', bikeId)
+    : doc(db, 'profiles', _activeProfileId, 'bikes', bikeId);
+}
+
+function subCol(bikeId, sub) {
+  return _activeProfileId === 'default'
+    ? collection(db, 'bikes', bikeId, sub)
+    : collection(db, 'profiles', _activeProfileId, 'bikes', bikeId, sub);
+}
+
+function subDoc(bikeId, sub, subId) {
+  return _activeProfileId === 'default'
+    ? doc(db, 'bikes', bikeId, sub, subId)
+    : doc(db, 'profiles', _activeProfileId, 'bikes', bikeId, sub, subId);
+}
+
 // ── Helpers ──────────────────────────────────────────────
 function clean(data) {
   // Remove undefined values before writing to Firestore
@@ -25,12 +62,12 @@ function colData(snap) {
 
 // ── BIKES ─────────────────────────────────────────────────
 export async function getBikes() {
-  const snap = await getDocs(query(collection(db, 'bikes'), orderBy('createdAt', 'asc')));
+  const snap = await getDocs(query(bikesCol(), orderBy('createdAt', 'asc')));
   return colData(snap);
 }
 
 export async function createBike(data) {
-  const ref = await addDoc(collection(db, 'bikes'), clean({
+  const ref = await addDoc(bikesCol(), clean({
     ...data,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
@@ -39,7 +76,7 @@ export async function createBike(data) {
 }
 
 export async function updateBike(bikeId, data) {
-  await updateDoc(doc(db, 'bikes', bikeId), clean({
+  await updateDoc(bikeDoc(bikeId), clean({
     ...data,
     updatedAt: serverTimestamp()
   }));
@@ -50,19 +87,19 @@ export async function deleteBike(bikeId) {
   await deleteCollection(db, `bikes/${bikeId}/components`);
   await deleteCollection(db, `bikes/${bikeId}/presets`);
   await deleteCollection(db, `bikes/${bikeId}/testSessions`);
-  await deleteDoc(doc(db, 'bikes', bikeId));
+  await deleteDoc(bikeDoc(bikeId));
 }
 
 // ── COMPONENTS ────────────────────────────────────────────
 export async function getComponents(bikeId) {
   const snap = await getDocs(
-    query(collection(db, 'bikes', bikeId, 'components'), orderBy('category', 'asc'))
+    query(subCol(bikeId, 'components'), orderBy('category', 'asc'))
   );
   return colData(snap);
 }
 
 export async function createComponent(bikeId, data) {
-  const ref = await addDoc(collection(db, 'bikes', bikeId, 'components'), clean({
+  const ref = await addDoc(subCol(bikeId, 'components'), clean({
     ...data,
     createdAt: serverTimestamp()
   }));
@@ -70,46 +107,46 @@ export async function createComponent(bikeId, data) {
 }
 
 export async function updateComponent(bikeId, componentId, data) {
-  await updateDoc(doc(db, 'bikes', bikeId, 'components', componentId), clean(data));
+  await updateDoc(subDoc(bikeId, 'components', componentId), clean(data));
 }
 
 export async function deleteComponent(bikeId, componentId) {
-  await deleteDoc(doc(db, 'bikes', bikeId, 'components', componentId));
+  await deleteDoc(subDoc(bikeId, 'components', componentId));
 }
 
 // ── RIDES ─────────────────────────────────────────────────
 export async function getRides(bikeId) {
   const snap = await getDocs(
-    query(collection(db, 'bikes', bikeId, 'rides'), orderBy('date', 'desc'))
+    query(subCol(bikeId, 'rides'), orderBy('date', 'desc'))
   );
   return colData(snap);
 }
 
 export async function createRide(bikeId, data) {
-  const ref = await addDoc(collection(db, 'bikes', bikeId, 'rides'), clean({
+  const ref = await addDoc(subCol(bikeId, 'rides'), clean({
     ...data, createdAt: serverTimestamp()
   }));
   return ref.id;
 }
 
 export async function updateRide(bikeId, rideId, data) {
-  await updateDoc(doc(db, 'bikes', bikeId, 'rides', rideId), clean(data));
+  await updateDoc(subDoc(bikeId, 'rides', rideId), clean(data));
 }
 
 export async function deleteRide(bikeId, rideId) {
-  await deleteDoc(doc(db, 'bikes', bikeId, 'rides', rideId));
+  await deleteDoc(subDoc(bikeId, 'rides', rideId));
 }
 
 // ── PRESETS ───────────────────────────────────────────────
 export async function getPresets(bikeId) {
   const snap = await getDocs(
-    query(collection(db, 'bikes', bikeId, 'presets'), orderBy('createdAt', 'desc'))
+    query(subCol(bikeId, 'presets'), orderBy('createdAt', 'desc'))
   );
   return colData(snap);
 }
 
 export async function createPreset(bikeId, data) {
-  const ref = await addDoc(collection(db, 'bikes', bikeId, 'presets'), clean({
+  const ref = await addDoc(subCol(bikeId, 'presets'), clean({
     ...data,
     createdAt: serverTimestamp()
   }));
@@ -117,11 +154,11 @@ export async function createPreset(bikeId, data) {
 }
 
 export async function updatePreset(bikeId, presetId, data) {
-  await updateDoc(doc(db, 'bikes', bikeId, 'presets', presetId), clean(data));
+  await updateDoc(subDoc(bikeId, 'presets', presetId), clean(data));
 }
 
 export async function deletePreset(bikeId, presetId) {
-  await deleteDoc(doc(db, 'bikes', bikeId, 'presets', presetId));
+  await deleteDoc(subDoc(bikeId, 'presets', presetId));
 }
 
 // ── TEST SESSIONS ─────────────────────────────────────────
