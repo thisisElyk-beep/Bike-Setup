@@ -1,4 +1,5 @@
 import { getBikes, createBike, updateBike, deleteBike } from './db.js';
+import { initProfile, showProfilePicker, renderProfileChip } from './profiles.js';
 import { getPresets } from './db.js';
 import { createSilhouette, createMiniSilhouette, setupZoneInteraction, resetZoom, createCockpitFrontView, setupCockpitInteraction } from './silhouette.js';
 import { renderZoneSettings, renderSettingsPlaceholder, renderCockpitSubZone } from './setup.js';
@@ -25,8 +26,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   bindHeader();
   bindTabs();
   bindModal();
-  await loadFleet();
-  showView('bikes');
+
+  const activeProfileId = initProfile();
+  if (!activeProfileId) {
+    // No profile selected yet — show picker before loading fleet
+    showProfilePicker(profileId => {
+      renderProfileChip(profileId, newProfileId => {
+        showView('bikes');
+        loadFleet();
+      });
+      showView('bikes');
+      loadFleet();
+    });
+  } else {
+    renderProfileChip(activeProfileId, newProfileId => {
+      showView('bikes');
+      loadFleet();
+    });
+    await loadFleet();
+    showView('bikes');
+  }
 });
 
 async function loadFleet() {
