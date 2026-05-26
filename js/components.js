@@ -399,7 +399,7 @@ const IMPORT_MAP = [
   { key: 'rearTire',   category: 'Rear Tire',      label: 'Rear Tire' },
 ];
 
-function showImportModal(bike) {
+async function showImportModal(bike) {
   const bl = bike.baseline || {};
 
   // Build candidates — only baseline entries that have a brand
@@ -410,15 +410,21 @@ function showImportModal(bike) {
     return;
   }
 
+  // Fetch existing to flag duplicates
+  let existing = [];
+  try { existing = await getComponents(bike.id); } catch(e) {}
+  const existingCategories = new Set(existing.map(c => c.category));
+
   const rows = candidates.map(({ key, category, label }) => {
     const d = bl[key];
     const name = [d.brand, d.model].filter(Boolean).join(' ');
+    const isDupe = existingCategories.has(category);
     return `
-      <label class="import-row">
-        <input type="checkbox" class="import-check" value="${key}" checked>
+      <label class="import-row${isDupe ? ' import-row-dupe' : ''}">
+        <input type="checkbox" class="import-check" value="${key}" ${isDupe ? '' : 'checked'} ${isDupe ? 'disabled' : ''}>
         <div class="import-row-info">
           <span class="import-row-cat">${escHtml(category)}</span>
-          <span class="import-row-name">${escHtml(name)}</span>
+          <span class="import-row-name">${escHtml(name)}${isDupe ? '<span class="import-dupe-tag">already exists</span>' : ''}</span>
         </div>
       </label>`;
   }).join('');
@@ -449,10 +455,21 @@ function showImportModal(bike) {
     const selected = [...document.querySelectorAll('.import-check:checked')].map(cb => cb.value);
     if (selected.length === 0) { showToast('Nothing selected', 'error'); return; }
 
-    let imported = 0;
+    // Fetch existing components to check for duplicates
+    let existing = [];
+    try { existing = await getComponents(bike.id); } catch(e) {}
+    const existingCategories = new Set(existing.map(c => c.category));
+
+    let imported = 0, skipped = 0;
     for (const key of selected) {
       const { category } = IMPORT_MAP.find(m => m.key === key);
       const d = bl[key];
+
+      if (existingCategories.has(category)) {
+        skipped++;
+        continue;
+      }
+
       try {
         await createComponent(bike.id, {
           category,
@@ -462,11 +479,15 @@ function showImportModal(bike) {
           installDate: null,
           serviceLog: [],
         });
+        existingCategories.add(category); // prevent double-import if two keys map to same category
         imported++;
-      } catch(e) { /* skip failures silently */ }
+      } catch(e) {}
     }
 
-    showToast(`${imported} component${imported !== 1 ? 's' : ''} imported`, 'success');
+    const msg = skipped > 0
+      ? `${imported} imported, ${skipped} skipped (already exist)`
+      : `${imported} component${imported !== 1 ? 's' : ''} imported`;
+    showToast(msg, skipped > 0 && imported === 0 ? 'info' : 'success');
     closeModal();
     renderComponentsTab(bike);
   };
