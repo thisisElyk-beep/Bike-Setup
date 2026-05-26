@@ -48,9 +48,20 @@ export function renderZoneSettings(zoneId, bike, container, onSaved) {
   `;
   container.parentElement.appendChild(saveBar);
 
-  container.querySelectorAll('input[type="range"]').forEach(r => {
-    const valEl = container.querySelector(`#val-${r.id}`);
-    r.addEventListener('input', () => { if (valEl) valEl.textContent = r.value; });
+  // Bind spinner −/+ buttons
+  container.querySelectorAll('.spinner-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = container.querySelector(`#${btn.dataset.id}`);
+      if (!input) return;
+      const step = parseFloat(btn.dataset.step || 1);
+      const min  = parseFloat(btn.dataset.min ?? -Infinity);
+      const max  = parseFloat(btn.dataset.max ?? Infinity);
+      const cur  = parseFloat(input.value) || 0;
+      const next = btn.classList.contains('spinner-minus')
+        ? Math.max(min, parseFloat((cur - step).toFixed(3)))
+        : Math.min(max, parseFloat((cur + step).toFixed(3)));
+      input.value = next;
+    });
   });
 
   container.querySelectorAll('input[name$="-type"]').forEach(t => {
@@ -114,13 +125,7 @@ function tireForm(key, tireData = {}, wheelData = {}, bikeType = 'mtb') {
       ${field('Compound', `${key}-compound`, tireData.compound, isDropBar(bikeType) ? 'e.g. Clincher, Tubeless' : 'e.g. 3C MaxxTerra')}
     </div>
     <div class="settings-section-divider">Pressure</div>
-    <div class="field-group">
-      <label class="field-label">Pressure (PSI)</label>
-      <div class="range-container">
-        <input type="range" id="${key}-psi" min="10" max="60" step="0.5" value="${tireData.psi ?? 25}" class="range-slider"/>
-        <span class="range-val"><span id="val-${key}-psi">${tireData.psi ?? 25}</span> psi</span>
-      </div>
-    </div>
+    ${spinner('Pressure', `${key}-psi`, tireData.psi ?? 25, 0.5, 10, isDropBar(bikeType) ? 160 : 65, 'psi')}
     <div class="field-row">
       ${field('Casing', `${key}-casing`, tireData.casing, isDropBar(bikeType) ? 'e.g. Folding, Wire' : 'e.g. EXO+, DD')}
       ${showInserts ? field('Inserts', `${key}-inserts`, tireData.inserts, 'e.g. Cushcore, none') : ''}
@@ -157,13 +162,7 @@ function suspensionForm(key, label, data = {}, isShock = false) {
       </div>
     </div>
     <div id="${key}-air-fields" ${isCoil ? 'style="display:none"' : ''}>
-      <div class="field-group">
-        <label class="field-label">Air Pressure (PSI)</label>
-        <div class="range-container">
-          <input type="range" id="${key}-psi" min="50" max="300" step="1" value="${data.psi ?? (isShock ? 140 : 90)}" class="range-slider"/>
-          <span class="range-val"><span id="val-${key}-psi">${data.psi ?? (isShock ? 140 : 90)}</span> psi</span>
-        </div>
-      </div>
+      ${spinner('Air Pressure', `${key}-psi`, data.psi ?? (isShock ? 140 : 90), 1, 20, 350, 'psi')}
       <div class="field-row">
         ${field('Volume Spacers / Tokens', `${key}-tokens`, data.tokens, 'e.g. 2', 'number')}
         ${field('Spacer Size', `${key}-spacerSize`, data.spacerSize, 'e.g. 10ml, large')}
@@ -176,35 +175,11 @@ function suspensionForm(key, label, data = {}, isShock = false) {
       </div>
     </div>
     <div class="settings-section-divider">Damper — Rebound</div>
-    <div class="field-group">
-      <label class="field-label">Low Speed Rebound (clicks from closed)</label>
-      <div class="range-container">
-        <input type="range" id="${key}-lsr" min="0" max="30" step="1" value="${data.lsr ?? 10}" class="range-slider"/>
-        <span class="range-val"><span id="val-${key}-lsr">${data.lsr ?? 10}</span></span>
-      </div>
-    </div>
-    <div class="field-group">
-      <label class="field-label">High Speed Rebound (clicks from closed)</label>
-      <div class="range-container">
-        <input type="range" id="${key}-hsr" min="0" max="20" step="1" value="${data.hsr ?? 5}" class="range-slider"/>
-        <span class="range-val"><span id="val-${key}-hsr">${data.hsr ?? 5}</span></span>
-      </div>
-    </div>
+    ${spinner('Low Speed Rebound', `${key}-lsr`, data.lsr ?? 10, 1, 0, 40, 'clicks')}
+    ${spinner('High Speed Rebound', `${key}-hsr`, data.hsr ?? 5, 1, 0, 40, 'clicks')}
     <div class="settings-section-divider">Damper — Compression</div>
-    <div class="field-group">
-      <label class="field-label">Low Speed Compression (clicks from closed)</label>
-      <div class="range-container">
-        <input type="range" id="${key}-lsc" min="0" max="30" step="1" value="${data.lsc ?? 8}" class="range-slider"/>
-        <span class="range-val"><span id="val-${key}-lsc">${data.lsc ?? 8}</span></span>
-      </div>
-    </div>
-    <div class="field-group">
-      <label class="field-label">High Speed Compression (clicks from closed)</label>
-      <div class="range-container">
-        <input type="range" id="${key}-hsc" min="0" max="20" step="1" value="${data.hsc ?? 4}" class="range-slider"/>
-        <span class="range-val"><span id="val-${key}-hsc">${data.hsc ?? 4}</span></span>
-      </div>
-    </div>
+    ${spinner('Low Speed Compression', `${key}-lsc`, data.lsc ?? 8, 1, 0, 40, 'clicks')}
+    ${spinner('High Speed Compression', `${key}-hsc`, data.hsc ?? 4, 1, 0, 40, 'clicks')}
     ${!isShock ? `
     <div class="settings-section-divider">Damper Internals</div>
     <div class="field-row">
@@ -457,6 +432,22 @@ function fieldTextarea(label, id, value = '') {
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+
+// Spinner: −/input/+ replacing range sliders
+function spinner(label, id, value, step, min, max, unit = '') {
+  const val = value != null ? value : '';
+  return `<div class="field-group">
+    <label class="field-label" for="${id}">${label}${unit ? ` <span class="field-unit">${unit}</span>` : ''}</label>
+    <div class="spinner-row">
+      <button type="button" class="spinner-btn spinner-minus" data-id="${id}" data-step="${step}" data-min="${min}" data-max="${max}" aria-label="Decrease">−</button>
+      <input type="number" id="${id}" class="field-input spinner-input"
+             value="${val}" min="${min}" max="${max}" step="${step}" placeholder="—">
+      <button type="button" class="spinner-btn spinner-plus" data-id="${id}" data-step="${step}" data-min="${min}" data-max="${max}" aria-label="Increase">+</button>
+    </div>
+  </div>`;
+}
+
+
 
 // ── COLLECT FORM DATA ─────────────────────────────────────
 
