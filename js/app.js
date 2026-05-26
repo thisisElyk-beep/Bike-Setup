@@ -4,6 +4,7 @@ import { createSilhouette, createMiniSilhouette, setupZoneInteraction, resetZoom
 import { renderZoneSettings, renderSettingsPlaceholder, renderCockpitSubZone } from './setup.js';
 import { renderComponentsTab } from './components.js';
 import { renderQuickAdjustTab } from './quickadjust.js';
+import { renderRidesTab } from './rides.js';
 import { renderTestingTab } from './testing.js';
 import { renderPresetsTab } from './presets.js';
 import { exportBikePDF } from './export.js';
@@ -111,6 +112,9 @@ function openBike(bike) {
   nameBtn.innerHTML = `${escHtml(bike.name)}<svg class="rename-icon" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7 1.5l2.5 2.5L3 10H.5V7.5L7 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
   nameBtn.classList.remove('hidden');
   nameBtn.onclick = () => showRenameBikeModal(bike);
+  // Show Rides tab only for road and gravel
+  const ridesTab = $('tab-btn-rides');
+  if (ridesTab) ridesTab.classList.toggle('hidden', !['road','gravel'].includes(bike.type));
   $('btn-export').classList.remove('hidden');
   $('btn-add-bike-header').classList.add('hidden');
   showView('detail');
@@ -283,6 +287,7 @@ function activateTab(tab) {
   switch (tab) {
     case 'components': renderComponentsTab(_bike);    break;
     case 'adjust':     renderQuickAdjustTab(_bike);   break;
+    case 'rides':      renderRidesTab(_bike);          break;
     case 'testing':    renderTestingTab(_bike);       break;
     case 'presets':    renderPresetsTab(_bike);       break;
   }
