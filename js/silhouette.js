@@ -268,15 +268,16 @@ function svgHardtail(isDJ = false) {
   // DJ: PBJ-inspired geometry — HA=69.6°, SA actual=68.3°, short seat tube
   // SS=TT_JOIN=(338,273) lies on both the seat tube AND the RW→HT line,
   // so seatstay and top tube share the same 23.3° angle — continuous visual line
-  const RW = isDJ ? {x:160,y:350} : {x:148,y:350};
-  const FW = isDJ ? {x:620,y:350} : {x:648,y:350};
+  // DJ: PBJ wheelbase 422px (vs 460px old) — short chainstay 158px, HA=69.5° maintained
+  const RW = isDJ ? {x:216,y:350} : {x:148,y:350};
+  const FW = isDJ ? {x:638,y:350} : {x:648,y:350};
   const BB = isDJ ? {x:374,y:362} : {x:378,y:365};
   const ST = isDJ ? {x:331,y:255} : {x:333,y:183};
-  const HT = isDJ ? {x:556,y:179} : {x:561,y:160};
-  const HC = isDJ ? {x:562,y:196} : {x:583,y:207}; // DJ: 18px head tube
-  const TT_JOIN = isDJ ? {x:338,y:273} : {x:340,y:212};
-  // For DJ: seatstay meets seat tube at TT_JOIN (same point), giving continuous line
-  const DJ_SS = {x:338, y:273};
+  const HT = isDJ ? {x:583,y:202} : {x:561,y:160};
+  const HC = isDJ ? {x:589,y:219} : {x:583,y:207};
+  const TT_JOIN = isDJ ? {x:348,y:297} : {x:340,y:212};
+  // DJ_SS collinear with RW→HT on seat tube (21.9° ≈ 22.0° — continuous line)
+  const DJ_SS = isDJ ? {x:348,y:297} : {x:0,y:0};
 
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
   const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
@@ -375,7 +376,7 @@ function svgHardtail(isDJ = false) {
 function svgGravel() {
   const RW={x:155,y:350}, FW={x:640,y:350}, BB={x:375,y:360};
   const ST={x:315,y:164}, HT={x:585,y:183}, HC={x:604,y:240};
-  const TT_JOIN={x:324,y:193}; // 30px below ST along seat tube
+  const TT_JOIN={x:324,y:197}; // 30px below ST along seat tube
 
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
   const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
@@ -420,7 +421,7 @@ function svgGravel() {
     <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="8" stroke-linecap="round"/>
     <!-- Seat tube -->
     <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="7" stroke-linecap="round"/>
-    <!-- Top tube: nearly flat (2.2°) -->
+    <!-- Top tube: 3.1° upward toward head tube (road/endurance style) -->
     <line x1="${TT_JOIN.x}" y1="${TT_JOIN.y}" x2="${HT.x}" y2="${HT.y}" stroke-width="6" stroke-linecap="round"/>
     <!-- Head tube -->
     <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="12" stroke-linecap="round"/>
@@ -515,9 +516,11 @@ function svgRoad() {
           fill="none" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
     <line x1="${RW.x}"   y1="${RW.y}" x2="${SS.x}" y2="${SS.y}" stroke-width="4" stroke-linecap="round"/>
     <line x1="${RW.x+7}" y1="${RW.y}" x2="${SS.x+6}" y2="${SS.y}" stroke-width="2" stroke-linecap="round" opacity="0.28"/>
-    <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="7" stroke-linecap="round"/>
+    <!-- Down tube: thicker than top tube (road frame character) -->
+    <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="10" stroke-linecap="round"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="6" stroke-linecap="round"/>
-    <line x1="327" y1="207" x2="${HT.x}" y2="${HT.y}" stroke-width="5.5" stroke-linecap="round"/>
+    <!-- Top tube: 1.9° upward toward head tube -->
+    <line x1="327" y1="216" x2="${HT.x}" y2="${HT.y}" stroke-width="5.5" stroke-linecap="round"/>
     <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="11" stroke-linecap="round"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${HT.x},${HT.y} ${HC.x},${HC.y}" data-zone="frame"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
@@ -541,9 +544,27 @@ function svgRoad() {
     <rect class="zone-overlay" x="${POST.x-48}" y="${POST.y-18}" width="108" height="${ST.y-POST.y+42}" rx="10" data-zone="dropper"/>
   </g>
 
-  <!-- Road: longer stem than MTB -->
+  <!-- Drop bars — side-view profile (matching gravel style) -->
   <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
-    ${dropBars(HT,32)}
+    <!-- Stem: forward from HT, nearly horizontal -->
+    <line x1="${HT.x}" y1="${HT.y}" x2="647" y2="203"
+          stroke-width="6.5" stroke-linecap="round"/>
+    <!-- Stem faceplate -->
+    <rect x="642" y="194" width="8" height="16" rx="3"
+          fill="var(--bg-elevated)" stroke-width="3"/>
+    <!-- Bar top section: extends rearward from stem tip -->
+    <line x1="647" y1="203" x2="617" y2="198"
+          stroke-width="6.5" stroke-linecap="round"/>
+    <!-- Brake hood body -->
+    <path d="M 623 196 Q 615 204 619 214"
+          fill="none" stroke-width="9" stroke-linecap="round" opacity="0.55"/>
+    <!-- Drop: bezier from bar rear, curves down and slightly forward -->
+    <path d="M 617 198 C 611 216 621 234 631 250"
+          fill="none" stroke-width="6.5" stroke-linecap="round"/>
+    <!-- Bottom curl: curves forward toward front of bike -->
+    <path d="M 631 250 Q 645 253 649 244"
+          fill="none" stroke-width="6.5" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="601" y="183" width="110" height="116" rx="10" data-zone="handlebar"/>
   </g>
 
   <!-- Curved fork (road — raked) -->
@@ -562,7 +583,7 @@ function svgRoad() {
     <line x1="${FW.x+4}" y1="${FW.y-18}" x2="${FW.x+18}" y2="${FW.y-18}" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
     <!-- Axle -->
     <line x1="${FW.x-2}" y1="${FW.y+2}" x2="${FW.x+22}" y2="${FW.y+2}" stroke-width="5.5" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="562" y="118" width="112" height="258" rx="12" data-zone="fork"/>
+    <rect class="zone-overlay" x="580" y="200" width="100" height="168" rx="12" data-zone="fork"/>
   </g>
 </svg>`;
 }
