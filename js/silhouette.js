@@ -273,7 +273,7 @@ function svgHardtail(isDJ = false) {
   const BB = isDJ ? {x:374,y:362} : {x:378,y:365};
   const ST = isDJ ? {x:331,y:255} : {x:333,y:183};
   const HT = isDJ ? {x:556,y:179} : {x:561,y:160};
-  const HC = isDJ ? {x:572,y:221} : {x:583,y:207};
+  const HC = isDJ ? {x:564,y:200} : {x:583,y:207};
   const TT_JOIN = isDJ ? {x:338,y:273} : {x:340,y:212};
   // For DJ: seatstay meets seat tube at TT_JOIN (same point), giving continuous line
   const DJ_SS = {x:338, y:273};
@@ -489,7 +489,7 @@ function svgGravel() {
 // Curved fork (road bikes still use raked forks)
 function svgRoad() {
   const RW={x:155,y:350}, FW={x:636,y:350}, BB={x:372,y:355};
-  const ST={x:319,y:183}, HT={x:573,y:145}, HC={x:591,y:204};
+  const ST={x:318,y:178}, HT={x:592,y:207}, HC={x:610,y:264};
 
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
   const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
@@ -499,8 +499,8 @@ function svgRoad() {
   const SS={x:Math.round(BB.x+stUx*stLen*0.52), y:Math.round(BB.y+stUy*stLen*0.52)};
 
   // Curved fork: two bezier paths from crown to axle
-  const fCx1=HC.x+18, fCy1=HC.y+55, fCx2=FW.x+12, fCy2=FW.y-62;
-  const fCx1r=HC.x+26, fCy1r=HC.y+56, fCx2r=FW.x+20, fCy2r=FW.y-62;
+  const fCx1=HC.x+10, fCy1=HC.y+45, fCx2=FW.x+10, fCy2=FW.y-35;
+  const fCx1r=HC.x+18, fCy1r=HC.y+46, fCx2r=FW.x+18, fCy2r=FW.y-34;
 
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
@@ -517,7 +517,7 @@ function svgRoad() {
     <line x1="${RW.x+7}" y1="${RW.y}" x2="${SS.x+6}" y2="${SS.y}" stroke-width="2" stroke-linecap="round" opacity="0.28"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="7" stroke-linecap="round"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="6" stroke-linecap="round"/>
-    <line x1="328" y1="212" x2="${HT.x}" y2="${HT.y}" stroke-width="5.5" stroke-linecap="round"/>
+    <line x1="327" y1="207" x2="${HT.x}" y2="${HT.y}" stroke-width="5.5" stroke-linecap="round"/>
     <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="11" stroke-linecap="round"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${HT.x},${HT.y} ${HC.x},${HC.y}" data-zone="frame"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
