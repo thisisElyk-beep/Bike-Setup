@@ -1,20 +1,30 @@
 import { updateBike } from './db.js';
 import { showToast } from './app.js';
 
+// Bike type helpers
+const isDropBar = t => ['gravel','road'].includes(t);
+const isRigidFork = t => ['gravel','road','dirtjumper'].includes(t);
+const hasDrooper = t => ['mtb','emtb','hardtail'].includes(t);
+
 // ── ZONE → FORM RENDERER ──────────────────────────────────
 
 export function renderZoneSettings(zoneId, bike, container, onSaved) {
   const baseline = bike.baseline || {};
+  const type = bike.type || 'mtb';
   let html = '';
 
   switch (zoneId) {
-    case 'front-wheel': html = tireForm('frontTire', 'Front Tire', baseline.frontTire, baseline.frontWheel || {}); break;
-    case 'rear-wheel':  html = tireForm('rearTire',  'Rear Tire',  baseline.rearTire,  baseline.rearWheel  || {}); break;
-    case 'fork':  html = suspensionForm('fork',  'Fork',        baseline.fork,  false); break;
-    case 'shock': html = suspensionForm('shock', 'Rear Shock',  baseline.shock, true);  break;
-    case 'handlebar':  html = cockpitForm(baseline); break;
-    case 'drivetrain': html = drivetrainForm(baseline); break;
-    case 'dropper':    html = dropperForm(bike.type, baseline); break;
+    case 'front-wheel': html = tireForm('frontTire', baseline.frontTire, baseline.frontWheel || {}, type); break;
+    case 'rear-wheel':  html = tireForm('rearTire',  baseline.rearTire,  baseline.rearWheel  || {}, type); break;
+    case 'fork':
+      html = isRigidFork(type)
+        ? rigidForkForm(baseline.fork)
+        : suspensionForm('fork', 'Fork', baseline.fork, false);
+      break;
+    case 'shock': html = suspensionForm('shock', 'Rear Shock', baseline.shock, true); break;
+    case 'handlebar':  html = cockpitForm(baseline, type); break;
+    case 'drivetrain': html = drivetrainForm(baseline, type); break;
+    case 'dropper':    html = hasDrooper(type) ? dropperForm(baseline) : seatpostForm(baseline); break;
     case 'frame':      html = frameForm(baseline); break;
     default: html = '<p style="color:var(--text-muted);font-size:.85rem">No settings for this zone.</p>';
   }
@@ -22,17 +32,14 @@ export function renderZoneSettings(zoneId, bike, container, onSaved) {
   container.innerHTML = `
     <div class="zone-settings-header">
       <div>
-        <div class="zone-settings-title">${zoneName(zoneId)}</div>
+        <div class="zone-settings-title">${zoneName(zoneId, type)}</div>
         <div class="zone-settings-sub">Editing baseline</div>
       </div>
     </div>
     <form id="zone-form">${html}</form>
   `;
 
-  // Remove any existing save bar before adding a new one
   container.parentElement.querySelectorAll('.save-bar').forEach(el => el.remove());
-
-  // Add save bar
   const saveBar = document.createElement('div');
   saveBar.className = 'save-bar';
   saveBar.innerHTML = `
@@ -41,22 +48,17 @@ export function renderZoneSettings(zoneId, bike, container, onSaved) {
   `;
   container.parentElement.appendChild(saveBar);
 
-  // Range live update
   container.querySelectorAll('input[type="range"]').forEach(r => {
     const valEl = container.querySelector(`#val-${r.id}`);
     r.addEventListener('input', () => { if (valEl) valEl.textContent = r.value; });
   });
 
-  // Suspension type toggle
-  const typeToggle = container.querySelectorAll('input[name$="-type"]');
-  typeToggle.forEach(t => {
-    t.addEventListener('change', () => {
-      updateSuspensionFields(container, t.value);
-    });
+  container.querySelectorAll('input[name$="-type"]').forEach(t => {
+    t.addEventListener('change', () => updateSuspensionFields(container, t.value));
   });
 
   document.getElementById('btn-save-zone').addEventListener('click', async () => {
-    const data = collectFormData(zoneId, container);
+    const data = collectFormData(zoneId, container, type);
     const updatedBaseline = { ...(bike.baseline || {}), ...data };
     try {
       await updateBike(bike.id, { baseline: updatedBaseline });
@@ -69,15 +71,13 @@ export function renderZoneSettings(zoneId, bike, container, onSaved) {
   });
 
   document.getElementById('btn-cancel-zone').addEventListener('click', () => {
-    onSaved && onSaved(true); // cancel
+    onSaved && onSaved(true);
   });
 }
 
 export function renderSettingsPlaceholder(container) {
-  // Remove save bar if present
   const saveBar = container.parentElement.querySelector('.save-bar');
   if (saveBar) saveBar.remove();
-
   container.innerHTML = `
     <div class="settings-placeholder">
       <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
@@ -91,8 +91,9 @@ export function renderSettingsPlaceholder(container) {
 
 // ── FORM BUILDERS ─────────────────────────────────────────
 
-function tireForm(key, label, tireData = {}, wheelData = {}) {
+function tireForm(key, tireData = {}, wheelData = {}, bikeType = 'mtb') {
   const wKey = key === 'frontTire' ? 'frontWheel' : 'rearWheel';
+  const showInserts = !isDropBar(bikeType); // inserts only relevant for MTB/DJ
   return `
     <div class="settings-section-divider">Wheel</div>
     <div class="field-row">
@@ -109,8 +110,8 @@ function tireForm(key, label, tireData = {}, wheelData = {}) {
       ${field('Model', `${key}-model`, tireData.model)}
     </div>
     <div class="field-row">
-      ${field('Size', `${key}-size`, tireData.size, 'e.g. 29x2.5 WT')}
-      ${field('Compound', `${key}-compound`, tireData.compound, 'e.g. 3C MaxxTerra')}
+      ${field('Size', `${key}-size`, tireData.size, isDropBar(bikeType) ? 'e.g. 700×40c' : 'e.g. 29×2.5 WT')}
+      ${field('Compound', `${key}-compound`, tireData.compound, isDropBar(bikeType) ? 'e.g. Clincher, Tubeless' : 'e.g. 3C MaxxTerra')}
     </div>
     <div class="settings-section-divider">Pressure</div>
     <div class="field-group">
@@ -121,24 +122,22 @@ function tireForm(key, label, tireData = {}, wheelData = {}) {
       </div>
     </div>
     <div class="field-row">
-      ${field('Casing', `${key}-casing`, tireData.casing, 'e.g. EXO+, DD')}
-      ${field('Inserts', `${key}-inserts`, tireData.inserts, 'e.g. Cushcore, none')}
+      ${field('Casing', `${key}-casing`, tireData.casing, isDropBar(bikeType) ? 'e.g. Folding, Wire' : 'e.g. EXO+, DD')}
+      ${showInserts ? field('Inserts', `${key}-inserts`, tireData.inserts, 'e.g. Cushcore, none') : ''}
     </div>
-    <div class="field-group">
-      ${fieldTextarea('Notes', `${key}-notes`, tireData.notes)}
-    </div>
+    <div class="field-group">${fieldTextarea('Notes', `${key}-notes`, tireData.notes)}</div>
   `;
 }
 
+// Suspension fork (MTB / Hardtail)
 function suspensionForm(key, label, data = {}, isShock = false) {
   const type = data.type || 'air';
   const isCoil = type === 'coil';
-
   return `
     <div class="settings-section-divider">Identification</div>
     <div class="field-row">
-      ${field('Brand', `${key}-brand`, data.brand, isShock ? 'e.g. Fox, RockShox' : 'e.g. Fox, RockShox')}
-      ${field('Model', `${key}-model`, data.model, isShock ? 'e.g. Float X2' : 'e.g. 38 Factory')}
+      ${field('Brand', `${key}-brand`, data.brand)}
+      ${field('Model', `${key}-model`, data.model)}
     </div>
     ${!isShock ? `<div class="field-row">
       ${field('Travel', `${key}-travel`, data.travel, 'e.g. 160mm')}
@@ -147,7 +146,6 @@ function suspensionForm(key, label, data = {}, isShock = false) {
       ${field('Stroke', `${key}-stroke`, data.stroke, 'e.g. 55mm')}
       ${field('Eye-to-Eye', `${key}-eye`, data.eye, 'e.g. 230mm')}
     </div>`}
-
     <div class="settings-section-divider">Spring Type</div>
     <div class="field-group">
       <label class="field-label">Spring</label>
@@ -158,7 +156,6 @@ function suspensionForm(key, label, data = {}, isShock = false) {
         <label for="${key}-type-coil">Coil</label>
       </div>
     </div>
-
     <div id="${key}-air-fields" ${isCoil ? 'style="display:none"' : ''}>
       <div class="field-group">
         <label class="field-label">Air Pressure (PSI)</label>
@@ -172,14 +169,12 @@ function suspensionForm(key, label, data = {}, isShock = false) {
         ${field('Spacer Size', `${key}-spacerSize`, data.spacerSize, 'e.g. 10ml, large')}
       </div>
     </div>
-
     <div id="${key}-coil-fields" ${!isCoil ? 'style="display:none"' : ''}>
       <div class="field-row">
         ${field('Spring Rate', `${key}-springRate`, data.springRate, 'e.g. 500 lbs/in')}
         ${field('Spring Brand', `${key}-springBrand`, data.springBrand, 'e.g. Öhlins STX22')}
       </div>
     </div>
-
     <div class="settings-section-divider">Damper — Rebound</div>
     <div class="field-group">
       <label class="field-label">Low Speed Rebound (clicks from closed)</label>
@@ -188,23 +183,13 @@ function suspensionForm(key, label, data = {}, isShock = false) {
         <span class="range-val"><span id="val-${key}-lsr">${data.lsr ?? 10}</span></span>
       </div>
     </div>
-    ${!isShock ? '' : `
     <div class="field-group">
       <label class="field-label">High Speed Rebound (clicks from closed)</label>
       <div class="range-container">
         <input type="range" id="${key}-hsr" min="0" max="20" step="1" value="${data.hsr ?? 5}" class="range-slider"/>
         <span class="range-val"><span id="val-${key}-hsr">${data.hsr ?? 5}</span></span>
       </div>
-    </div>`}
-    ${!isShock ? `
-    <div class="field-group">
-      <label class="field-label">High Speed Rebound (clicks from closed)</label>
-      <div class="range-container">
-        <input type="range" id="${key}-hsr" min="0" max="20" step="1" value="${data.hsr ?? 5}" class="range-slider"/>
-        <span class="range-val"><span id="val-${key}-hsr">${data.hsr ?? 5}</span></span>
-      </div>
-    </div>` : ''}
-
+    </div>
     <div class="settings-section-divider">Damper — Compression</div>
     <div class="field-group">
       <label class="field-label">Low Speed Compression (clicks from closed)</label>
@@ -220,12 +205,11 @@ function suspensionForm(key, label, data = {}, isShock = false) {
         <span class="range-val"><span id="val-${key}-hsc">${data.hsc ?? 4}</span></span>
       </div>
     </div>
-
     ${!isShock ? `
     <div class="settings-section-divider">Damper Internals</div>
     <div class="field-row">
-      ${field('Damper Brand', `${key}-damperBrand`, data.damperBrand, 'e.g. Fox, Öhlins')}
-      ${field('Damper Model', `${key}-damperModel`, data.damperModel, 'e.g. GRIP2, TTX')}
+      ${field('Damper Brand', `${key}-damperBrand`, data.damperBrand)}
+      ${field('Damper Model', `${key}-damperModel`, data.damperModel)}
     </div>
     <div class="field-row">
       ${field('Tune', `${key}-tune`, data.tune, 'e.g. Medium, Firm')}
@@ -235,18 +219,39 @@ function suspensionForm(key, label, data = {}, isShock = false) {
       ${field('Lower Leg Oil', `${key}-lowerLegOil`, data.lowerLegOil, 'e.g. 10ml 15wt')}
       ${field('Last Service', `${key}-lastService`, data.lastService, '', 'date')}
     </div>` : ''}
-
-    <div class="field-group">
-      ${fieldTextarea('Notes', `${key}-notes`, data.notes)}
-    </div>
+    <div class="field-group">${fieldTextarea('Notes', `${key}-notes`, data.notes)}</div>
   `;
 }
 
-function cockpitForm(baseline = {}) {
+// Rigid fork (DJ / Gravel / Road)
+function rigidForkForm(data = {}) {
+  return `
+    <div class="settings-section-divider">Fork</div>
+    <div class="field-row">
+      ${field('Brand', 'fork-brand', data.brand)}
+      ${field('Model', 'fork-model', data.model)}
+    </div>
+    <div class="field-row">
+      ${field('Rake / Offset', 'fork-offset', data.offset, 'e.g. 47mm')}
+      ${field('Material', 'fork-material', data.material, 'e.g. Carbon, Steel')}
+    </div>
+    <div class="field-row">
+      ${field('Blade Shape', 'fork-blade', data.blade, 'e.g. Round, Aero')}
+      ${field('Axle Standard', 'fork-axle', data.axle, 'e.g. 12×100, QR')}
+    </div>
+    <div class="field-group">${fieldTextarea('Notes', 'fork-notes', data.notes)}</div>
+  `;
+}
+
+// Cockpit overview (handlebar zone — full summary)
+function cockpitForm(baseline = {}, bikeType = 'mtb') {
   const hb = baseline.handlebar || {};
   const st = baseline.stem || {};
   const br = baseline.brakes || {};
   const gr = baseline.grips || {};
+  const bt = baseline.bartape || {};
+  const drop = isDropBar(bikeType);
+
   return `
     <div class="settings-section-divider">Handlebar</div>
     <div class="field-row">
@@ -254,13 +259,26 @@ function cockpitForm(baseline = {}) {
       ${field('Model', 'hb-model', hb.model)}
     </div>
     <div class="field-row">
-      ${field('Width', 'hb-width', hb.width, 'e.g. 780mm')}
-      ${field('Rise', 'hb-rise', hb.rise, 'e.g. 20mm')}
+      ${field('Width', 'hb-width', hb.width, drop ? 'e.g. 420mm' : 'e.g. 780mm')}
+      ${drop
+        ? field('Reach', 'hb-reach', hb.reach, 'e.g. 80mm')
+        : field('Rise', 'hb-rise', hb.rise, 'e.g. 20mm')}
     </div>
     <div class="field-row">
-      ${field('Backsweep', 'hb-sweep', hb.sweep, 'e.g. 9°')}
-      ${field('Material', 'hb-material', hb.material, 'e.g. Carbon, Alloy')}
+      ${drop
+        ? field('Drop', 'hb-drop', hb.drop, 'e.g. 128mm')
+        : field('Backsweep', 'hb-sweep', hb.sweep, 'e.g. 9°')}
+      ${drop
+        ? field('Flare', 'hb-flare', hb.flare, 'e.g. 12°')
+        : field('Material', 'hb-material', hb.material, 'e.g. Carbon, Alloy')}
     </div>
+    ${!drop ? `<div class="field-row">
+      ${field('Material', 'hb-material', hb.material, 'e.g. Carbon, Alloy')}
+      <div class="field-group"></div>
+    </div>` : `<div class="field-row">
+      ${field('Material', 'hb-material', hb.material, 'e.g. Carbon, Alloy')}
+      <div class="field-group"></div>
+    </div>`}
     <div class="settings-section-divider">Stem</div>
     <div class="field-row">
       ${field('Brand', 'st-brand', st.brand)}
@@ -272,24 +290,76 @@ function cockpitForm(baseline = {}) {
     </div>
     <div class="settings-section-divider">Brakes</div>
     <div class="field-row">
-      ${field('Brand', 'br-brand', br.brand, 'e.g. SRAM, Shimano')}
-      ${field('Model', 'br-model', br.model, 'e.g. Code RSC')}
+      ${field('Brand', 'br-brand', br.brand)}
+      ${field('Model', 'br-model', br.model)}
     </div>
     <div class="field-row">
       ${field('Lever Reach', 'br-reach', br.reach, 'e.g. 3 clicks')}
       ${field('Bite Point', 'br-bite', br.bite, 'e.g. 4 clicks')}
     </div>
+    ${drop ? `
+    <div class="settings-section-divider">Bar Tape</div>
+    <div class="field-row">
+      ${field('Brand', 'bt-brand', bt.brand)}
+      ${field('Model', 'bt-model', bt.model)}
+    </div>
+    <div class="field-row">
+      ${field('Material', 'bt-material', bt.material, 'e.g. Cork, Gel, Foam')}
+      ${field('Color', 'bt-color', bt.color)}
+    </div>` : `
     <div class="settings-section-divider">Grips</div>
     <div class="field-row">
-      ${field('Brand', 'gr-brand', gr.brand, 'e.g. Ergon, ODI')}
-      ${field('Model', 'gr-model', gr.model, 'e.g. GA2 Fat')}
-    </div>
+      ${field('Brand', 'gr-brand', gr.brand)}
+      ${field('Model', 'gr-model', gr.model)}
+    </div>`}
     <div class="field-group">${fieldTextarea('Notes', 'cockpit-notes', baseline.cockpitNotes)}</div>
   `;
 }
 
-function drivetrainForm(baseline = {}) {
+// Drivetrain — bike-type-aware
+function drivetrainForm(baseline = {}, bikeType = 'mtb') {
   const dt = baseline.drivetrain || {};
+  if (bikeType === 'road') {
+    return `
+      <div class="settings-section-divider">Groupset</div>
+      <div class="field-row">
+        ${field('Brand', 'dt-brand', dt.brand, 'e.g. Shimano, SRAM')}
+        ${field('Groupset', 'dt-model', dt.model, 'e.g. Dura-Ace Di2 12sp')}
+      </div>
+      <div class="field-row">
+        ${field('Speeds', 'dt-speeds', dt.speeds, 'e.g. 11, 12')}
+        ${field('Cable / Di2 / AXS', 'dt-actuation', dt.actuation, 'e.g. Di2, AXS, Cable')}
+      </div>
+      <div class="field-row">
+        ${field('Cassette', 'dt-cassette', dt.cassette, 'e.g. 11-30t')}
+        ${field('Chain', 'dt-chain', dt.chain, 'e.g. CN-HG901')}
+      </div>
+      <div class="field-group">${fieldTextarea('Notes', 'dt-notes', dt.notes)}</div>
+    `;
+  }
+  if (bikeType === 'gravel') {
+    return `
+      <div class="settings-section-divider">Drivetrain</div>
+      <div class="field-row">
+        ${field('Brand', 'dt-brand', dt.brand, 'e.g. SRAM, Shimano')}
+        ${field('Group / Model', 'dt-model', dt.model, 'e.g. Rival AXS')}
+      </div>
+      <div class="field-row">
+        ${field('Configuration', 'dt-config', dt.config, 'e.g. 1×, 2×')}
+        ${field('Speeds', 'dt-speeds', dt.speeds, 'e.g. 12')}
+      </div>
+      <div class="field-row">
+        ${field('Cassette', 'dt-cassette', dt.cassette, 'e.g. 10-44t')}
+        ${field('Chainring(s)', 'dt-chainring', dt.chainring, 'e.g. 40t or 46/30')}
+      </div>
+      <div class="field-row">
+        ${field('Chain', 'dt-chain', dt.chain, 'e.g. SRAM Rival')}
+        ${field('Rear Derailleur', 'dt-rd', dt.rd, 'e.g. Rival AXS')}
+      </div>
+      <div class="field-group">${fieldTextarea('Notes', 'dt-notes', dt.notes)}</div>
+    `;
+  }
+  // MTB / Hardtail / DJ
   return `
     <div class="settings-section-divider">Drivetrain</div>
     <div class="field-row">
@@ -308,21 +378,45 @@ function drivetrainForm(baseline = {}) {
   `;
 }
 
-function dropperForm(bikeType, baseline = {}) {
+// Dropper post (MTB / Hardtail)
+function dropperForm(baseline = {}) {
   const dp = baseline.dropper || {};
-  const isRoad = bikeType === 'road';
-  const label = isRoad ? 'Seatpost' : 'Dropper Post';
   return `
-    <div class="settings-section-divider">${label}</div>
+    <div class="settings-section-divider">Dropper Post</div>
     <div class="field-row">
       ${field('Brand', 'dp-brand', dp.brand)}
       ${field('Model', 'dp-model', dp.model)}
     </div>
     <div class="field-row">
-      ${!isRoad ? field('Travel', 'dp-travel', dp.travel, 'e.g. 170mm') : field('Length', 'dp-length', dp.length, 'e.g. 350mm')}
+      ${field('Travel', 'dp-travel', dp.travel, 'e.g. 170mm')}
       ${field('Diameter', 'dp-diameter', dp.diameter, 'e.g. 31.6mm')}
     </div>
+    <div class="field-row">
+      ${field('Actuation', 'dp-actuation', dp.actuation, 'e.g. Cable, Reverb AXS')}
+      <div class="field-group"></div>
+    </div>
     <div class="field-group">${fieldTextarea('Notes', 'dp-notes', dp.notes)}</div>
+  `;
+}
+
+// Seatpost (DJ / Gravel / Road)
+function seatpostForm(baseline = {}) {
+  const sp = baseline.seatpost || baseline.dropper || {};
+  return `
+    <div class="settings-section-divider">Seatpost</div>
+    <div class="field-row">
+      ${field('Brand', 'sp-brand', sp.brand)}
+      ${field('Model', 'sp-model', sp.model)}
+    </div>
+    <div class="field-row">
+      ${field('Length', 'sp-length', sp.length, 'e.g. 350mm')}
+      ${field('Diameter', 'sp-diameter', sp.diameter, 'e.g. 27.2mm')}
+    </div>
+    <div class="field-row">
+      ${field('Setback', 'sp-setback', sp.setback, 'e.g. 0mm, 20mm')}
+      ${field('Material', 'sp-material', sp.material, 'e.g. Carbon, Alloy')}
+    </div>
+    <div class="field-group">${fieldTextarea('Notes', 'sp-notes', sp.notes)}</div>
   `;
 }
 
@@ -366,10 +460,10 @@ function escHtml(s) {
 
 // ── COLLECT FORM DATA ─────────────────────────────────────
 
-function collectFormData(zoneId, container) {
+function collectFormData(zoneId, container, bikeType = 'mtb') {
   const val = id => container.querySelector(`#${id}`)?.value?.trim() || '';
   const num = id => { const v = container.querySelector(`#${id}`)?.value; return v ? parseFloat(v) : null; };
-  const radio = name => container.querySelector(`input[name="${name}"]:checked`)?.value;
+  const drop = isDropBar(bikeType);
 
   switch (zoneId) {
     case 'front-wheel': return {
@@ -380,17 +474,28 @@ function collectFormData(zoneId, container) {
       rearTire:   { brand: val('rearTire-brand'), model: val('rearTire-model'), size: val('rearTire-size'), compound: val('rearTire-compound'), casing: val('rearTire-casing'), inserts: val('rearTire-inserts'), psi: num('rearTire-psi'), notes: val('rearTire-notes') },
       rearWheel:  { brand: val('rearWheel-brand'), model: val('rearWheel-model'), size: val('rearWheel-size'), hub: val('rearWheel-hub') },
     };
-    case 'fork': return { fork: collectSuspension('fork', container) };
+    case 'fork':
+      if (isRigidFork(bikeType)) return { fork: { brand: val('fork-brand'), model: val('fork-model'), offset: val('fork-offset'), material: val('fork-material'), blade: val('fork-blade'), axle: val('fork-axle'), notes: val('fork-notes') } };
+      return { fork: collectSuspension('fork', container) };
     case 'shock': return { shock: collectSuspension('shock', container) };
     case 'handlebar': return {
-      handlebar: { brand: val('hb-brand'), model: val('hb-model'), width: val('hb-width'), rise: val('hb-rise'), sweep: val('hb-sweep'), material: val('hb-material') },
-      stem:      { brand: val('st-brand'), model: val('st-model'), length: val('st-length'), clamp: val('st-clamp') },
-      brakes:    { brand: val('br-brand'), model: val('br-model'), reach: val('br-reach'), bite: val('br-bite') },
-      grips:     { brand: val('gr-brand'), model: val('gr-model') },
-      cockpitNotes: val('cockpit-notes')
+      handlebar: drop
+        ? { brand: val('hb-brand'), model: val('hb-model'), width: val('hb-width'), reach: val('hb-reach'), drop: val('hb-drop'), flare: val('hb-flare'), material: val('hb-material') }
+        : { brand: val('hb-brand'), model: val('hb-model'), width: val('hb-width'), rise: val('hb-rise'), sweep: val('hb-sweep'), material: val('hb-material') },
+      stem:    { brand: val('st-brand'), model: val('st-model'), length: val('st-length'), clamp: val('st-clamp') },
+      brakes:  { brand: val('br-brand'), model: val('br-model'), reach: val('br-reach'), bite: val('br-bite') },
+      ...(drop
+        ? { bartape: { brand: val('bt-brand'), model: val('bt-model'), material: val('bt-material'), color: val('bt-color') } }
+        : { grips:   { brand: val('gr-brand'), model: val('gr-model') } }),
+      cockpitNotes: val('cockpit-notes'),
     };
-    case 'drivetrain': return { drivetrain: { brand: val('dt-brand'), model: val('dt-model'), cassette: val('dt-cassette'), chainring: val('dt-chainring'), chain: val('dt-chain'), rd: val('dt-rd'), notes: val('dt-notes') } };
-    case 'dropper': return { dropper: { brand: val('dp-brand'), model: val('dp-model'), travel: val('dp-travel'), length: val('dp-length'), diameter: val('dp-diameter'), notes: val('dp-notes') } };
+    case 'drivetrain':
+      if (bikeType === 'road') return { drivetrain: { brand: val('dt-brand'), model: val('dt-model'), speeds: val('dt-speeds'), actuation: val('dt-actuation'), cassette: val('dt-cassette'), chain: val('dt-chain'), notes: val('dt-notes') } };
+      if (bikeType === 'gravel') return { drivetrain: { brand: val('dt-brand'), model: val('dt-model'), config: val('dt-config'), speeds: val('dt-speeds'), cassette: val('dt-cassette'), chainring: val('dt-chainring'), chain: val('dt-chain'), rd: val('dt-rd'), notes: val('dt-notes') } };
+      return { drivetrain: { brand: val('dt-brand'), model: val('dt-model'), cassette: val('dt-cassette'), chainring: val('dt-chainring'), chain: val('dt-chain'), rd: val('dt-rd'), notes: val('dt-notes') } };
+    case 'dropper':
+      if (hasDrooper(bikeType)) return { dropper: { brand: val('dp-brand'), model: val('dp-model'), travel: val('dp-travel'), diameter: val('dp-diameter'), actuation: val('dp-actuation'), notes: val('dp-notes') } };
+      return { seatpost: { brand: val('sp-brand'), model: val('sp-model'), length: val('sp-length'), diameter: val('sp-diameter'), setback: val('sp-setback'), material: val('sp-material'), notes: val('sp-notes') } };
     case 'frame': return {
       frame: { brand: val('fr-brand'), model: val('fr-model'), year: val('fr-year'), size: val('fr-size'), material: val('fr-material'), color: val('fr-color'), notes: val('fr-notes') },
     };
@@ -402,57 +507,50 @@ function collectSuspension(key, container) {
   const val = id => container.querySelector(`#${id}`)?.value?.trim() || '';
   const num = id => { const v = container.querySelector(`#${id}`)?.value; return v ? parseFloat(v) : null; };
   const radio = name => container.querySelector(`input[name="${name}"]:checked`)?.value;
-
   const type = radio(`${key}-type`) || 'air';
   return {
     brand: val(`${key}-brand`), model: val(`${key}-model`),
     travel: val(`${key}-travel`), offset: val(`${key}-offset`),
     stroke: val(`${key}-stroke`), eye: val(`${key}-eye`),
     type,
-    psi:        type === 'air' ? num(`${key}-psi`)        : null,
-    tokens:     type === 'air' ? num(`${key}-tokens`)     : null,
-    spacerSize: type === 'air' ? val(`${key}-spacerSize`) : null,
-    springRate: type === 'coil' ? val(`${key}-springRate`) : null,
+    psi:         type === 'air'  ? num(`${key}-psi`)         : null,
+    tokens:      type === 'air'  ? num(`${key}-tokens`)      : null,
+    spacerSize:  type === 'air'  ? val(`${key}-spacerSize`)  : null,
+    springRate:  type === 'coil' ? val(`${key}-springRate`)  : null,
     springBrand: type === 'coil' ? val(`${key}-springBrand`) : null,
     lsr: num(`${key}-lsr`), hsr: num(`${key}-hsr`),
     lsc: num(`${key}-lsc`), hsc: num(`${key}-hsc`),
-    // Damper internals (fork only — fields absent on shock form)
-    damperBrand:  val(`${key}-damperBrand`)  || undefined,
-    damperModel:  val(`${key}-damperModel`)  || undefined,
-    tune:         val(`${key}-tune`)         || undefined,
-    oilWeight:    val(`${key}-oilWeight`)    || undefined,
-    lowerLegOil:  val(`${key}-lowerLegOil`) || undefined,
-    lastService:  val(`${key}-lastService`)  || undefined,
-    notes: val(`${key}-notes`)
+    damperBrand: val(`${key}-damperBrand`) || undefined,
+    damperModel: val(`${key}-damperModel`) || undefined,
+    tune:        val(`${key}-tune`)        || undefined,
+    oilWeight:   val(`${key}-oilWeight`)   || undefined,
+    lowerLegOil: val(`${key}-lowerLegOil`) || undefined,
+    lastService: val(`${key}-lastService`) || undefined,
+    notes: val(`${key}-notes`),
   };
 }
 
 function updateSuspensionFields(container, type) {
   const isCoil = type === 'coil';
-  container.querySelectorAll('[id$="-air-fields"]').forEach(el => {
-    el.style.display = isCoil ? 'none' : '';
-  });
-  container.querySelectorAll('[id$="-coil-fields"]').forEach(el => {
-    el.style.display = isCoil ? '' : 'none';
-  });
+  container.querySelectorAll('[id$="-air-fields"]').forEach(el => { el.style.display = isCoil ? 'none' : ''; });
+  container.querySelectorAll('[id$="-coil-fields"]').forEach(el => { el.style.display = isCoil ? '' : 'none'; });
 }
 
-function zoneName(id) {
+function zoneName(id, bikeType = 'mtb') {
   const names = {
     'front-wheel': 'Front Wheel & Tire',
     'rear-wheel':  'Rear Wheel & Tire',
     'fork':        'Fork',
     'shock':       'Rear Shock',
-    'handlebar':   'Cockpit & Bars',
+    'handlebar':   'Cockpit',
     'drivetrain':  'Drivetrain',
-    'dropper':     'Dropper / Saddle',
+    'dropper':     hasDrooper(bikeType) ? 'Dropper / Saddle' : 'Seatpost / Saddle',
     'frame':       'Frame',
   };
   return names[id] || id;
 }
 
 // ── FULL BASELINE SUMMARY ─────────────────────────────────
-// Returns a compact text summary of all baseline settings
 export function baselineSummary(bike) {
   const bl = bike.baseline || {};
   const lines = [];
@@ -466,16 +564,26 @@ export function baselineSummary(bike) {
 // ── COCKPIT SUB-ZONE FORMS ────────────────────────────────
 export function renderCockpitSubZone(subZone, bike, container, onSaved) {
   const bl = bike.baseline || {};
+  const bikeType = bike.type || 'mtb';
+  const drop = isDropBar(bikeType);
   let html = '', title = '';
 
   switch(subZone) {
     case 'cockpit-bars': {
       title = 'Handlebar';
       const hb = bl.handlebar || {};
-      html = `
-        <div class="field-row">${field('Brand','hb-brand',hb.brand)}${field('Model','hb-model',hb.model)}</div>
-        <div class="field-row">${field('Width','hb-width',hb.width,'e.g. 780mm')}${field('Rise','hb-rise',hb.rise,'e.g. 20mm')}</div>
-        <div class="field-row">${field('Backsweep','hb-sweep',hb.sweep,'e.g. 9°')}${field('Material','hb-material',hb.material,'e.g. Carbon, Alloy')}</div>`;
+      if (drop) {
+        html = `
+          <div class="field-row">${field('Brand','hb-brand',hb.brand)}${field('Model','hb-model',hb.model)}</div>
+          <div class="field-row">${field('Width','hb-width',hb.width,'e.g. 420mm')}${field('Reach','hb-reach',hb.reach,'e.g. 80mm')}</div>
+          <div class="field-row">${field('Drop','hb-drop',hb.drop,'e.g. 128mm')}${field('Flare','hb-flare',hb.flare,'e.g. 12°')}</div>
+          <div class="field-row">${field('Material','hb-material',hb.material,'e.g. Carbon, Alloy')}<div class="field-group"></div></div>`;
+      } else {
+        html = `
+          <div class="field-row">${field('Brand','hb-brand',hb.brand)}${field('Model','hb-model',hb.model)}</div>
+          <div class="field-row">${field('Width','hb-width',hb.width,'e.g. 780mm')}${field('Rise','hb-rise',hb.rise,'e.g. 20mm')}</div>
+          <div class="field-row">${field('Backsweep','hb-sweep',hb.sweep,'e.g. 9°')}${field('Material','hb-material',hb.material,'e.g. Carbon, Alloy')}</div>`;
+      }
       break;
     }
     case 'cockpit-stem': {
@@ -487,22 +595,39 @@ export function renderCockpitSubZone(subZone, bike, container, onSaved) {
       break;
     }
     case 'cockpit-brakes': {
-      title = 'Brakes & Shifters';
       const br = bl.brakes  || {};
       const sh = bl.shifters || {};
-      html = `
-        <div class="settings-section-divider" style="margin-top:0">Brakes</div>
-        <div class="field-row">${field('Brand','br-brand',br.brand)}${field('Model','br-model',br.model)}</div>
-        <div class="field-row">${field('Lever Reach','br-reach',br.reach,'e.g. 3 clicks')}${field('Bite Point','br-bite',br.bite,'e.g. 4 clicks')}</div>
-        <div class="settings-section-divider">Shifters</div>
-        <div class="field-row">${field('Brand','sh-brand',sh.brand)}${field('Model','sh-model',sh.model)}</div>
-        <div class="field-row">${field('Speeds','sh-speeds',sh.speeds,'e.g. 12')}${field('Cable / Di2','sh-type',sh.type,'e.g. Cable, Di2')}</div>`;
+      if (drop) {
+        // Road/Gravel: integrated levers, no separate shifter section
+        title = 'Brakes & Levers';
+        html = `
+          <div class="field-row">${field('Brand','br-brand',br.brand)}${field('Model','br-model',br.model)}</div>
+          <div class="field-row">${field('Lever Reach','br-reach',br.reach,'e.g. 3 clicks')}${field('Bite Point','br-bite',br.bite,'e.g. 4 clicks')}</div>`;
+      } else {
+        // MTB/DJ: separate brakes + shifters
+        title = 'Brakes & Shifters';
+        html = `
+          <div class="settings-section-divider" style="margin-top:0">Brakes</div>
+          <div class="field-row">${field('Brand','br-brand',br.brand)}${field('Model','br-model',br.model)}</div>
+          <div class="field-row">${field('Lever Reach','br-reach',br.reach,'e.g. 3 clicks')}${field('Bite Point','br-bite',br.bite,'e.g. 4 clicks')}</div>
+          <div class="settings-section-divider">Shifters</div>
+          <div class="field-row">${field('Brand','sh-brand',sh.brand)}${field('Model','sh-model',sh.model)}</div>
+          <div class="field-row">${field('Speeds','sh-speeds',sh.speeds,'e.g. 12')}${field('Cable / Di2','sh-type',sh.type,'e.g. Cable, Di2')}</div>`;
+      }
       break;
     }
     case 'cockpit-grips': {
-      title = 'Grips';
-      const gr = bl.grips || {};
-      html = `<div class="field-row">${field('Brand','gr-brand',gr.brand,'e.g. Ergon, ODI')}${field('Model','gr-model',gr.model,'e.g. GA2 Fat')}</div>`;
+      if (drop) {
+        title = 'Bar Tape';
+        const bt = bl.bartape || {};
+        html = `
+          <div class="field-row">${field('Brand','bt-brand',bt.brand)}${field('Model','bt-model',bt.model)}</div>
+          <div class="field-row">${field('Material','bt-material',bt.material,'e.g. Cork, Gel, Foam')}${field('Color','bt-color',bt.color)}</div>`;
+      } else {
+        title = 'Grips';
+        const gr = bl.grips || {};
+        html = `<div class="field-row">${field('Brand','gr-brand',gr.brand)}${field('Model','gr-model',gr.model)}</div>`;
+      }
       break;
     }
     case 'cockpit-stack': {
@@ -530,21 +655,34 @@ export function renderCockpitSubZone(subZone, bike, container, onSaved) {
   saveBar.className = 'save-bar';
   saveBar.innerHTML = `
     <button type="button" class="btn-secondary" id="btn-cancel-zone">Cancel</button>
-    <button type="button" class="btn-primary"   id="btn-save-zone">Save</button>`;
+    <button type="button" class="btn-primary" id="btn-save-zone">Save</button>`;
   container.parentElement.appendChild(saveBar);
 
   document.getElementById('btn-save-zone').addEventListener('click', async () => {
     const val = id => container.querySelector(`#${id}`)?.value?.trim() || '';
     let data = {};
     switch(subZone) {
-      case 'cockpit-bars':   data = { handlebar: {...(bl.handlebar||{}), brand:val('hb-brand'), model:val('hb-model'), width:val('hb-width'), rise:val('hb-rise'), sweep:val('hb-sweep'), material:val('hb-material') }}; break;
-      case 'cockpit-stem':   data = { stem:      {...(bl.stem||{}),      brand:val('st-brand'), model:val('st-model'), length:val('st-length'), clamp:val('st-clamp') }}; break;
-      case 'cockpit-brakes': data = {
-        brakes:   {...(bl.brakes||{}),   brand:val('br-brand'), model:val('br-model'), reach:val('br-reach'), bite:val('br-bite') },
-        shifters: {...(bl.shifters||{}), brand:val('sh-brand'), model:val('sh-model'), speeds:val('sh-speeds'), type:val('sh-type') },
-      }; break;
-      case 'cockpit-grips':  data = { grips:     {...(bl.grips||{}),     brand:val('gr-brand'), model:val('gr-model') }}; break;
-      case 'cockpit-stack':  data = { headset:   { brand:val('hs-brand'), model:val('hs-model'), stack:val('hs-stack'), spacers:val('hs-spacers') }}; break;
+      case 'cockpit-bars':
+        data = { handlebar: { ...(bl.handlebar||{}),
+          brand: val('hb-brand'), model: val('hb-model'), width: val('hb-width'), material: val('hb-material'),
+          ...(drop
+            ? { reach: val('hb-reach'), drop: val('hb-drop'), flare: val('hb-flare') }
+            : { rise: val('hb-rise'), sweep: val('hb-sweep') })
+        }}; break;
+      case 'cockpit-stem':
+        data = { stem: { ...(bl.stem||{}), brand: val('st-brand'), model: val('st-model'), length: val('st-length'), clamp: val('st-clamp') }}; break;
+      case 'cockpit-brakes':
+        data = {
+          brakes: { ...(bl.brakes||{}), brand: val('br-brand'), model: val('br-model'), reach: val('br-reach'), bite: val('br-bite') },
+          ...(!drop ? { shifters: { ...(bl.shifters||{}), brand: val('sh-brand'), model: val('sh-model'), speeds: val('sh-speeds'), type: val('sh-type') } } : {}),
+        }; break;
+      case 'cockpit-grips':
+        data = drop
+          ? { bartape: { ...(bl.bartape||{}), brand: val('bt-brand'), model: val('bt-model'), material: val('bt-material'), color: val('bt-color') } }
+          : { grips:   { ...(bl.grips||{}),   brand: val('gr-brand'), model: val('gr-model') } };
+        break;
+      case 'cockpit-stack':
+        data = { headset: { brand: val('hs-brand'), model: val('hs-model'), stack: val('hs-stack'), spacers: val('hs-spacers') }}; break;
     }
     const updatedBaseline = {...(bike.baseline||{}), ...data};
     try {
