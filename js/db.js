@@ -77,6 +77,29 @@ export async function deleteComponent(bikeId, componentId) {
   await deleteDoc(doc(db, 'bikes', bikeId, 'components', componentId));
 }
 
+// ── RIDES ─────────────────────────────────────────────────
+export async function getRides(bikeId) {
+  const snap = await getDocs(
+    query(collection(db, 'bikes', bikeId, 'rides'), orderBy('date', 'desc'))
+  );
+  return colData(snap);
+}
+
+export async function createRide(bikeId, data) {
+  const ref = await addDoc(collection(db, 'bikes', bikeId, 'rides'), clean({
+    ...data, createdAt: serverTimestamp()
+  }));
+  return ref.id;
+}
+
+export async function updateRide(bikeId, rideId, data) {
+  await updateDoc(doc(db, 'bikes', bikeId, 'rides', rideId), clean(data));
+}
+
+export async function deleteRide(bikeId, rideId) {
+  await deleteDoc(doc(db, 'bikes', bikeId, 'rides', rideId));
+}
+
 // ── PRESETS ───────────────────────────────────────────────
 export async function getPresets(bikeId) {
   const snap = await getDocs(
