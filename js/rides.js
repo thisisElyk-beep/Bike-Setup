@@ -1,5 +1,5 @@
 import { getRides, createRide, updateRide, deleteRide } from './db.js';
-import { showToast } from './app.js';
+import { showToast, openModal, closeModal } from './app.js';
 
 // ── ENTRY POINT ───────────────────────────────────────────
 export async function renderRidesTab(bike) {
