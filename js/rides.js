@@ -483,36 +483,95 @@ function showCompareView(container, rides, bike, preselectedBaseId = null) {
 }
 
 function renderCompareResult(el, base, test) {
-  const row = (label, baseVal, testVal, higherIsBetter = true, unit = '', isCond = false) => {
+  // ── ROW BUILDERS ──────────────────────────────────────────
+  const perfRow = (label, baseVal, testVal, higherIsBetter, unit = '') => {
     const bNum = parseFloat(baseVal), tNum = parseFloat(testVal);
     const hasNums = !isNaN(bNum) && !isNaN(tNum);
-    let deltaHtml = '', cls = '';
+    let deltaHtml = '', valCls = '';
     if (hasNums) {
       const delta = tNum - bNum;
       const better = higherIsBetter ? delta > 0 : delta < 0;
       const worse  = higherIsBetter ? delta < 0 : delta > 0;
       const sign   = delta > 0 ? '+' : '';
-      const fmtDelta = Number.isInteger(bNum) && Number.isInteger(tNum)
-        ? `${sign}${delta}` : `${sign}${delta.toFixed(2)}`;
-      cls = isCond ? '' : (better ? 'cmp-better' : worse ? 'cmp-worse' : '');
-      const icon = isCond
-        ? (delta !== 0 ? '<span class="cmp-cond-warn" title="Conditions differ">⚠️</span>' : '')
-        : '';
+      const fmt    = Math.abs(delta) < 1 ? delta.toFixed(2) : delta % 1 === 0 ? `${delta}` : delta.toFixed(1);
+      valCls = better ? 'cmp-better' : worse ? 'cmp-worse' : '';
       deltaHtml = delta !== 0
-        ? `<span class="cmp-delta ${cls}">${fmtDelta}${unit}</span>${icon}`
+        ? `<span class="cmp-delta ${valCls}">${sign}${fmt}${unit}</span>`
         : `<span class="cmp-delta cmp-same">—</span>`;
     }
-    const changed = hasNums && bNum !== tNum && !isCond;
-    const settingHighlight = changed && !isCond && cls === '' ? 'cmp-setting-changed' : '';
-    return `<tr class="${settingHighlight}">
+    return `<tr>
       <td class="cmp-label">${label}</td>
       <td class="cmp-val">${baseVal != null ? `${baseVal}${unit}` : '—'}</td>
-      <td class="cmp-val ${cls}">${testVal != null ? `${testVal}${unit}` : '—'}</td>
+      <td class="cmp-val ${valCls}">${testVal != null ? `${testVal}${unit}` : '—'}</td>
       <td class="cmp-delta-cell">${deltaHtml}</td>
     </tr>`;
   };
 
-  const condRow = (label, bVal, tVal) => row(label, bVal, tVal, true, '', true);
+  const settingRow = (label, baseVal, testVal, unit = '') => {
+    const bNum = parseFloat(baseVal), tNum = parseFloat(testVal);
+    const changed = !isNaN(bNum) && !isNaN(tNum) && bNum !== tNum;
+    const delta = changed ? tNum - bNum : null;
+    const sign = delta > 0 ? '+' : '';
+    const fmt = delta != null ? (Math.abs(delta) < 1 ? delta.toFixed(2) : `${delta}`) : null;
+    return `<tr class="${changed ? 'cmp-setting-row' : ''}">
+      <td class="cmp-label">${label}${changed ? ' <span class="cmp-changed-pip"></span>' : ''}</td>
+      <td class="cmp-val">${baseVal != null ? `${baseVal}${unit}` : '—'}</td>
+      <td class="cmp-val cmp-val-setting">${testVal != null ? `${testVal}${unit}` : '—'}</td>
+      <td class="cmp-delta-cell">${changed ? `<span class="cmp-delta cmp-setting-delta">${sign}${fmt}${unit}</span>` : '<span class="cmp-delta cmp-same">—</span>'}</td>
+    </tr>`;
+  };
+
+  const condRow = (label, bVal, tVal) => {
+    const changed = bVal !== tVal && bVal != null && tVal != null;
+    return `<tr>
+      <td class="cmp-label">${label}</td>
+      <td class="cmp-val" style="font-size:.82rem">${bVal ?? '—'}</td>
+      <td class="cmp-val" style="font-size:.82rem">${tVal ?? '—'}</td>
+      <td class="cmp-delta-cell">${changed ? '<span class="cmp-cond-warn">⚠️</span>' : '<span class="cmp-delta cmp-same">—</span>'}</td>
+    </tr>`;
+  };
+
+  // ── PERFORMANCE SUMMARY CARD ──────────────────────────────
+  const speedDelta = (base.avgSpeed != null && test.avgSpeed != null)
+    ? (test.avgSpeed - base.avgSpeed) : null;
+  const timeDelta  = (base.elapsedTime != null && test.elapsedTime != null)
+    ? (test.elapsedTime - base.elapsedTime) : null;
+
+  const speedBetter = speedDelta != null && speedDelta > 0;
+  const speedWorse  = speedDelta != null && speedDelta < 0;
+  const timeBetter  = timeDelta  != null && timeDelta  < 0;
+  const timeWorse   = timeDelta  != null && timeDelta  > 0;
+
+  const summaryIcon = speedDelta == null ? '📊'
+    : speedBetter ? '🟢' : speedWorse ? '🔴' : '⚪';
+
+  const summaryText = speedDelta == null
+    ? 'Log speed data to see performance summary'
+    : speedBetter
+      ? `+${speedDelta.toFixed(2)} km/h faster — the test setup performed better`
+      : speedWorse
+      ? `${speedDelta.toFixed(2)} km/h slower — the test setup performed worse`
+      : 'No speed difference between setups';
+
+  // Changed settings summary
+  const settingKeys = ['seatHeight','stackHeight','crankLength','seatOffset','reach','tirePsiF','tirePsiR'];
+  const settingLabels = {'seatHeight':'Seat Height','stackHeight':'Stack','crankLength':'Crank Length','seatOffset':'Seat Offset','reach':'Reach','tirePsiF':'Front PSI','tirePsiR':'Rear PSI'};
+  const settingUnits  = {'seatHeight':'mm','stackHeight':'mm','crankLength':'mm','seatOffset':'mm','reach':'mm','tirePsiF':' psi','tirePsiR':' psi'};
+  const changedSettings = settingKeys.filter(k => {
+    const b = parseFloat(base.settings?.[k]), t = parseFloat(test.settings?.[k]);
+    return !isNaN(b) && !isNaN(t) && b !== t;
+  });
+
+  const changedSettingsPills = changedSettings.map(k => {
+    const b = base.settings[k], t = test.settings[k];
+    const delta = t - b;
+    const sign = delta > 0 ? '+' : '';
+    return `<span class="cmp-changed-pill">${settingLabels[k]}: ${b}→${t}${settingUnits[k]} <span class="cmp-pill-delta">(${sign}${delta})</span></span>`;
+  }).join('');
+
+  const conditionsMatch = ['wind','windDir','surface','weather'].every(k =>
+    (base.conditions?.[k] ?? null) === (test.conditions?.[k] ?? null)
+  );
 
   const fmtSpeed = v => v != null ? v.toFixed(1) : null;
   const fmtDist  = v => v != null ? v.toFixed(1) : null;
@@ -521,6 +580,20 @@ function renderCompareResult(el, base, test) {
 
   el.innerHTML = `
     <div class="compare-result-wrap">
+
+      <!-- ── SUMMARY CARD ── -->
+      <div class="cmp-summary-card ${speedBetter ? 'cmp-card-better' : speedWorse ? 'cmp-card-worse' : ''}">
+        <div class="cmp-summary-icon">${summaryIcon}</div>
+        <div class="cmp-summary-body">
+          <div class="cmp-summary-headline">${summaryText}</div>
+          ${changedSettings.length > 0
+            ? `<div class="cmp-summary-changes">Changed: ${changedSettingsPills}</div>`
+            : `<div class="cmp-summary-changes" style="color:var(--text-muted)">No settings differences detected</div>`}
+          ${!conditionsMatch ? `<div class="cmp-summary-cond-warn">⚠️ Conditions differed between rides — results may not be directly comparable</div>` : ''}
+        </div>
+      </div>
+
+      <!-- ── HEADER ── -->
       <div class="compare-header-row">
         <div class="compare-header-label"></div>
         <div class="compare-header-val">
@@ -534,29 +607,33 @@ function renderCompareResult(el, base, test) {
         <div class="compare-header-delta">Delta</div>
       </div>
 
+      <!-- ── PERFORMANCE ── -->
       <div class="cmp-section-title">Performance</div>
       <table class="cmp-table">
-        ${row('Avg Speed', fmtSpeed(base.avgSpeed), fmtSpeed(test.avgSpeed), true, ' km/h')}
-        ${row('Elapsed Time', fmtTime2(base.elapsedTime), fmtTime2(test.elapsedTime), false, '')}
-        ${row('Distance', fmtDist(base.distance), fmtDist(test.distance), true, ' km')}
-        ${row('Elevation Gain', fmtElev(base.elevationGain), fmtElev(test.elevationGain), true, 'm')}
-        ${base.avgHR || test.avgHR ? row('Avg Heart Rate', base.avgHR, test.avgHR, false, ' bpm') : ''}
+        ${perfRow('Avg Speed', fmtSpeed(base.avgSpeed), fmtSpeed(test.avgSpeed), true, ' km/h')}
+        ${perfRow('Elapsed Time', fmtTime2(base.elapsedTime), fmtTime2(test.elapsedTime), false)}
+        ${perfRow('Distance', fmtDist(base.distance), fmtDist(test.distance), true, ' km')}
+        ${perfRow('Elevation Gain', fmtElev(base.elevationGain), fmtElev(test.elevationGain), true, 'm')}
+        ${base.avgHR || test.avgHR ? perfRow('Avg Heart Rate', base.avgHR ? Math.round(base.avgHR) : null, test.avgHR ? Math.round(test.avgHR) : null, false, ' bpm') : ''}
+        ${base.avgPower || test.avgPower ? perfRow('Avg Power', base.avgPower ? Math.round(base.avgPower) : null, test.avgPower ? Math.round(test.avgPower) : null, true, 'w') : ''}
       </table>
 
-      <div class="cmp-section-title">Settings</div>
+      <!-- ── SETTINGS ── -->
+      <div class="cmp-section-title">Settings <span style="font-size:.72rem;font-weight:400;color:var(--text-muted)">— <span class="cmp-changed-pip" style="display:inline-block;vertical-align:middle"></span> changed between rides</span></div>
       <table class="cmp-table">
-        ${row('Seat Height', base.settings?.seatHeight, test.settings?.seatHeight, true, 'mm')}
-        ${row('Stack / Spacers', base.settings?.stackHeight, test.settings?.stackHeight, true, 'mm')}
-        ${row('Crank Length', base.settings?.crankLength, test.settings?.crankLength, true, 'mm')}
-        ${row('Seat Offset', base.settings?.seatOffset, test.settings?.seatOffset, true, 'mm')}
-        ${row('Reach', base.settings?.reach, test.settings?.reach, true, 'mm')}
-        ${row('Tire PSI Front', base.settings?.tirePsiF, test.settings?.tirePsiF, true, ' psi')}
-        ${row('Tire PSI Rear', base.settings?.tirePsiR, test.settings?.tirePsiR, true, ' psi')}
+        ${settingRow('Seat Height', base.settings?.seatHeight, test.settings?.seatHeight, 'mm')}
+        ${settingRow('Stack / Spacers', base.settings?.stackHeight, test.settings?.stackHeight, 'mm')}
+        ${settingRow('Crank Length', base.settings?.crankLength, test.settings?.crankLength, 'mm')}
+        ${settingRow('Seat Offset', base.settings?.seatOffset, test.settings?.seatOffset, 'mm')}
+        ${settingRow('Reach', base.settings?.reach, test.settings?.reach, 'mm')}
+        ${settingRow('Tire PSI Front', base.settings?.tirePsiF, test.settings?.tirePsiF, ' psi')}
+        ${settingRow('Tire PSI Rear', base.settings?.tirePsiR, test.settings?.tirePsiR, ' psi')}
       </table>
 
+      <!-- ── CONDITIONS ── -->
       <div class="cmp-section-title">Conditions <span style="font-size:.72rem;font-weight:400;color:var(--text-muted)">(⚠️ = differs between rides)</span></div>
       <table class="cmp-table">
-        ${condRow('Temperature', base.conditions?.temp != null ? base.conditions.temp + '°C' : null, test.conditions?.temp != null ? test.conditions.temp + '°C' : null)}
+        ${condRow('Temperature', base.conditions?.temp != null ? base.conditions.temp+'°C' : null, test.conditions?.temp != null ? test.conditions.temp+'°C' : null)}
         ${condRow('Wind', base.conditions?.wind, test.conditions?.wind)}
         ${condRow('Wind Direction', base.conditions?.windDir, test.conditions?.windDir)}
         ${condRow('Surface', base.conditions?.surface, test.conditions?.surface)}
@@ -565,9 +642,9 @@ function renderCompareResult(el, base, test) {
 
       ${(base.notes || test.notes) ? `
       <div class="cmp-section-title">Notes</div>
-      <div class="cmp-notes-row">
-        <div class="cmp-note">${escHtml(base.notes || '—')}</div>
-        <div class="cmp-note">${escHtml(test.notes || '—')}</div>
+      <div class="cmp-notes-grid">
+        <div class="cmp-note-wrap"><div class="cmp-note-label">Base</div><div class="cmp-note">${escHtml(base.notes || '—')}</div></div>
+        <div class="cmp-note-wrap"><div class="cmp-note-label">Test</div><div class="cmp-note">${escHtml(test.notes || '—')}</div></div>
       </div>` : ''}
     </div>`;
 }
