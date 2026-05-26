@@ -657,7 +657,7 @@ export function getZoneQuickValue(zoneId,bike){
     case 'rear-wheel': {const t=bl.rearTire; return t?.brand?`${t.brand} ${t.model||''} ${t.psi?'· '+t.psi+' psi':''}`.trim():'Not set';}
     case 'fork': {const f=bl.fork; return f?.brand?`${f.brand} ${f.model||''} ${f.type==='air'&&f.psi?'· '+f.psi+' psi':f.type==='coil'?'· Coil':''}`.trim():'Not set';}
     case 'shock':{const s=bl.shock;return s?.brand?`${s.brand} ${s.model||''} ${s.type==='air'&&s.psi?'· '+s.psi+' psi':s.type==='coil'?'· Coil':''}`.trim():'Not set';}
-    case 'handlebar': return bl.handlebar?.brand ?`${bl.handlebar.brand} ${bl.handlebar.model||''}`.trim() :'Not set';
+    case 'handlebar': return 'Click to explore cockpit';
     case 'drivetrain':return bl.drivetrain?.brand?`${bl.drivetrain.brand} ${bl.drivetrain.model||''}`.trim():'Not set';
     case 'dropper':   return bl.dropper?.brand   ?`${bl.dropper.brand} ${bl.dropper.model||''}`.trim()    :'Not set';
     case 'frame':     return bl.frame?.brand     ?`${bl.frame.brand} ${bl.frame.model||''}`.trim()        :'Not set';
