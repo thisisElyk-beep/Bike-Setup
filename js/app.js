@@ -310,7 +310,6 @@ function bindHeader() {
   $('btn-theme').onclick  = toggleTheme;
   $('btn-export').onclick = () => _bike && exportBikePDF(_bike);
   $('btn-add-bike-header').onclick = showAddBikeModal;
-  $('btn-add-bike-hero').onclick   = showAddBikeModal;
   $('btn-add-bike-empty').onclick  = showAddBikeModal;
 }
 
