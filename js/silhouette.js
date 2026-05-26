@@ -166,10 +166,10 @@ function drivetrain(BB, RW, r=33) {
 }
 
 // ── FULL SUSPENSION MTB ───────────────────────────────────
-// Verified: HC(587,206) HT(563,157) ST(335,179) HA=63.75° TT=5.5°↑
+// HC(580,191) HT(563,157) ST(335,179) HA=63.9° — shorter head tube (38px)
 function svgMTBFS(hasMotor = false) {
   const RW={x:148,y:350}, FW={x:658,y:350}, BB={x:382,y:368};
-  const ST={x:335,y:179}, HT={x:563,y:157}, HC={x:587,y:206};
+  const ST={x:335,y:179}, HT={x:563,y:157}, HC={x:580,y:191};
   const stLen=195;
   const stUx=(ST.x-BB.x)/stLen, stUy=(ST.y-BB.y)/stLen;
   const POST={x:322,y:125};
@@ -235,7 +235,7 @@ function svgMTBFS(hasMotor = false) {
     <line x1="${F.lB.x-2}" y1="${F.lB.y-22}" x2="${F.rB.x+2}" y2="${F.rB.y-22}" stroke-width="6" stroke-linecap="round" opacity="0.64"/>
     <rect x="${F.lB.x-20}" y="${F.lB.y-62}" width="14" height="28" rx="3" fill="none" stroke-width="3" opacity="0.58"/>
     <line x1="${F.lB.x-10}" y1="${F.lB.y+2}" x2="${F.rB.x+10}" y2="${F.rB.y+2}" stroke-width="7" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="563" y="196" width="117" height="164" rx="14" data-zone="fork"/>
+    <rect class="zone-overlay" x="555" y="183" width="140" height="181" rx="14" data-zone="fork"/>
   </g>
 
   <!-- SHOCK + LINKAGE (rendered last) -->
@@ -273,7 +273,7 @@ function svgHardtail(isDJ = false) {
   const BB = isDJ ? {x:374,y:362} : {x:378,y:365};
   const ST = isDJ ? {x:331,y:255} : {x:333,y:183};
   const HT = isDJ ? {x:556,y:179} : {x:561,y:160};
-  const HC = isDJ ? {x:564,y:200} : {x:583,y:207};
+  const HC = isDJ ? {x:562,y:196} : {x:583,y:207}; // DJ: 18px head tube
   const TT_JOIN = isDJ ? {x:338,y:273} : {x:340,y:212};
   // For DJ: seatstay meets seat tube at TT_JOIN (same point), giving continuous line
   const DJ_SS = {x:338, y:273};
