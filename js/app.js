@@ -107,8 +107,10 @@ function openBike(bike) {
   _tab  = 'setup';
   $('logo-home').classList.add('hidden');
   $('btn-back').classList.remove('hidden');
-  $('bike-name-header').textContent = bike.name;
-  $('bike-name-header').classList.remove('hidden');
+  const nameBtn = $('bike-name-header');
+  nameBtn.innerHTML = `${escHtml(bike.name)}<svg class="rename-icon" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7 1.5l2.5 2.5L3 10H.5V7.5L7 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
+  nameBtn.classList.remove('hidden');
+  nameBtn.onclick = () => showRenameBikeModal(bike);
   $('btn-export').classList.remove('hidden');
   $('btn-add-bike-header').classList.add('hidden');
   showView('detail');
@@ -503,6 +505,11 @@ function showRenameBikeModal(bike) {
       await updateBike(bike.id, { name });
       bike.name = name;
       _bikes = _bikes.map(b => b.id === bike.id ? {...b, name} : b);
+      // Refresh header if we're inside the bike view
+      const nameBtn = $('bike-name-header');
+      if (nameBtn && !nameBtn.classList.contains('hidden')) {
+        nameBtn.innerHTML = `${escHtml(name)}<svg class="rename-icon" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7 1.5l2.5 2.5L3 10H.5V7.5L7 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
+      }
       showToast('Renamed', 'success');
       closeModal();
       renderFleet();
