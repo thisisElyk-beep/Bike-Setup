@@ -220,6 +220,22 @@ function suspensionForm(key, label, data = {}, isShock = false) {
         <span class="range-val"><span id="val-${key}-hsc">${data.hsc ?? 4}</span></span>
       </div>
     </div>
+
+    ${!isShock ? `
+    <div class="settings-section-divider">Damper Internals</div>
+    <div class="field-row">
+      ${field('Damper Brand', `${key}-damperBrand`, data.damperBrand, 'e.g. Fox, Öhlins')}
+      ${field('Damper Model', `${key}-damperModel`, data.damperModel, 'e.g. GRIP2, TTX')}
+    </div>
+    <div class="field-row">
+      ${field('Tune', `${key}-tune`, data.tune, 'e.g. Medium, Firm')}
+      ${field('Oil Weight', `${key}-oilWeight`, data.oilWeight, 'e.g. 5wt, 7.5wt')}
+    </div>
+    <div class="field-row">
+      ${field('Lower Leg Oil', `${key}-lowerLegOil`, data.lowerLegOil, 'e.g. 10ml 15wt')}
+      ${field('Last Service', `${key}-lastService`, data.lastService, '', 'date')}
+    </div>` : ''}
+
     <div class="field-group">
       ${fieldTextarea('Notes', `${key}-notes`, data.notes)}
     </div>
@@ -400,6 +416,13 @@ function collectSuspension(key, container) {
     springBrand: type === 'coil' ? val(`${key}-springBrand`) : null,
     lsr: num(`${key}-lsr`), hsr: num(`${key}-hsr`),
     lsc: num(`${key}-lsc`), hsc: num(`${key}-hsc`),
+    // Damper internals (fork only — fields absent on shock form)
+    damperBrand:  val(`${key}-damperBrand`)  || undefined,
+    damperModel:  val(`${key}-damperModel`)  || undefined,
+    tune:         val(`${key}-tune`)         || undefined,
+    oilWeight:    val(`${key}-oilWeight`)    || undefined,
+    lowerLegOil:  val(`${key}-lowerLegOil`) || undefined,
+    lastService:  val(`${key}-lastService`)  || undefined,
     notes: val(`${key}-notes`)
   };
 }
