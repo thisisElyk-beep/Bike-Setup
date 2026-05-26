@@ -369,13 +369,11 @@ function svgHardtail(isDJ = false) {
 }
 
 // ── GRAVEL BIKE ───────────────────────────────────────────
-// 72° HA, 73° SA, nearly flat top tube (2.2°) — Giordano Trieste / endurance style
-// HC(604,240) HT(585,183) ST(315,164) TT_JOIN(324,193)
-// Top tube: (324,193)→(585,183) — 2.2° slope, visually flat ✓
-// Straight fork legs (modern gravel)
+// 72° HA, 73° SA — shorter frame, higher DT connection, 3.8° TT slope
+// HC(560,226) HT(548,188) ST(315,164) TT_JOIN(324,203)
 function svgGravel() {
-  const RW={x:155,y:350}, FW={x:640,y:350}, BB={x:375,y:360};
-  const ST={x:315,y:164}, HT={x:585,y:183}, HC={x:604,y:240};
+  const RW={x:155,y:350}, FW={x:600,y:350}, BB={x:375,y:360};
+  const ST={x:315,y:164}, HT={x:548,y:188}, HC={x:560,y:226};
   const TT_JOIN={x:324,y:203}; // 4.4° downward slope from HT // 30px below ST along seat tube
 
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
@@ -390,18 +388,18 @@ function svgGravel() {
   const fDx=FW.x-HC.x, fDy=FW.y-HC.y;
   const fLen=Math.sqrt(fDx*fDx+fDy*fDy);
   const fux=fDx/fLen, fuy=fDy/fLen, fpx=fuy, fpy=-fux;
-  const lT={x:597,y:242}, rT={x:611,y:238};
+  const lT={x:553,y:228}, rT={x:567,y:224};
   const lB={x:FW.x-6,y:FW.y}, rB={x:FW.x+6,y:FW.y};
 
   // Drop bars — side-view profile
   // Stem: from HT going forward (right) and very slightly down
-  const StemTip={x:631,y:179};
+  const StemTip={x:594,y:184};
   // Bar top: extends rearward (left) from stem tip
-  const BarRear={x:603,y:174};
+  const BarRear={x:566,y:179};
   // Drop: bezier from BarRear down and slight curl forward at bottom
-  const DropBot={x:617,y:222};
+  const DropBot={x:580,y:227};
   // Hood body (brake hood area, near stem)
-  const HoodX=607, HoodY=171;
+  const HoodX=570, HoodY=177;
 
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
@@ -481,7 +479,7 @@ function svgGravel() {
     <line x1="${rT.x}" y1="${rT.y}" x2="${rB.x}" y2="${rB.y}" stroke-width="7" stroke-linecap="round"/>
     <line x1="${lB.x-1}" y1="${lB.y-20}" x2="${rB.x+1}" y2="${rB.y-20}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
     <line x1="${lB.x-8}" y1="${lB.y+2}" x2="${rB.x+8}" y2="${rB.y+2}" stroke-width="6" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="572" y="195" width="106" height="172" rx="12" data-zone="fork"/>
+    <rect class="zone-overlay" x="543" y="218" width="72" height="148" rx="12" data-zone="fork"/>
   </g>
 </svg>`;
 }
@@ -490,8 +488,8 @@ function svgGravel() {
 // Verified: HC(591,204) HT(573,145) ST(319,183) HA=73° TT=8.5°↑
 // Curved fork (road bikes still use raked forks)
 function svgRoad() {
-  const RW={x:155,y:350}, FW={x:636,y:350}, BB={x:372,y:355};
-  const ST={x:318,y:178}, HT={x:592,y:207}, HC={x:610,y:264};
+  const RW={x:155,y:350}, FW={x:598,y:350}, BB={x:372,y:355};
+  const ST={x:318,y:178}, HT={x:556,y:214}, HC={x:567,y:250};
 
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
   const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
@@ -502,8 +500,8 @@ function svgRoad() {
   const SS={x:331, y:238};
 
   // Curved fork: two bezier paths from crown to axle
-  const fCx1=HC.x+10, fCy1=HC.y+45, fCx2=FW.x+10, fCy2=FW.y-35;
-  const fCx1r=HC.x+18, fCy1r=HC.y+46, fCx2r=FW.x+18, fCy2r=FW.y-34;
+  const fCx1=HC.x+8, fCy1=HC.y+38, fCx2=FW.x+8, fCy2=FW.y-28;
+  const fCx1r=HC.x+16, fCy1r=HC.y+39, fCx2r=FW.x+16, fCy2r=FW.y-27;
 
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
@@ -549,24 +547,24 @@ function svgRoad() {
   <!-- Drop bars — side-view profile (matching gravel style) -->
   <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
     <!-- Stem: forward from HT, nearly horizontal -->
-    <line x1="${HT.x}" y1="${HT.y}" x2="647" y2="203"
+    <line x1="${HT.x}" y1="${HT.y}" x2="611" y2="210"
           stroke-width="6.5" stroke-linecap="round"/>
     <!-- Stem faceplate -->
-    <rect x="642" y="194" width="8" height="16" rx="3"
+    <rect x="606" y="201" width="8" height="16" rx="3"
           fill="var(--bg-elevated)" stroke-width="3"/>
     <!-- Bar top section: extends rearward from stem tip -->
-    <line x1="647" y1="203" x2="617" y2="198"
+    <line x1="611" y1="210" x2="581" y2="205"
           stroke-width="6.5" stroke-linecap="round"/>
     <!-- Brake hood body -->
-    <path d="M 623 196 Q 615 204 619 214"
+    <path d="M 587 203 Q 579 211 583 221"
           fill="none" stroke-width="9" stroke-linecap="round" opacity="0.55"/>
     <!-- Drop: bezier from bar rear, curves down and slightly forward -->
-    <path d="M 617 198 C 611 216 621 234 631 250"
+    <path d="M 581 205 C 575 223 585 241 595 257"
           fill="none" stroke-width="6.5" stroke-linecap="round"/>
     <!-- Bottom curl: curves forward toward front of bike -->
-    <path d="M 631 250 Q 645 253 649 244"
+    <path d="M 595 257 Q 609 260 613 251"
           fill="none" stroke-width="6.5" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="601" y="183" width="110" height="116" rx="10" data-zone="handlebar"/>
+    <rect class="zone-overlay" x="565" y="190" width="106" height="116" rx="10" data-zone="handlebar"/>
   </g>
 
   <!-- Curved fork (road — raked) -->
@@ -585,7 +583,7 @@ function svgRoad() {
     <line x1="${FW.x+4}" y1="${FW.y-18}" x2="${FW.x+18}" y2="${FW.y-18}" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
     <!-- Axle -->
     <line x1="${FW.x-2}" y1="${FW.y+2}" x2="${FW.x+22}" y2="${FW.y+2}" stroke-width="5.5" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="580" y="200" width="100" height="168" rx="12" data-zone="fork"/>
+    <rect class="zone-overlay" x="553" y="240" width="58" height="120" rx="12" data-zone="fork"/>
   </g>
 </svg>`;
 }
