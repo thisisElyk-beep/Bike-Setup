@@ -61,7 +61,10 @@ function buildQuickAdjust(bike) {
         <path d="M22 14v5M22 22v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
       </svg>
       <h3>No setup data yet</h3>
-      <p>Fill in your fork, shock, and tire settings in the Setup tab first.</p>
+      <p>Add your fork, shock, and tire pressures in the Setup tab first — then come back here to make quick trailside tweaks.</p>
+      <button class="btn-primary" style="margin-top:.75rem" onclick="document.querySelector('[data-tab=\'setup\']').click()">
+        Go to Setup →
+      </button>
     </div>`;
   }
 
