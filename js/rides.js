@@ -39,20 +39,7 @@ function renderRidesList(container, rides, bike) {
     </div>
     <div id="rides-list-container"></div>
 
-    ${isRoadGravel ? `
-    <div class="session-notes-section">
-      <div class="session-notes-header">
-        <div>
-          <div class="session-notes-title">Session Notes</div>
-          <div class="session-notes-sub">Quick feel-based notes — conditions, tweaks, observations</div>
-        </div>
-        <button class="btn-primary" id="btn-new-session-note" style="font-size:.78rem;padding:.35rem .7rem;display:flex;align-items:center;gap:.35rem">
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          Add Note
-        </button>
-      </div>
-      <div id="session-notes-list"></div>
-    </div>` : ''}`;
+`;
 
   renderFilteredList(rides, bike);
 
@@ -64,10 +51,7 @@ function renderRidesList(container, rides, bike) {
     filter.value ? rides.filter(r => r.routeName === filter.value) : rides, bike
   );
 
-  if (isRoadGravel) {
-    renderSessionNotes(bike);
-    document.getElementById('btn-new-session-note').onclick = () => showSessionNoteModal(bike);
-  }
+
 }
 
 function renderFilteredList(rides, bike) {
@@ -99,6 +83,28 @@ function renderFilteredList(rides, bike) {
   el.querySelectorAll('.ride-card').forEach(card => {
     const id = card.dataset.id;
     const ride = rides.find(r => r.id === id);
+    card.querySelector('.ride-card-note-btn')?.addEventListener('click', async e => {
+      e.stopPropagation();
+      const ride = rides.find(r => r.id === id);
+      const note = prompt('Session note for this ride:', ride.notes || '');
+      if (note === null) return; // cancelled
+      try {
+        await updateRide(bike.id, id, { notes: note.trim() });
+        ride.notes = note.trim();
+        // Update card note display
+        const noteEl = card.querySelector('.ride-card-note');
+        const noteBtn = card.querySelector('.ride-card-note-btn');
+        if (note.trim()) {
+          if (noteEl) noteEl.textContent = note.trim();
+          else { const main = card.querySelector('.ride-card-main'); main.insertAdjacentHTML('beforeend', `<div class="ride-card-note">${escHtml(note.trim())}</div>`); }
+          if (noteBtn) noteBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 9V7l5-5 2 2-5 5H2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg> Edit note';
+        } else {
+          if (noteEl) noteEl.remove();
+          if (noteBtn) noteBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 9V7l5-5 2 2-5 5H2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg> Add note';
+        }
+      } catch(err) { showToast('Save failed', 'error'); }
+    });
+
     card.querySelector('.ride-card-compare')?.addEventListener('click', e => {
       e.stopPropagation();
       showCompareView(container, rides, bike, id);
@@ -136,13 +142,20 @@ function rideCard(r) {
           <span class="ride-stat">${time}</span>
         </div>
         ${cond ? `<div class="ride-card-cond">${escHtml(cond)}</div>` : ''}
+        ${r.notes ? `<div class="ride-card-note">${escHtml(r.notes)}</div>` : ''}
       </div>
-      <button class="btn-icon-sm ride-card-compare" title="Compare with another ride" style="margin-right:.25rem">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5h9M8 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <button class="btn-icon-sm ride-card-delete" title="Delete ride">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4.5 3V2a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v1M4.5 5v4M7.5 5v4M2.5 3l.6 6.5a.5.5 0 00.5.5h5a.5.5 0 00.5-.5L9.5 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+      <div class="ride-card-actions">
+        <button class="btn-text ride-card-note-btn" title="Add/edit note" style="font-size:.75rem;color:var(--text-muted);display:flex;align-items:center;gap:.25rem">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 9V7l5-5 2 2-5 5H2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+          ${r.notes ? 'Edit note' : 'Add note'}
+        </button>
+        <button class="btn-icon-sm ride-card-compare" title="Compare">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5h9M8 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="btn-icon-sm ride-card-delete" title="Delete">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4.5 3V2a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v1M4.5 5v4M7.5 5v4M2.5 3l.6 6.5a.5.5 0 00.5.5h5a.5.5 0 00.5-.5L9.5 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
     </div>`;
 }
 
