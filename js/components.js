@@ -151,48 +151,34 @@ function buildRow(comp, bike) {
     </div>
     <div class="comp-row-detail hidden">
       <div class="comp-edit-form">
-<!-- SERVICE LOG — shown above edit form for easy access -->
-      <div class="service-log">
-        <div class="service-log-header">
-          <span class="service-log-title">Service History</span>
-          <button class="btn-primary btn-log-service" style="font-size:.72rem;padding:.3rem .7rem;display:flex;align-items:center;gap:.35rem">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Log Service
-          </button>
-        </div>
-        <div class="service-log-add hidden">
-          <div class="field-row" style="margin-bottom:.5rem">
-            <div class="field-group">
-              <label class="field-label">Date</label>
-              <input class="field-input svc-date" type="date" value="${new Date().toISOString().slice(0,10)}">
-            </div>
-            <div class="field-group">
-              <label class="field-label">Type</label>
-              <select class="field-select svc-type">
-                <option>Full Service</option>
-                <option>Seal Kit</option>
-                <option>Oil Change</option>
-                <option>Brake Bleed</option>
-                <option>Chain Replaced</option>
-                <option>Cable / Housing</option>
-                <option>Cleaned</option>
-                <option>Other</option>
-              </select>
-            </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Brand</label>
+            <input class="field-input comp-field-brand" type="text" value="${escHtml(comp.brand || '')}" placeholder="Brand">
           </div>
-          <div class="field-group" style="margin-bottom:.5rem">
-            <input class="field-input svc-notes" type="text" placeholder="Notes (optional)">
-          </div>
-          <div style="display:flex;gap:.5rem;justify-content:flex-end">
-            <button class="btn-secondary btn-svc-cancel" style="font-size:.72rem;padding:.3rem .65rem">Cancel</button>
-            <button class="btn-primary btn-svc-save" style="font-size:.72rem;padding:.3rem .65rem">Add Entry</button>
+          <div class="field-group">
+            <label class="field-label">Model</label>
+            <input class="field-input comp-field-model" type="text" value="${escHtml(comp.model || '')}" placeholder="Model">
           </div>
         </div>
-        <div class="service-log-entries"></div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Install Date</label>
+            <input class="field-input comp-field-date" type="date" value="${comp.installDate ? comp.installDate.slice(0,10) : ''}">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Notes</label>
+            <input class="field-input comp-field-notes" type="text" value="${escHtml(comp.notes || '')}" placeholder="Notes">
+          </div>
+        </div>
+        <div class="comp-edit-actions">
+          <button class="btn-secondary btn-comp-cancel" style="font-size:.78rem">Cancel</button>
+          <button class="btn-primary btn-comp-save" style="font-size:.78rem">Save</button>
+          <button class="btn-text btn-comp-delete" style="font-size:.78rem;color:var(--danger);margin-left:auto">Delete</button>
+        </div>
       </div>
     </div>
   `;
-
   const summary = row.querySelector('.comp-row-summary');
   const detail  = row.querySelector('.comp-row-detail');
   const chevron = row.querySelector('.comp-row-chevron');
@@ -273,37 +259,6 @@ function buildRow(comp, bike) {
     } catch (err) {
       showToast('Delete failed', 'error');
     }
-  };
-
-  // Service log
-  renderServiceLog(row, comp, bike);
-  row.querySelector('.btn-log-service').onclick = e => {
-    e.stopPropagation();
-    const addForm = row.querySelector('.service-log-add');
-    addForm.classList.toggle('hidden');
-    if (!addForm.classList.contains('hidden')) row.querySelector('.svc-notes')?.focus();
-  };
-  row.querySelector('.btn-svc-cancel').onclick = e => {
-    e.stopPropagation();
-    row.querySelector('.service-log-add').classList.add('hidden');
-  };
-  row.querySelector('.btn-svc-save').onclick = async e => {
-    e.stopPropagation();
-    const date  = row.querySelector('.svc-date').value;
-    const type  = row.querySelector('.svc-type').value;
-    const notes = row.querySelector('.svc-notes').value.trim();
-    if (!date) { showToast('Pick a date', 'error'); return; }
-    const entry = { id: Date.now().toString(), date, type, notes };
-    comp.serviceLog = [...(comp.serviceLog || []), entry];
-    comp.serviceLog.sort((a,b) => b.date.localeCompare(a.date));
-    try {
-      await updateComponent(bike.id, comp.id, { serviceLog: comp.serviceLog });
-      row.querySelector('.service-log-add').classList.add('hidden');
-      row.querySelector('.svc-notes').value = '';
-      renderServiceLog(row, comp, bike);
-      updateLastServiceDate(row, comp);
-      showToast('Service logged', 'success');
-    } catch(err) { showToast('Failed: ' + err.message, 'error'); }
   };
 
   return row;
