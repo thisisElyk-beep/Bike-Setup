@@ -6,6 +6,38 @@ const isDropBar = t => ['gravel','road'].includes(t);
 const isRigidFork = t => ['gravel','road','dirtjumper'].includes(t);
 const hasDrooper = t => ['mtb','emtb','hardtail'].includes(t);
 
+
+// ── SETUP CHANGELOG ──────────────────────────────────────
+function logSetupChange(bikeId, zoneId, oldData, newData) {
+  const changes = [];
+  const compare = (oldObj, newObj, prefix) => {
+    oldObj = oldObj || {};
+    newObj = newObj || {};
+    const keys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
+    keys.forEach(k => {
+      const o = oldObj[k], n = newObj[k];
+      if (typeof o === 'object' || typeof n === 'object') return;
+      if (o !== n && n != null) {
+        changes.push({ field: prefix ? `${prefix}.${k}` : k, from: o ?? null, to: n });
+      }
+    });
+  };
+  compare(oldData, newData, zoneId);
+  if (!changes.length) return;
+  const entry = { date: new Date().toISOString(), zone: zoneId, changes };
+  try {
+    const key = `quiver_changelog_${bikeId}`;
+    const log = JSON.parse(localStorage.getItem(key) || '[]');
+    log.unshift(entry);
+    localStorage.setItem(key, JSON.stringify(log.slice(0, 100))); // keep last 100
+  } catch(e) {}
+}
+
+export function getSetupChangelog(bikeId) {
+  try { return JSON.parse(localStorage.getItem(`quiver_changelog_${bikeId}`) || '[]'); }
+  catch { return []; }
+}
+
 // ── ZONE → FORM RENDERER ──────────────────────────────────
 
 export function renderZoneSettings(zoneId, bike, container, onSaved) {

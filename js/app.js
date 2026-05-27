@@ -3,7 +3,7 @@ import { getBikes, createBike, updateBike, deleteBike } from './db.js';
 import { initProfile, showProfilePicker, renderProfileChip, THEMES, getProfileTheme, setProfileTheme, applyTheme } from './profiles.js';
 import { getPresets } from './db.js';
 import { createSilhouette, createMiniSilhouette, setupZoneInteraction, resetZoom, createCockpitFrontView, setupCockpitInteraction } from './silhouette.js';
-import { renderZoneSettings, renderSettingsPlaceholder, renderCockpitSubZone } from './setup.js';
+import { renderZoneSettings, renderSettingsPlaceholder, renderCockpitSubZone, getSetupChangelog } from './setup.js';
 import { renderComponentsTab } from './components.js';
 import { renderQuickAdjustTab } from './quickadjust.js';
 import { renderRidesTab } from './rides.js';
@@ -61,12 +61,91 @@ async function loadFleet() {
     }
   }
   renderFleet();
+  initNotifications(_bikes);
+}
+
+
+
+// ── SETUP CHANGELOG DISPLAY ───────────────────────────────
+function renderSetupChangelog(bike) {
+  const el = document.getElementById('setup-changelog');
+  if (!el) return;
+  const log = getSetupChangelog(bike.id);
+  if (log.length === 0) { el.innerHTML = ''; return; }
+
+  const fmt = d => new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const fmtField = f => f.split('.').pop().replace(/([A-Z])/g,' $1').replace(/^./,c=>c.toUpperCase());
+
+  el.innerHTML = `
+    <div class="changelog-section">
+      <div class="changelog-title">Recent Changes</div>
+      <div class="changelog-entries">
+        ${log.slice(0,8).map(entry => `
+          <div class="changelog-entry">
+            <div class="changelog-date">${fmt(entry.date)}</div>
+            <div class="changelog-changes">
+              ${entry.changes.map(c => `
+                <span class="changelog-change">
+                  ${fmtField(c.field)}: ${c.from != null ? c.from+'→' : ''}${c.to}
+                </span>`).join('')}
+            </div>
+          </div>`).join('')}
+        ${log.length > 8 ? `<div class="changelog-more">+${log.length-8} older entries</div>` : ''}
+      </div>
+    </div>`;
+}
+
+// ── PUSH NOTIFICATIONS ────────────────────────────────────
+async function initNotifications(bikes) {
+  if (!('Notification' in window)) return;
+  const profileId = localStorage.getItem('dialed_active_profile') || 'default';
+  const lastCheck = localStorage.getItem(`quiver_notif_check_${profileId}`);
+  const today = new Date().toISOString().slice(0,10);
+  if (lastCheck === today) return; // already checked today
+
+  // Request permission if not yet decided
+  if (Notification.permission === 'default') {
+    await Notification.requestPermission();
+  }
+  if (Notification.permission !== 'granted') return;
+
+  // Check each bike's service components
+  for (const bike of bikes) {
+    const { getComponents } = await import('./db.js');
+    let comps = [];
+    try { comps = await getComponents(bike.id); } catch(e) { continue; }
+
+    const SERVICE_CATS = ['Fork','Rear Shock','Dropper Post','Brakes'];
+    const overdue = comps.filter(c => {
+      if (!SERVICE_CATS.includes(c.category)) return false;
+      if (!c.serviceIntervalMonths) return false;
+      const log = c.serviceLog || [];
+      const lastDate = log[0]?.date || c.installDate;
+      if (!lastDate) return false;
+      const due = new Date(lastDate + 'T00:00:00');
+      due.setMonth(due.getMonth() + parseFloat(c.serviceIntervalMonths));
+      return due < new Date();
+    });
+
+    if (overdue.length > 0) {
+      new Notification(`Quiver — Service Due: ${bike.name}`, {
+        body: `${overdue.map(c => c.category).join(', ')} ${overdue.length === 1 ? 'is' : 'are'} overdue for service.`,
+        icon: '/Bike-Setup/icons/icon-192.png',
+        tag: `quiver-service-${bike.id}`,
+      });
+    }
+  }
+  localStorage.setItem(`quiver_notif_check_${profileId}`, today);
 }
 
 // ── FLEET VIEW ────────────────────────────────────────────
 function renderFleet() {
   const grid  = $('bikes-grid');
   const empty = $('bikes-empty');
+
+  // Stats dashboard
+  renderFleetStats();
+
   grid.innerHTML = '';
   if (_bikes.length === 0) {
     grid.classList.add('hidden');
@@ -76,6 +155,78 @@ function renderFleet() {
     empty.classList.add('hidden');
     _bikes.forEach(b => grid.appendChild(buildBikeCard(b)));
   }
+}
+
+function renderFleetStats() {
+  const el = $('fleet-stats');
+  if (!el || _bikes.length === 0) { if (el) el.innerHTML = ''; return; }
+
+  const profileId = localStorage.getItem('dialed_active_profile') || 'default';
+
+  // Total hours across all bikes
+  const totalHours = _bikes.reduce((sum, b) => {
+    try {
+      const log = JSON.parse(localStorage.getItem(`quiver_hours_${b.id}`) || '[]');
+      return sum + log.reduce((s, e) => s + (e.hours || 0), 0);
+    } catch { return sum; }
+  }, 0);
+
+  // Total rides (from Firestore would require async — use 0 as placeholder, updated async)
+  const bikeCount = _bikes.length;
+
+  el.innerHTML = `
+    <div class="fleet-stats-row">
+      <div class="fleet-stat-card">
+        <div class="fleet-stat-val">${bikeCount}</div>
+        <div class="fleet-stat-lbl">${bikeCount === 1 ? 'Bike' : 'Bikes'}</div>
+      </div>
+      <div class="fleet-stat-card">
+        <div class="fleet-stat-val">${totalHours.toFixed(1)}</div>
+        <div class="fleet-stat-lbl">Hours Logged</div>
+      </div>
+      <div class="fleet-stat-card" id="stat-rides">
+        <div class="fleet-stat-val">—</div>
+        <div class="fleet-stat-lbl">Rides</div>
+      </div>
+      <div class="fleet-stat-card" id="stat-service">
+        <div class="fleet-stat-val">—</div>
+        <div class="fleet-stat-lbl">Service Due</div>
+      </div>
+    </div>`;
+
+  // Load ride count async
+  Promise.all(_bikes.map(async b => {
+    const { getRides } = await import('./db.js');
+    try { return (await getRides(b.id)).length; } catch { return 0; }
+  })).then(counts => {
+    const total = counts.reduce((a,b) => a+b, 0);
+    const el = $('stat-rides');
+    if (el) { el.querySelector('.fleet-stat-val').textContent = total; }
+  });
+
+  // Service status async
+  Promise.all(_bikes.map(async b => {
+    const { getComponents } = await import('./db.js');
+    try {
+      const comps = await getComponents(b.id);
+      return comps.filter(c => {
+        if (!c.serviceIntervalMonths) return false;
+        const log = c.serviceLog || [];
+        const lastDate = log[0]?.date || c.installDate;
+        if (!lastDate) return false;
+        const due = new Date(lastDate + 'T00:00:00');
+        due.setMonth(due.getMonth() + parseFloat(c.serviceIntervalMonths));
+        return due < new Date();
+      }).length;
+    } catch { return 0; }
+  })).then(counts => {
+    const total = counts.reduce((a,b) => a+b, 0);
+    const el = $('stat-service');
+    if (el) {
+      el.querySelector('.fleet-stat-val').textContent = total || '✓';
+      if (total > 0) el.classList.add('fleet-stat-alert');
+    }
+  });
 }
 
 function buildBikeCard(bike) {
@@ -299,6 +450,7 @@ function activateTab(tab) {
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${tab}`));
   if (!_bike) return;
   switch (tab) {
+    case 'setup':      renderSetupChangelog(_bike);   break;
     case 'components': renderComponentsTab(_bike);    break;
     case 'adjust':     renderQuickAdjustTab(_bike);   break;
     case 'rides':      renderRidesTab(_bike);          break;
@@ -575,12 +727,15 @@ function bindModal() {
 
 // ── THEME ─────────────────────────────────────────────────
 function initTheme() {
-  // Apply immediately using saved profile theme, fallback to dark
   const profileId = localStorage.getItem('dialed_active_profile');
-  const saved = profileId
-    ? localStorage.getItem(`quiver_theme_${profileId}`) || 'dark'
-    : 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
+  const saved = profileId ? localStorage.getItem(`quiver_theme_${profileId}`) : null;
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+  } else {
+    // No saved theme — follow system preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+  }
 }
 
 function showThemeDropdown(e) {
