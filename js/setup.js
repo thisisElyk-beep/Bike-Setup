@@ -61,22 +61,14 @@ export function renderZoneSettings(zoneId, bike, container, onSaved) {
       const dt = btn.dataset.preset;
       const fieldsEl = container.querySelector(`#${key}-damper-fields`);
       if (!fieldsEl) return;
-      const single = dt === 'single';
-      const showLSR = true, showHSR = ['3way','4way'].includes(dt);
-      const showLSC = ['2way','3way','4way'].includes(dt);
-      const showHSC = dt === '4way';
-      // Get current values from hidden inputs or visible inputs
-      const getVal = id => container.querySelector(`#${id}`)?.value || '';
-      const lsr=getVal(`${key}-lsr`), hsr=getVal(`${key}-hsr`);
-      const lsc=getVal(`${key}-lsc`), hsc=getVal(`${key}-hsc`);
-      fieldsEl.innerHTML = `
-        <div class="settings-section-divider">Damper — Rebound</div>
-        ${showLSR ? spinner(single?'Rebound':'Low Speed Rebound',`${key}-lsr`,lsr||10,1,0,40,'clicks') : `<input type="hidden" id="${key}-lsr" value="${lsr}">`}
-        ${showHSR ? spinner('High Speed Rebound',`${key}-hsr`,hsr||5,1,0,40,'clicks') : `<input type="hidden" id="${key}-hsr" value="${hsr}">`}
-        ${(showLSC||showHSC) ? '<div class="settings-section-divider">Damper — Compression</div>' : ''}
-        ${showLSC ? spinner('Low Speed Compression',`${key}-lsc`,lsc||8,1,0,40,'clicks') : `<input type="hidden" id="${key}-lsc" value="${lsc}">`}
-        ${showHSC ? spinner('High Speed Compression',`${key}-hsc`,hsc||4,1,0,40,'clicks') : `<input type="hidden" id="${key}-hsc" value="${hsc}">`}
-      `;
+      // Get current values before wiping
+      const getVal = id => { const el = container.querySelector(`#${id}`); return el ? parseFloat(el.value) || null : null; };
+      const fakeData = {
+        damperType: dt,
+        lsr: getVal(`${key}-lsr`), hsr: getVal(`${key}-hsr`),
+        lsc: getVal(`${key}-lsc`), hsc: getVal(`${key}-hsc`),
+      };
+      fieldsEl.innerHTML = damperFieldsHtml(key, fakeData);
       // Re-bind spinners in new content
       fieldsEl.querySelectorAll('.spinner-btn').forEach(sb => {
         sb.addEventListener('click', () => {
@@ -179,6 +171,27 @@ function tireForm(key, tireData = {}, wheelData = {}, bikeType = 'mtb') {
 }
 
 // Suspension fork (MTB / Hardtail)
+// ── DAMPER FIELDS (called by suspensionForm and preset buttons) ──
+function damperFieldsHtml(key, data) {
+  const dt     = (data && data.damperType) || '4way';
+  const single  = dt === 'single';
+  const showHSR = dt === '3way' || dt === '4way';
+  const showLSC = dt === '2way' || dt === '3way' || dt === '4way';
+  const showHSC = dt === '4way';
+  const lsr = (data && data.lsr != null) ? data.lsr : 10;
+  const hsr = (data && data.hsr != null) ? data.hsr : 5;
+  const lsc = (data && data.lsc != null) ? data.lsc : 8;
+  const hsc = (data && data.hsc != null) ? data.hsc : 4;
+  const hidden = (id, val) => '<input type="hidden" id="' + id + '" value="' + val + '">';
+  let html = '<div class="settings-section-divider">Damper \u2014 Rebound</div>';
+  html += spinner(single ? 'Rebound' : 'Low Speed Rebound', key + '-lsr', lsr, 1, 0, 40, 'clicks');
+  html += showHSR ? spinner('High Speed Rebound', key + '-hsr', hsr, 1, 0, 40, 'clicks') : hidden(key + '-hsr', hsr);
+  if (showLSC || showHSC) html += '<div class="settings-section-divider">Damper \u2014 Compression</div>';
+  html += showLSC ? spinner('Low Speed Compression', key + '-lsc', lsc, 1, 0, 40, 'clicks') : hidden(key + '-lsc', lsc);
+  html += showHSC ? spinner('High Speed Compression', key + '-hsc', hsc, 1, 0, 40, 'clicks') : hidden(key + '-hsc', hsc);
+  return html;
+}
+
 function suspensionForm(key, label, data = {}, isShock = false) {
   const type = data.type || 'air';
   const isCoil = type === 'coil';
@@ -230,21 +243,7 @@ function suspensionForm(key, label, data = {}, isShock = false) {
       </div>
     </div>
     <div id="${key}-damper-fields">
-    ${(()=>{
-      const dt = data.damperType || '4way';
-      const single = dt === 'single';
-      const showHSR = ['3way','4way'].includes(dt);
-      const showLSC = ['2way','3way','4way'].includes(dt);
-      const showHSC = dt === '4way';
-      return `
-        <div class="settings-section-divider">Damper — Rebound</div>
-        ${spinner(single ? 'Rebound' : 'Low Speed Rebound', \`${key}-lsr\`, data.lsr ?? 10, 1, 0, 40, 'clicks')}
-        ${showHSR ? spinner('High Speed Rebound', \`${key}-hsr\`, data.hsr ?? 5, 1, 0, 40, 'clicks') : \`<input type="hidden" id="${key}-hsr" value="${data.hsr ?? ''}">\`}
-        ${(showLSC||showHSC) ? '<div class="settings-section-divider">Damper — Compression</div>' : ''}
-        ${showLSC ? spinner('Low Speed Compression', \`${key}-lsc\`, data.lsc ?? 8, 1, 0, 40, 'clicks') : \`<input type="hidden" id="${key}-lsc" value="${data.lsc ?? ''}">\`}
-        ${showHSC ? spinner('High Speed Compression', \`${key}-hsc\`, data.hsc ?? 4, 1, 0, 40, 'clicks') : \`<input type="hidden" id="${key}-hsc" value="${data.hsc ?? ''}">\`}
-      `;
-    })()}
+    ${damperFieldsHtml(key, data)}
     </div>
     ${!isShock ? `
     <div class="settings-section-divider">Damper Internals</div>
