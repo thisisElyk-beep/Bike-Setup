@@ -2684,3 +2684,201 @@ textarea.field-input {
   .svc-cards-grid  { grid-template-columns: 1fr; padding: 0 1rem 1rem; }
   .svc-tab-header  { padding: 1rem 1rem .75rem; }
 }
+
+/* ─── FLEET STATS DASHBOARD ─────────────────────────────── */
+.fleet-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .75rem;
+  padding: 1.5rem 1.5rem .75rem;
+}
+.fleet-stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition);
+}
+.fleet-stat-card.fleet-stat-alert {
+  border-color: var(--danger);
+  background: var(--danger-dim);
+}
+.fleet-stat-val {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: .3rem;
+}
+.fleet-stat-alert .fleet-stat-val { color: var(--danger); }
+.fleet-stat-lbl {
+  font-family: var(--font-display);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+@media (max-width: 520px) {
+  .fleet-stats-row { grid-template-columns: repeat(2, 1fr); padding: 1rem 1rem .5rem; }
+}
+
+/* ─── SETUP CHANGELOG ────────────────────────────────────── */
+.changelog-section {
+  padding: 0 1.5rem 1.5rem;
+}
+.changelog-title {
+  font-family: var(--font-display);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: .6rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.changelog-entry {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  padding: .3rem 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.changelog-entry:last-child { border-bottom: none; }
+.changelog-date {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  width: 80px;
+}
+.changelog-changes { display: flex; flex-wrap: wrap; gap: .35rem; }
+.changelog-change {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: .1rem .4rem;
+}
+.changelog-more {
+  font-size: .72rem;
+  color: var(--text-muted);
+  padding: .3rem 0;
+}
+
+/* ─── PRESETS REDESIGN ───────────────────────────────────── */
+.presets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.25rem;
+  padding: 0 2rem 2rem;
+}
+.preset-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: .85rem;
+  box-shadow: var(--shadow-sm);
+}
+.preset-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.preset-card-name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.preset-card-date {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  color: var(--text-muted);
+  margin-top: .15rem;
+}
+.preset-card-notes {
+  font-size: .78rem;
+  color: var(--text-secondary);
+  margin-top: .25rem;
+  font-style: italic;
+}
+
+.preset-diff-section { display: flex; flex-direction: column; gap: .35rem; }
+.preset-diff-count {
+  font-family: var(--font-display);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.preset-diff-list { display: flex; flex-direction: column; gap: .25rem; }
+.preset-diff-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: .25rem .5rem;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  font-size: .8rem;
+}
+.preset-diff-label { color: var(--text-secondary); }
+.preset-diff-vals {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+.preset-diff-base { color: var(--text-muted); }
+.preset-diff-new { color: var(--accent); font-weight: 600; }
+.preset-diff-empty { font-size: .78rem; color: var(--text-muted); font-style: italic; }
+
+.preset-modal-hint {
+  font-size: .78rem;
+  color: var(--text-muted);
+  margin-bottom: .75rem;
+  padding: .5rem .75rem;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--accent);
+}
+.preset-field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .35rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.preset-field-row:last-child { border-bottom: none; }
+.preset-field-label {
+  font-size: .83rem;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+}
+.preset-field-base {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--text-muted);
+}
+.preset-card-actions { margin-top: auto; }
+
+@media (max-width: 640px) {
+  .presets-grid { grid-template-columns: 1fr; padding: 0 1rem 1rem; }
+}
