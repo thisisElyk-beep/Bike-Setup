@@ -205,19 +205,26 @@ function showProfileDropdown(activeId, anchor, onSwitch) {
   const drop = document.createElement('div');
   drop.id = 'profile-dropdown';
   drop.className = 'profile-dropdown';
+  const activeName = profiles.find(p => p.id === activeId)?.name || 'Profile';
   drop.innerHTML = `
-    <div class="profile-drop-header">Profiles</div>
-    ${profiles.map(p => `
-      <div class="profile-drop-row">
-        <button class="profile-drop-item ${p.id === activeId ? 'active' : ''}" data-id="${p.id}">
-          <div class="profile-drop-avatar">${p.name.charAt(0).toUpperCase()}</div>
-          <span>${escHtml(p.name)}</span>
-          ${p.id === activeId ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
-        </button>
-        <button class="profile-drop-rename" data-id="${p.id}" data-name="${escHtml(p.name)}" title="Rename">
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7 1.5l2.5 2.5L3 10H.5V7.5L7 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-        </button>
-      </div>`).join('')}
+    <div class="profile-drop-header">Signed in as</div>
+    <div class="profile-drop-whoami">
+      <div class="profile-drop-avatar active-avatar">${activeName.charAt(0).toUpperCase()}</div>
+      <span class="profile-drop-active-name">${escHtml(activeName)}</span>
+    </div>
+    <div class="profile-drop-divider"></div>
+    <button class="profile-drop-new" id="profile-drop-rename-active" data-id="${activeId}" data-name="${escHtml(activeName)}">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 1.5l2.5 2.5L3.5 10.5H1V8L8 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+      Rename "${escHtml(activeName)}"
+    </button>
+    ${profiles.length > 1 ? `
+    <div class="profile-drop-divider"></div>
+    <div class="profile-drop-header">Switch to</div>
+    ${profiles.filter(p => p.id !== activeId).map(p => `
+      <button class="profile-drop-item" data-id="${p.id}">
+        <div class="profile-drop-avatar">${p.name.charAt(0).toUpperCase()}</div>
+        <span>${escHtml(p.name)}</span>
+      </button>`).join('')}` : ''}
     <div class="profile-drop-divider"></div>
     <button class="profile-drop-new" id="profile-drop-new">
       <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
@@ -242,14 +249,11 @@ function showProfileDropdown(activeId, anchor, onSwitch) {
     };
   });
 
-  drop.querySelectorAll('.profile-drop-rename').forEach(btn => {
-    btn.onclick = e => {
-      e.stopPropagation();
-      drop.remove();
-      const id = btn.dataset.id;
-      const currentName = btn.dataset.name;
-      showRenameProfileModal(id, currentName, activeId, onSwitch);
-    };
+  document.getElementById('profile-drop-rename-active')?.addEventListener('click', e => {
+    e.stopPropagation();
+    drop.remove();
+    const btn = e.currentTarget;
+    showRenameProfileModal(btn.dataset.id, btn.dataset.name, activeId, onSwitch);
   });
 
   document.getElementById('profile-drop-new').onclick = () => {
