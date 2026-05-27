@@ -293,45 +293,51 @@ function testSettingsForm(baseline) {
   const ft = bl.frontTire || {};
   const rt = bl.rearTire  || {};
 
-  const rangeField = (label, id, min, max, step, val) => `
+  const spinnerField = (label, id, min, max, step, val, unit = '') => `
     <div class="field-group">
-      <label class="field-label">${label}</label>
-      <div class="range-container">
-        <input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val ?? 0}" class="range-slider"/>
-        <span class="range-val"><span id="val-${id}">${val ?? 0}</span></span>
+      <label class="field-label">${label}${unit ? ' <span class="field-unit">'+unit+'</span>' : ''}</label>
+      <div class="spinner-row">
+        <button type="button" class="spinner-btn spinner-minus" data-id="${id}" data-step="${step}" data-min="${min}" data-max="${max}">−</button>
+        <input type="number" id="${id}" class="field-input spinner-input" value="${val ?? 0}" min="${min}" max="${max}" step="${step}">
+        <button type="button" class="spinner-btn spinner-plus" data-id="${id}" data-step="${step}" data-min="${min}" data-max="${max}">+</button>
       </div>
     </div>
   `;
 
+  // Helper: render damper fields respecting damperType setting
+  const damperFields = (prefix, data) => {
+    const dt = data.damperType || '4way';
+    const single = dt === 'single';
+    const showHSR = dt === '3way' || dt === '4way';
+    const showLSC = dt === '2way' || dt === '3way' || dt === '4way';
+    const showHSC = dt === '4way';
+    let html = '';
+    html += spinnerField(single ? 'Rebound' : 'LSR', prefix+'-lsr', 0, 40, 1, data.lsr ?? 10, 'clicks');
+    if (showHSR) html += spinnerField('HSR', prefix+'-hsr', 0, 40, 1, data.hsr ?? 5, 'clicks');
+    if (showLSC) html += spinnerField('LSC', prefix+'-lsc', 0, 40, 1, data.lsc ?? 8, 'clicks');
+    if (showHSC) html += spinnerField('HSC', prefix+'-hsc', 0, 40, 1, data.hsc ?? 4, 'clicks');
+    return html;
+  };
+
   return `
     <div class="settings-section-divider">Tire Pressure</div>
     <div class="field-row">
-      ${rangeField('Front PSI', 'ts-ft-psi', 10, 60, 0.5, ft.psi ?? 25)}
-      ${rangeField('Rear PSI', 'ts-rt-psi', 10, 60, 0.5, rt.psi ?? 25)}
+      ${spinnerField('Front PSI', 'ts-ft-psi', 10, 160, 0.5, ft.psi ?? 25, 'psi')}
+      ${spinnerField('Rear PSI',  'ts-rt-psi', 10, 160, 0.5, rt.psi ?? 25, 'psi')}
     </div>
 
     ${fk.brand ? `
     <div class="settings-section-divider">Fork</div>
-    ${fk.type !== 'coil' ? rangeField('Fork PSI', 'ts-fk-psi', 50, 300, 1, fk.psi ?? 80) : ''}
+    ${fk.type !== 'coil' ? spinnerField('Air Pressure', 'ts-fk-psi', 20, 350, 1, fk.psi ?? 80, 'psi') : ''}
     <div class="field-row">
-      ${rangeField('LSR', 'ts-fk-lsr', 0, 30, 1, fk.lsr ?? 10)}
-      ${rangeField('HSR', 'ts-fk-hsr', 0, 20, 1, fk.hsr ?? 5)}
-    </div>
-    <div class="field-row">
-      ${rangeField('LSC', 'ts-fk-lsc', 0, 30, 1, fk.lsc ?? 8)}
-      ${rangeField('HSC', 'ts-fk-hsc', 0, 20, 1, fk.hsc ?? 4)}
+      ${damperFields('ts-fk', fk)}
     </div>` : ''}
 
     ${sk.brand ? `
     <div class="settings-section-divider">Rear Shock</div>
-    ${sk.type !== 'coil' ? rangeField('Shock PSI', 'ts-sk-psi', 50, 350, 1, sk.psi ?? 140) : ''}
+    ${sk.type !== 'coil' ? spinnerField('Air Pressure', 'ts-sk-psi', 20, 350, 1, sk.psi ?? 140, 'psi') : ''}
     <div class="field-row">
-      ${rangeField('LSR', 'ts-sk-lsr', 0, 30, 1, sk.lsr ?? 10)}
-      ${rangeField('HSR', 'ts-sk-hsr', 0, 20, 1, sk.hsr ?? 5)}
-    </div>
-    <div class="field-row">
-      ${rangeField('LSC', 'ts-sk-lsc', 0, 30, 1, sk.lsc ?? 8)}
-      ${rangeField('HSC', 'ts-sk-hsc', 0, 20, 1, sk.hsc ?? 4)}
+      ${damperFields('ts-sk', sk)}
     </div>` : ''}
   `;
 }
@@ -341,11 +347,27 @@ function collectTestSettings(baseline) {
   const fk = baseline.fork  || {};
   const sk = baseline.shock || {};
 
+  const numIfPresent = id => {
+    const el = document.getElementById(id);
+    return el && el.type !== 'hidden' ? parseFloat(el.value) : null;
+  };
   return {
     frontTire: { ...baseline.frontTire, psi: num('ts-ft-psi') },
     rearTire:  { ...baseline.rearTire,  psi: num('ts-rt-psi') },
-    fork:  fk.brand ? { ...fk, psi: num('ts-fk-psi'), lsr: num('ts-fk-lsr'), hsr: num('ts-fk-hsr'), lsc: num('ts-fk-lsc'), hsc: num('ts-fk-hsc') } : null,
-    shock: sk.brand ? { ...sk, psi: num('ts-sk-psi'), lsr: num('ts-sk-lsr'), hsr: num('ts-sk-hsr'), lsc: num('ts-sk-lsc'), hsc: num('ts-sk-hsc') } : null,
+    fork:  fk.brand ? { ...fk,
+      psi: num('ts-fk-psi'),
+      lsr: numIfPresent('ts-fk-lsr'),
+      hsr: numIfPresent('ts-fk-hsr'),
+      lsc: numIfPresent('ts-fk-lsc'),
+      hsc: numIfPresent('ts-fk-hsc'),
+    } : null,
+    shock: sk.brand ? { ...sk,
+      psi: num('ts-sk-psi'),
+      lsr: numIfPresent('ts-sk-lsr'),
+      hsr: numIfPresent('ts-sk-hsr'),
+      lsc: numIfPresent('ts-sk-lsc'),
+      hsc: numIfPresent('ts-sk-hsc'),
+    } : null,
   };
 }
 
