@@ -398,7 +398,7 @@ function svgGravel() {
   // Bar top: extends rearward (left) from stem tip
   const BarRear={x:562,y:168};
   // Drop: curves rearward and down from BarRear, bottom curls forward
-  const DropBot={x:542,y:218};
+  const DropBot={x:560,y:218};
   // Hood body (brake hood area, near stem)
   const HoodX=566, HoodY=166;
 
@@ -459,16 +459,16 @@ function svgGravel() {
     <!-- Brake hood body (silicone hood over lever) -->
     <path d="M ${HoodX} ${HoodY} Q ${HoodX-8} ${HoodY+8} ${HoodX-4} ${HoodY+18}"
           fill="none" stroke-width="9" stroke-linecap="round" opacity="0.55"/>
-    <!-- Drop: smooth rearward+down curve, bottom curls slightly forward -->
+    <!-- Drop: convex forward — bezier bulges RIGHT (forward direction) -->
     <path d="M ${BarRear.x} ${BarRear.y}
-             C ${BarRear.x-10} ${BarRear.y+20}
-               ${DropBot.x+6} ${DropBot.y-18}
+             C ${BarRear.x+16} ${BarRear.y+14}
+               ${DropBot.x+16} ${DropBot.y-14}
                ${DropBot.x} ${DropBot.y}"
           fill="none" stroke-width="6.5" stroke-linecap="round"/>
-    <!-- Bottom curl toward front of bike -->
+    <!-- Bottom curl rearward (hook shape) -->
     <path d="M ${DropBot.x} ${DropBot.y}
-             Q ${DropBot.x+18} ${DropBot.y+5}
-               ${DropBot.x+22} ${DropBot.y-6}"
+             Q ${DropBot.x-10} ${DropBot.y+8}
+               ${DropBot.x-14} ${DropBot.y+2}"
           fill="none" stroke-width="6.5" stroke-linecap="round"/>
     <rect class="zone-overlay" x="${BarRear.x-16}" y="${HT.y-24}" width="120" height="108" rx="10" data-zone="handlebar"/>
   </g>
@@ -564,11 +564,11 @@ function svgRoad() {
     <!-- Brake hood body -->
     <path d="M 583 192 Q 575 200 579 210"
           fill="none" stroke-width="9" stroke-linecap="round" opacity="0.55"/>
-    <!-- Drop: smooth rearward+down curve -->
-    <path d="M 577 194 C 567 214 553 232 557 246"
+    <!-- Drop: convex forward — bezier bulges RIGHT (forward direction) -->
+    <path d="M 577 194 C 595 210 593 231 575 247"
           fill="none" stroke-width="6.5" stroke-linecap="round"/>
-    <!-- Bottom curl toward front of bike -->
-    <path d="M 557 246 Q 573 251 577 242"
+    <!-- Bottom curl rearward (hook shape) -->
+    <path d="M 575 247 Q 563 255 559 249"
           fill="none" stroke-width="6.5" stroke-linecap="round"/>
     <rect class="zone-overlay" x="561" y="180" width="106" height="112" rx="10" data-zone="handlebar"/>
   </g>
