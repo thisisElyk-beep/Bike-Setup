@@ -1,5 +1,5 @@
 import { getBikes, createBike, updateBike, deleteBike } from './db.js';
-import { initProfile, showProfilePicker, renderProfileChip } from './profiles.js';
+import { initProfile, showProfilePicker, renderProfileChip, THEMES, getProfileTheme, setProfileTheme, applyTheme, getActiveProfileId as getActiveProfile } from './profiles.js';
 import { getPresets } from './db.js';
 import { createSilhouette, createMiniSilhouette, setupZoneInteraction, resetZoom, createCockpitFrontView, setupCockpitInteraction } from './silhouette.js';
 import { renderZoneSettings, renderSettingsPlaceholder, renderCockpitSubZone } from './setup.js';
@@ -23,6 +23,7 @@ const $ = id => document.getElementById(id);
 document.addEventListener('DOMContentLoaded', async () => {
   registerServiceWorker();
   initTheme();
+  updateThemeBtn(document.documentElement.getAttribute('data-theme') || 'dark');
   bindHeader();
   bindTabs();
   bindModal();
@@ -592,17 +593,38 @@ export function showToast(message, type = 'info') {
 
 // ── THEME ─────────────────────────────────────────────────
 function initTheme() {
-  // Theme is now profile-specific, applied by profiles.js initProfile()
-  // Fallback: apply dark if no profile loaded yet
-  if (!document.documentElement.getAttribute('data-theme')) {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  }
+  // Apply immediately using saved profile theme, fallback to dark
+  const profileId = localStorage.getItem('dialed_active_profile');
+  const saved = profileId
+    ? localStorage.getItem(`quiver_theme_${profileId}`) || 'dark'
+    : 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
 }
+
 function toggleTheme() {
-  // Legacy toggle — cycles dark/light for non-profiled contexts
-  const cur = document.documentElement.getAttribute('data-theme');
-  const next = cur === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next);
+  // Cycle through all themes for the active profile
+  const profileId = localStorage.getItem('dialed_active_profile') || 'default';
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  const ids = THEMES.map(t => t.id);
+  const next = ids[(ids.indexOf(cur) + 1) % ids.length];
+  setProfileTheme(profileId, next);
+  updateThemeBtn(next);
+}
+
+function updateThemeBtn(themeId) {
+  const btn = $('btn-theme');
+  if (!btn) return;
+  const theme = THEMES.find(t => t.id === themeId);
+  // Show a small color dot + name tooltip
+  btn.title = `Theme: ${theme?.name || themeId} (click to cycle)`;
+  // Update dot color indicator inside button
+  let dot = btn.querySelector('.theme-dot');
+  if (!dot) {
+    dot = document.createElement('span');
+    dot.className = 'theme-dot';
+    btn.appendChild(dot);
+  }
+  dot.style.background = theme?.swatch[1] || '#f59e0b';
 }
 
 // ── SERVICE WORKER ────────────────────────────────────────
