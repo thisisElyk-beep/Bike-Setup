@@ -7,14 +7,15 @@
 const VB_DEFAULT = [0, 0, 800, 480];
 
 const ZONE_META = {
-  'front-wheel': { label: 'Front Wheel / Tire', vb: [499, 205, 319, 290], key: 'frontTire' },
-  'rear-wheel':  { label: 'Rear Wheel / Tire',  vb: [-11, 205, 319, 290], key: 'rearTire' },
-  'fork':        { label: 'Fork',               vb: [479, 148, 286, 260], key: 'fork' },
-  'shock':       { label: 'Rear Shock',         vb: [256, 213, 260, 210], key: 'shock' },
-  'handlebar':   { label: 'Cockpit',            vb: [442,  38, 242, 220], key: 'handlebar' },
-  'drivetrain':  { label: 'Drivetrain',         vb: [250, 245, 264, 240], key: 'drivetrain' },
-  'dropper':     { label: 'Dropper / Saddle',   vb: [215,  50, 231, 210], key: 'dropper' },
-  'frame':       { label: 'Frame / Geometry',   vb: [181,   5, 572, 520], key: 'frame' },
+  // vb: [x, y, width, height] — wider = more context shown
+  'front-wheel': { label: 'Front Wheel / Tire', vb: [380, 160, 420, 280], key: 'frontTire' },
+  'rear-wheel':  { label: 'Rear Wheel / Tire',  vb: [ -30, 160, 420, 280], key: 'rearTire' },
+  'fork':        { label: 'Fork',               vb: [370, 100, 420, 280], key: 'fork' },
+  'shock':       { label: 'Rear Shock',         vb: [160, 140, 440, 300], key: 'shock' },
+  'handlebar':   { label: 'Cockpit',            vb: [360,  20, 440, 300], key: 'handlebar' },
+  'drivetrain':  { label: 'Drivetrain',         vb: [160, 200, 420, 280], key: 'drivetrain' },
+  'dropper':     { label: 'Dropper / Saddle',   vb: [130,  20, 420, 280], key: 'dropper' },
+  'frame':       { label: 'Frame / Geometry',   vb: [  0,   0, 800, 480], key: 'frame' },
 };
 
 // ── WHEELS ────────────────────────────────────────────────

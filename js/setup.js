@@ -229,12 +229,23 @@ function suspensionForm(key, label, data = {}, isShock = false) {
         ${field('Spring Brand', `${key}-springBrand`, data.springBrand, 'e.g. Öhlins STX22')}
       </div>
     </div>
-    <div class="settings-section-divider">Damper — Rebound</div>
-    ${spinner('Low Speed Rebound', `${key}-lsr`, data.lsr ?? 10, 1, 0, 40, 'clicks')}
-    ${spinner('High Speed Rebound', `${key}-hsr`, data.hsr ?? 5, 1, 0, 40, 'clicks')}
-    <div class="settings-section-divider">Damper — Compression</div>
-    ${spinner('Low Speed Compression', `${key}-lsc`, data.lsc ?? 8, 1, 0, 40, 'clicks')}
-    ${spinner('High Speed Compression', `${key}-hsc`, data.hsc ?? 4, 1, 0, 40, 'clicks')}
+    <div id="${key}-damper-fields">
+    ${(()=>{
+      const dt = data.damperType || '4way';
+      const single = dt === 'single';
+      const showHSR = ['3way','4way'].includes(dt);
+      const showLSC = ['2way','3way','4way'].includes(dt);
+      const showHSC = dt === '4way';
+      return `
+        <div class="settings-section-divider">Damper — Rebound</div>
+        ${spinner(single ? 'Rebound' : 'Low Speed Rebound', \`${key}-lsr\`, data.lsr ?? 10, 1, 0, 40, 'clicks')}
+        ${showHSR ? spinner('High Speed Rebound', \`${key}-hsr\`, data.hsr ?? 5, 1, 0, 40, 'clicks') : \`<input type="hidden" id="${key}-hsr" value="${data.hsr ?? ''}">\`}
+        ${(showLSC||showHSC) ? '<div class="settings-section-divider">Damper — Compression</div>' : ''}
+        ${showLSC ? spinner('Low Speed Compression', \`${key}-lsc\`, data.lsc ?? 8, 1, 0, 40, 'clicks') : \`<input type="hidden" id="${key}-lsc" value="${data.lsc ?? ''}">\`}
+        ${showHSC ? spinner('High Speed Compression', \`${key}-hsc\`, data.hsc ?? 4, 1, 0, 40, 'clicks') : \`<input type="hidden" id="${key}-hsc" value="${data.hsc ?? ''}">\`}
+      `;
+    })()}
+    </div>
     ${!isShock ? `
     <div class="settings-section-divider">Damper Internals</div>
     <div class="field-row">

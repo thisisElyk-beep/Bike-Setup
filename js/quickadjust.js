@@ -62,7 +62,7 @@ function buildQuickAdjust(bike) {
       </svg>
       <h3>No setup data yet</h3>
       <p>Add your fork, shock, and tire pressures in the Setup tab first — then come back here to make quick trailside tweaks.</p>
-      <button class="btn-primary" style="margin-top:.75rem" onclick="document.querySelector('[data-tab=\'setup\']').click()">
+      <button class="btn-primary" style="margin-top:.75rem" id="qa-go-setup">
         Go to Setup →
       </button>
     </div>`;

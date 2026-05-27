@@ -152,8 +152,6 @@ function renderComponentList(container, components, bike) {
 
 // ── SERVICE STATUS ────────────────────────────────────────
 function getServiceStatus(comp) {
-  const intervalMonths = comp.serviceIntervalMonths ? parseFloat(comp.serviceIntervalMonths) : null;
-  const intervalHours  = comp.serviceIntervalHours  ? parseFloat(comp.serviceIntervalHours)  : null;
   if (!intervalMonths && !intervalHours) return null;
 
   // Use most recent service log entry, fall back to install date
@@ -183,11 +181,6 @@ function getServiceStatus(comp) {
   return { status: 'ok', label: `Every ${intervalHours}h` };
 }
 
-function serviceStatusBadge(status) {
-  if (!status || status.status === 'ok') return '';
-  const color = status.status === 'overdue' ? 'var(--danger)' : 'var(--accent)';
-  return `<span class="svc-status-dot" style="background:${color}" title="${status.label}"></span>`;
-}
 
 // ── BUILD ROW ─────────────────────────────────────────────
 function buildRow(comp, bike) {
@@ -196,19 +189,9 @@ function buildRow(comp, bike) {
   row.dataset.id = comp.id;
 
   const meta      = CATEGORY_META[comp.category] || CATEGORY_META['Other'];
-  const svcStatus = getServiceStatus(comp);
-  if (svcStatus?.status === 'overdue') row.classList.add('comp-row-overdue');
-  if (svcStatus?.status === 'soon')    row.classList.add('comp-row-soon');
 
   // Date column: show service info if due/overdue, else install date
   let dateDisplay = '';
-  if (svcStatus && (svcStatus.status === 'overdue' || svcStatus.status === 'soon')) {
-    dateDisplay = `<span class="comp-row-date svc-${svcStatus.status}">${svcStatus.label}</span>`;
-  } else if (comp.installDate) {
-    dateDisplay = `<span class="comp-row-date">${formatDate(comp.installDate.slice(0,10))}</span>`;
-  } else {
-    dateDisplay = `<span class="comp-row-date"></span>`;
-  }
 
   row.innerHTML = `
     <div class="comp-row-summary">
@@ -222,56 +205,7 @@ function buildRow(comp, bike) {
     </div>
     <div class="comp-row-detail hidden">
       <div class="comp-edit-form">
-        <div class="field-row">
-          <div class="field-group">
-            <label class="field-label">Brand</label>
-            <input class="field-input comp-field-brand" type="text" value="${escHtml(comp.brand || '')}" placeholder="Brand">
-          </div>
-          <div class="field-group">
-            <label class="field-label">Model</label>
-            <input class="field-input comp-field-model" type="text" value="${escHtml(comp.model || '')}" placeholder="Model">
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label class="field-label">Install Date</label>
-            <input class="field-input comp-field-date" type="date" value="${comp.installDate ? comp.installDate.slice(0,10) : ''}">
-          </div>
-          <div class="field-group">
-            <label class="field-label">Service Interval
-              <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0;margin-left:.3rem">(months)</span>
-            </label>
-            <input class="field-input comp-field-interval-months" type="number" min="1" max="120"
-                   value="${comp.serviceIntervalMonths || ''}" placeholder="e.g. 6">
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label class="field-label">Service Interval
-              <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0;margin-left:.3rem">(hours)</span>
-            </label>
-            <input class="field-input comp-field-interval-hours" type="number" min="1" max="5000"
-                   value="${comp.serviceIntervalHours || ''}" placeholder="e.g. 200">
-          </div>
-          <div class="field-group"></div>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Notes</label>
-          <textarea class="field-input comp-field-notes" rows="2">${escHtml(comp.notes || '')}</textarea>
-        </div>
-        <div class="comp-edit-actions">
-          <button class="btn-danger btn-comp-delete">
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 3.5h9M4.5 3.5V2.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5v1M5 5.5v4M8 5.5v4M2.5 3.5l.75 7a.5.5 0 00.5.5h5.5a.5.5 0 00.5-.5l.75-7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Delete
-          </button>
-          <div style="display:flex;gap:.5rem">
-            <button class="btn-secondary btn-comp-cancel">Cancel</button>
-            <button class="btn-primary btn-comp-save">Save</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- SERVICE LOG — shown above edit form for easy access -->
+<!-- SERVICE LOG — shown above edit form for easy access -->
       <div class="service-log">
         <div class="service-log-header">
           <span class="service-log-title">Service History</span>
@@ -341,8 +275,6 @@ function buildRow(comp, bike) {
     const model          = row.querySelector('.comp-field-model').value.trim();
     const installDate    = row.querySelector('.comp-field-date').value || null;
     const notes          = row.querySelector('.comp-field-notes').value.trim();
-    const intMonthsEl    = row.querySelector('.comp-field-interval-months');
-    const intHoursEl     = row.querySelector('.comp-field-interval-hours');
     const intervalMonths = intMonthsEl?.value ? parseFloat(intMonthsEl.value) : null;
     const intervalHours  = intHoursEl?.value  ? parseFloat(intHoursEl.value)  : null;
     try {
