@@ -1665,6 +1665,7 @@ svg { display: block; flex-shrink: 0; }
   padding: 0.4rem;
   transition: color var(--transition), background var(--transition);
   font-size: 0.8rem;
+  position: relative;
 }
 .btn-icon:hover {
   color: var(--text-primary);
@@ -1701,10 +1702,18 @@ svg { display: block; flex-shrink: 0; }
 .btn-text:hover { color: var(--accent-text); }
 
 /* Theme button icons */
-[data-theme="dark"] .icon-moon { display: none; }
-[data-theme="dark"] .icon-sun { display: block; }
-[data-theme="light"] .icon-sun { display: none; }
-[data-theme="light"] .icon-moon { display: block; }
+/* Theme dot indicator on cycle button */
+.theme-dot {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: var(--accent);
+  transition: background 0.2s;
+}
 
 /* ─── EMPTY STATE ──────────────────────────────────── */
 .empty-state {
