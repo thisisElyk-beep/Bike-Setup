@@ -492,9 +492,9 @@ function svgGravel() {
 // Verified: HC(591,204) HT(573,145) ST(319,183) HA=73° TT=8.5°↑
 // Curved fork (road bikes still use raked forks)
 function svgRoad() {
-  const RW={x:155,y:350}, FW={x:598,y:350}, BB={x:372,y:355};
-  const ST={x:318,y:178}, HT={x:552,y:203}, HC={x:567,y:250};
-  const TT_TOP={x:556,y:214}; // TT meets head tube here, stub extends above
+  const RW={x:155,y:350}, FW={x:575,y:350}, BB={x:372,y:355};
+  const ST={x:318,y:178}, HT={x:535,y:214}, HC={x:546,y:250};
+  const TT_TOP={x:535,y:214}; // TT meets head tube here, stub extends above
 
   const stDx=ST.x-BB.x, stDy=ST.y-BB.y;
   const stLen=Math.round(Math.sqrt(stDx*stDx+stDy*stDy));
@@ -505,8 +505,8 @@ function svgRoad() {
   const SS={x:331, y:238};
 
   // Curved fork: two bezier paths from crown to axle
-  const fCx1=HC.x+8, fCy1=HC.y+38, fCx2=FW.x+8, fCy2=FW.y-28;
-  const fCx1r=HC.x+16, fCy1r=HC.y+39, fCx2r=FW.x+16, fCy2r=FW.y-27;
+  const fCx1=HC.x+6, fCy1=HC.y+35, fCx2=FW.x+6, fCy2=FW.y-25;
+  const fCx1r=HC.x+14, fCy1r=HC.y+36, fCx2r=FW.x+14, fCy2r=FW.y-24;
 
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
@@ -570,29 +570,30 @@ function svgRoad() {
     <line x1="${FW.x+4}" y1="${FW.y-18}" x2="${FW.x+18}" y2="${FW.y-18}" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
     <!-- Axle -->
     <line x1="${FW.x-2}" y1="${FW.y+2}" x2="${FW.x+22}" y2="${FW.y+2}" stroke-width="5.5" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="553" y="240" width="58" height="120" rx="12" data-zone="fork"/>
+    <!-- Fork hitbox: narrow polygon along upper fork, above wheel overlay -->
+    <polygon class="zone-overlay" points="540,252 554,252 562,320 548,320" data-zone="fork"/>
   </g>
 
   <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
     <!-- Stem: forward from HT, nearly horizontal -->
-    <line x1="${HT.x}" y1="${HT.y}" x2="607" y2="199"
+    <line x1="${HT.x}" y1="${HT.y}" x2="590" y2="210"
           stroke-width="6.5" stroke-linecap="round"/>
     <!-- Stem faceplate -->
-    <rect x="602" y="190" width="8" height="16" rx="3"
+    <rect x="585" y="201" width="8" height="16" rx="3"
           fill="var(--bg-elevated)" stroke-width="3"/>
     <!-- Bar top section: extends rearward from stem tip -->
-    <line x1="607" y1="199" x2="577" y2="194"
+    <line x1="590" y1="210" x2="560" y2="205"
           stroke-width="6.5" stroke-linecap="round"/>
     <!-- Brake hood body -->
-    <path d="M 583 192 Q 575 200 579 210"
+    <path d="M 566 203 Q 558 211 562 221"
           fill="none" stroke-width="9" stroke-linecap="round" opacity="0.55"/>
     <!-- Drop: convex forward — bezier bulges RIGHT (forward direction) -->
-    <path d="M 577 194 C 595 210 593 231 575 247"
+    <path d="M 560 205 C 578 221 576 242 558 258"
           fill="none" stroke-width="6.5" stroke-linecap="round"/>
     <!-- Bottom curl rearward (hook shape) -->
-    <path d="M 575 247 Q 563 255 559 249"
+    <path d="M 558 258 Q 546 266 542 260"
           fill="none" stroke-width="6.5" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="561" y="180" width="106" height="112" rx="10" data-zone="handlebar"/>
+    <rect class="zone-overlay" x="530" y="190" width="108" height="110" rx="10" data-zone="handlebar"/>
   </g>
   </g>
 
