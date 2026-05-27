@@ -2142,3 +2142,26 @@ textarea.field-input {
 @media (max-width: 640px) {
   .session-notes-section { margin: 1rem 1rem 0; }
 }
+
+/* Ride card note + actions row */
+.ride-card-note {
+  font-size: .8rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: .35rem;
+  line-height: 1.4;
+}
+.ride-card-actions {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  flex-shrink: 0;
+  align-self: flex-start;
+  padding-top: .1rem;
+}
+.ride-card-note-btn {
+  font-size: .74rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.ride-card-note-btn:hover { color: var(--accent); }
