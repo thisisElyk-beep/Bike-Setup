@@ -84,22 +84,11 @@ function buildBikeCard(bike) {
   const label = bikeTypeLabel(bike.type);
   const susp  = bike.type === 'mtb' ? (bike.suspensionType === 'hardtail' ? 'Hardtail' : 'Full Suspension') : '';
 
-  // Key stats for card — show up to 3 meaningful values
-  const bl = bike.baseline || {};
-  const stats = [
-    bl.fork?.brand  && bl.fork?.psi  ? `Fork ${bl.fork.psi} psi`   : bl.fork?.brand  ? `Fork: ${bl.fork.brand}`   : null,
-    bl.shock?.brand && bl.shock?.psi ? `Shock ${bl.shock.psi} psi` : bl.shock?.brand ? `Shock: ${bl.shock.brand}` : null,
-    bl.frontTire?.psi ? `F ${bl.frontTire.psi} / R ${bl.rearTire?.psi ?? '?'} psi` : null,
-  ].filter(Boolean).slice(0, 3);
-
   card.innerHTML = `
     <div class="bike-card-silhouette">${mini}</div>
     <div class="bike-card-body">
       <div class="bike-card-type">${label}${susp ? ' · ' + susp : ''}</div>
       <div class="bike-card-name">${escHtml(bike.name)}</div>
-      <div class="bike-card-stats">
-        ${stats.length ? stats.map(s => `<span class="bike-card-stat">${escHtml(s)}</span>`).join('') : '<span class="bike-card-stat" style="color:var(--text-muted)">No setup yet</span>'}
-      </div>
     </div>
     <div class="bike-card-actions">
       <button class="btn-icon-sm btn-dupe-bike" title="Duplicate bike">
