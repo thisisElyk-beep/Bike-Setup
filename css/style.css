@@ -2021,9 +2021,8 @@ textarea.field-input {
   display: flex; align-items: center; justify-content: center;
   border-radius: var(--radius-sm); color: var(--text-muted);
   background: none; border: none; cursor: pointer;
-  opacity: 0; transition: opacity var(--transition), color var(--transition);
+  transition: color var(--transition), background var(--transition);
 }
-.profile-drop-row:hover .profile-drop-rename { opacity: 1; }
 .profile-drop-rename:hover { color: var(--text-primary); background: var(--bg-elevated); }
 .profile-rename-input { flex: 1; }
 
@@ -2051,4 +2050,95 @@ textarea.field-input {
   background: var(--bg-elevated);
   color: var(--text-muted);
   border: 1px solid var(--border);
+}
+
+/* ─── SESSION NOTES ─────────────────────────────────────── */
+.session-notes-section {
+  border-top: 1px solid var(--border);
+  margin: 1rem 2rem 0;
+  padding-top: 1.25rem;
+  padding-bottom: 2rem;
+}
+.session-notes-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+.session-notes-title {
+  font-family: var(--font-display);
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: .02em;
+}
+.session-notes-sub {
+  font-size: .78rem;
+  color: var(--text-muted);
+  margin-top: .2rem;
+}
+.session-notes-empty {
+  font-size: .82rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: .5rem 0;
+}
+.session-note-card {
+  position: relative;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: .75rem 2.5rem .75rem .9rem;
+  margin-bottom: .5rem;
+}
+.session-note-meta {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .3rem;
+}
+.session-note-date {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  color: var(--text-muted);
+}
+.session-note-tag {
+  font-family: var(--font-display);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .1rem .4rem;
+  border-radius: 100px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.session-note-body {
+  font-size: .85rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+.session-note-delete {
+  position: absolute;
+  top: .5rem;
+  right: .5rem;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition), background var(--transition);
+}
+.session-note-delete:hover { color: var(--danger); background: var(--bg-elevated); }
+
+@media (max-width: 640px) {
+  .session-notes-section { margin: 1rem 1rem 0; }
 }
