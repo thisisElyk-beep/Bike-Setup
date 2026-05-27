@@ -2420,3 +2420,267 @@ textarea.field-input {
   display: flex; flex-direction: column;
 }
 .theme-drop-accent { height: 5px; width: 100%; }
+
+/* ─── SERVICE TAB ────────────────────────────────────────── */
+.service-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.25rem;
+  padding: 0 2rem 2rem;
+}
+
+.service-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  box-shadow: var(--shadow-sm);
+  border-left: 3px solid transparent;
+}
+.service-card-overdue { border-left-color: var(--danger); }
+.service-card-soon    { border-left-color: var(--accent); }
+.service-card-empty   { opacity: .6; border-style: dashed; }
+
+.service-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.service-card-title {
+  font-family: var(--font-display);
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.service-card-sub {
+  font-size: .78rem;
+  color: var(--text-muted);
+  margin-top: .1rem;
+}
+
+.service-card-status-badge {
+  font-family: var(--font-display);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  padding: .18rem .5rem;
+  border-radius: 100px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.status-ok      { background: var(--success-dim); color: var(--success); }
+.status-soon    { background: var(--accent-dim);  color: var(--accent); }
+.status-overdue { background: var(--danger-dim);  color: var(--danger); }
+.status-unknown { background: var(--bg-elevated); color: var(--text-muted); }
+
+.service-card-body { display: flex; flex-direction: column; gap: .3rem; }
+.service-stat { display: flex; flex-direction: column; gap: .05rem; }
+.service-stat-label {
+  font-family: var(--font-display);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.service-stat-val {
+  font-size: .85rem;
+  color: var(--text-secondary);
+}
+
+.service-history-mini {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  padding: .6rem .75rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+.svc-history-row {
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+  font-size: .78rem;
+}
+.svc-history-date { font-family: var(--font-mono); color: var(--text-muted); font-size: .7rem; flex-shrink: 0; }
+.svc-history-type { color: var(--text-primary); font-weight: 500; }
+.svc-history-note { color: var(--text-muted); font-style: italic; font-size: .72rem; }
+.svc-history-more { font-size: .72rem; color: var(--text-muted); text-align: right; }
+
+.service-card-actions {
+  display: flex;
+  gap: .5rem;
+  margin-top: auto;
+  padding-top: .25rem;
+}
+
+/* Damper preset buttons */
+.damper-presets {
+  display: flex;
+  gap: .35rem;
+  flex-wrap: wrap;
+}
+.damper-preset-btn {
+  padding: .3rem .7rem;
+  font-family: var(--font-display);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .03em;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.damper-preset-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+.damper-preset-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+
+@media (max-width: 640px) {
+  .service-cards-grid { grid-template-columns: 1fr; padding: 0 1rem 1rem; }
+}
+
+/* ─── SERVICE TAB v2 ─────────────────────────────────────── */
+.svc-tab-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.25rem 2rem 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.svc-header-left { display: flex; flex-direction: column; gap: .25rem; }
+.svc-total-hours { display: flex; align-items: baseline; gap: .35rem; }
+.svc-hours-num {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.svc-hours-lbl { font-size: .78rem; color: var(--text-muted); }
+
+.svc-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  padding: 0 2rem 2rem;
+}
+
+.svc-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+.svc-card-empty {
+  border-style: dashed;
+  opacity: .6;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1.25rem;
+  gap: .5rem;
+}
+.svc-card-empty .svc-card-icon { color: var(--text-muted); margin-bottom:.25rem; }
+
+.svc-card-header { display: flex; align-items: flex-start; gap: .85rem; }
+.svc-card-icon { color: var(--text-secondary); flex-shrink: 0; margin-top:.1rem; }
+.svc-card-info { flex: 1; min-width: 0; }
+.svc-card-title {
+  font-family: var(--font-display);
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: .02em;
+}
+.svc-card-sub { font-size: .78rem; color: var(--text-muted); margin-top: .1rem; }
+.svc-last-svc { font-size: .72rem; color: var(--text-secondary); margin-top: .25rem; }
+.svc-never { color: var(--danger); }
+
+/* Tier bars */
+.svc-tiers { display: flex; flex-direction: column; gap: .85rem; }
+.svc-tier { display: flex; flex-direction: column; gap: .25rem; }
+
+.svc-tier-labels {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.svc-tier-name {
+  font-family: var(--font-display);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.svc-tier-status {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  font-weight: 500;
+}
+.svc-tier-status.ok      { color: var(--success); }
+.svc-tier-status.soon    { color: var(--accent); }
+.svc-tier-status.overdue { color: var(--danger); font-weight: 700; }
+
+.svc-progress-track {
+  height: 8px;
+  background: var(--bg-elevated);
+  border-radius: 100px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.svc-progress-fill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width .6s cubic-bezier(.4,0,.2,1), background .4s;
+  min-width: 2px;
+}
+@keyframes svc-pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .55; }
+}
+.svc-overdue-pulse { animation: svc-pulse 1.4s ease-in-out infinite; }
+
+.svc-tier-sub {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* Service history mini log */
+.svc-history-mini {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  padding: .6rem .8rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  border: 1px solid var(--border);
+}
+.svc-history-row {
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+  font-size: .76rem;
+  flex-wrap: wrap;
+}
+.svc-history-date { font-family: var(--font-mono); font-size: .68rem; color: var(--text-muted); flex-shrink: 0; }
+.svc-history-type { color: var(--text-primary); font-weight: 500; }
+.svc-history-note { color: var(--text-muted); font-style: italic; }
+.svc-history-more { font-size: .68rem; color: var(--text-muted); text-align: right; margin-top: .1rem; }
+
+@media (max-width: 640px) {
+  .svc-cards-grid  { grid-template-columns: 1fr; padding: 0 1rem 1rem; }
+  .svc-tab-header  { padding: 1rem 1rem .75rem; }
+}
