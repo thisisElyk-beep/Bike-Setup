@@ -244,16 +244,17 @@ function buildRow(comp, bike) {
     const notes          = row.querySelector('.comp-field-notes').value.trim();
     try {
       await updateComponent(bike.id, comp.id, {
-        category: comp.category, brand, model, installDate, notes,      });
+        category: comp.category, brand, model, installDate, notes,
+      });
       comp.brand = brand; comp.model = model;
-      comp.installDate = installDate; comp.notes = notes;      // Refresh status display
+      comp.installDate = installDate; comp.notes = notes;
       row.querySelector('.comp-row-name').textContent = [brand, model].filter(Boolean).join(' ') || '—';
-          row.classList.remove('comp-row-overdue','comp-row-soon');
+      row.classList.remove('comp-row-overdue','comp-row-soon');
       const dateEl = row.querySelector('.comp-row-date');
       if (dateEl) {
-        } else if (installDate) {
-          dateEl.textContent  = formatDate(installDate.slice(0,10));
-          dateEl.className    = 'comp-row-date';
+        if (installDate) {
+          dateEl.textContent = formatDate(installDate.slice(0,10));
+          dateEl.className   = 'comp-row-date';
         }
       }
       detail.classList.add('hidden');
