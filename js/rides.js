@@ -586,8 +586,13 @@ function renderCompareResult(el, base, test) {
   const timeBetter  = timeDelta  != null && timeDelta  < 0;
   const timeWorse   = timeDelta  != null && timeDelta  > 0;
 
-  const summaryIcon = speedDelta == null ? '📊'
-    : speedBetter ? '🟢' : speedWorse ? '🔴' : '⚪';
+  const summaryIndicator = speedDelta == null
+    ? `<div class="cmp-indicator cmp-indicator-neutral"></div>`
+    : speedBetter
+    ? `<div class="cmp-indicator cmp-indicator-better"></div>`
+    : speedWorse
+    ? `<div class="cmp-indicator cmp-indicator-worse"></div>`
+    : `<div class="cmp-indicator cmp-indicator-neutral"></div>`;
 
   const summaryText = speedDelta == null
     ? 'Log speed data to see performance summary'
@@ -627,7 +632,7 @@ function renderCompareResult(el, base, test) {
 
       <!-- ── SUMMARY CARD ── -->
       <div class="cmp-summary-card ${speedBetter ? 'cmp-card-better' : speedWorse ? 'cmp-card-worse' : ''}">
-        <div class="cmp-summary-icon">${summaryIcon}</div>
+        <div class="cmp-summary-icon">${summaryIndicator}</div>
         <div class="cmp-summary-body">
           <div class="cmp-summary-headline">${summaryText}</div>
           ${changedSettings.length > 0
