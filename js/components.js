@@ -216,7 +216,6 @@ function buildRow(comp, bike) {
       <span class="comp-row-cat">${escHtml(comp.category || 'Other')}</span>
       <span class="comp-row-name">${escHtml([comp.brand, comp.model].filter(Boolean).join(' ') || '—')}</span>
       ${dateDisplay}
-      ${serviceStatusBadge(svcStatus)}
       <svg class="comp-row-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none">
         <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>

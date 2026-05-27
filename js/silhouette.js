@@ -460,14 +460,21 @@ function svgGravel() {
 
   <!-- Drop bars — side-view profile -->
 
-  <!-- Straight fork (modern gravel — no curve) -->
+  <!-- Gravel fork: rear leg (behind wheel) -->
+  <g id="g-fork-rear" class="bike-zone" data-zone="fork">
+    <line x1="${rT.x}" y1="${rT.y}" x2="${rB.x}" y2="${rB.y}" stroke-width="7" stroke-linecap="round"/>
+  </g>
+
+  <!-- Front wheel between fork legs -->
+  ${roadWheel(FW.x,FW.y,'front-wheel',14)}
+
+  <!-- Gravel fork: crown + front leg + hitbox -->
   <g id="g-fork" class="bike-zone" data-zone="fork">
     <line x1="${lT.x-1}" y1="${lT.y}" x2="${rT.x+1}" y2="${rT.y}" stroke-width="8" stroke-linecap="round"/>
     <line x1="${lT.x}" y1="${lT.y}" x2="${lB.x}" y2="${lB.y}" stroke-width="7" stroke-linecap="round"/>
-    <line x1="${rT.x}" y1="${rT.y}" x2="${rB.x}" y2="${rB.y}" stroke-width="7" stroke-linecap="round"/>
     <line x1="${lB.x-1}" y1="${lB.y-20}" x2="${rB.x+1}" y2="${rB.y-20}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
     <line x1="${lB.x-8}" y1="${lB.y+2}" x2="${rB.x+8}" y2="${rB.y+2}" stroke-width="6" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="543" y="218" width="72" height="148" rx="12" data-zone="fork"/>
+    <rect class="zone-overlay" x="543" y="218" width="36" height="148" rx="8" data-zone="fork"/>
   </g>
 
   <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
@@ -499,7 +506,7 @@ function svgGravel() {
   </g>
   </g>
 
-  ${roadWheel(FW.x,FW.y,'front-wheel',14)}
+  
 </svg>`;
 }
 
@@ -538,8 +545,8 @@ function svgRoad() {
     <!-- Down tube: thicker than top tube (road frame character) -->
     <line x1="${BB.x}" y1="${BB.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="10" stroke-linecap="round"/>
     <line x1="${BB.x}" y1="${BB.y}" x2="${ST.x}" y2="${ST.y}" stroke-width="6" stroke-linecap="round"/>
-    <!-- Top tube: connects to TT_TOP, HT stub extends above -->
-    <line x1="327" y1="227" x2="${TT_TOP.x}" y2="${TT_TOP.y}" stroke-width="5.5" stroke-linecap="round"/>
+    <!-- Top tube: nearly flat, raised to match head tube height -->
+    <line x1="320" y1="218" x2="${TT_TOP.x}" y2="${TT_TOP.y}" stroke-width="5.5" stroke-linecap="round"/>
     <line x1="${HT.x}" y1="${HT.y}" x2="${HC.x}" y2="${HC.y}" stroke-width="11" stroke-linecap="round"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${ST.x},${ST.y} ${TT_TOP.x},${TT_TOP.y} ${HC.x},${HC.y}" data-zone="frame"/>
     <polygon class="zone-overlay" points="${BB.x},${BB.y} ${RW.x},${RW.y} ${SS.x},${SS.y} ${ST.x},${ST.y}" data-zone="frame"/>
@@ -569,24 +576,19 @@ function svgRoad() {
 
   <!-- Drop bars — side-view profile (matching gravel style) -->
 
-  <!-- Curved fork (road — raked) -->
+  <!-- Road fork: straight blades split around wheel -->
+  <g id="g-fork-rear" class="bike-zone" data-zone="fork">
+    <line x1="553" y1="248" x2="${FW.x+8}" y2="${FW.y}" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  ${roadWheel(FW.x,FW.y,'front-wheel',6)}
+
   <g id="g-fork" class="bike-zone" data-zone="fork">
-    <!-- Crown -->
-    <line x1="${HC.x-6}" y1="${HC.y+2}" x2="${HC.x+8}" y2="${HC.y+2}" stroke-width="8" stroke-linecap="round"/>
-    <!-- Left leg: curved bezier -->
-    <path d="M ${HC.x-5} ${HC.y+3}
-             C ${fCx1-2} ${fCy1} ${fCx2-2} ${fCy2} ${FW.x+6} ${FW.y}"
-          fill="none" stroke-width="5.5" stroke-linecap="round"/>
-    <!-- Right leg -->
-    <path d="M ${HC.x+7} ${HC.y+3}
-             C ${fCx1r} ${fCy1r} ${fCx2r} ${fCy2r} ${FW.x+16} ${FW.y}"
-          fill="none" stroke-width="5.5" stroke-linecap="round"/>
-    <!-- Lower brace -->
-    <line x1="${FW.x+4}" y1="${FW.y-18}" x2="${FW.x+18}" y2="${FW.y-18}" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
-    <!-- Axle -->
-    <line x1="${FW.x-2}" y1="${FW.y+2}" x2="${FW.x+22}" y2="${FW.y+2}" stroke-width="5.5" stroke-linecap="round"/>
-    <!-- Fork hitbox: narrow polygon along upper fork, above wheel overlay -->
-    <polygon class="zone-overlay" points="540,252 554,252 562,320 548,320" data-zone="fork"/>
+    <line x1="${HC.x-8}" y1="${HC.y+2}" x2="${HC.x+10}" y2="${HC.y+2}" stroke-width="8" stroke-linecap="round"/>
+    <line x1="539" y1="252" x2="${FW.x-8}" y2="${FW.y}" stroke-width="6" stroke-linecap="round"/>
+    <line x1="${FW.x-10}" y1="${FW.y-18}" x2="${FW.x+10}" y2="${FW.y-18}" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+    <line x1="${FW.x-12}" y1="${FW.y+2}" x2="${FW.x+12}" y2="${FW.y+2}" stroke-width="5.5" stroke-linecap="round"/>
+    <polygon class="zone-overlay" points="532,252 546,252 555,320 541,320" data-zone="fork"/>
   </g>
 
   <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
@@ -612,7 +614,7 @@ function svgRoad() {
   </g>
   </g>
 
-  ${roadWheel(FW.x,FW.y,'front-wheel',6)}
+  
 </svg>`;
 }
 
