@@ -592,13 +592,17 @@ export function showToast(message, type = 'info') {
 
 // ── THEME ─────────────────────────────────────────────────
 function initTheme() {
-  const saved = localStorage.getItem('dialed-theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
+  // Theme is now profile-specific, applied by profiles.js initProfile()
+  // Fallback: apply dark if no profile loaded yet
+  if (!document.documentElement.getAttribute('data-theme')) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
 }
 function toggleTheme() {
-  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  // Legacy toggle — cycles dark/light for non-profiled contexts
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'light' ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('dialed-theme', next);
 }
 
 // ── SERVICE WORKER ────────────────────────────────────────
