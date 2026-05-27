@@ -1,3 +1,4 @@
+
 // ── SHAREABLE TEXT SUMMARY ────────────────────────────────
 export function copySetupSummary(bike) {
   const bl = bike.baseline || {};
@@ -91,7 +92,7 @@ export function copySetupSummary(bike) {
 }
 
 import { getComponents, getTestSessions } from './db.js';
-import { showToast } from './app.js';
+import { showToast } from './utils.js';
 
 export async function exportBikePDF(bike) {
   showToast('Generating PDF...', 'info');

@@ -1,5 +1,5 @@
 import { updateBike } from './db.js';
-import { showToast } from './app.js';
+import { showToast } from './utils.js';
 
 let _saveTimer = null;
 

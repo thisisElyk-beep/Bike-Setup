@@ -1,5 +1,5 @@
 import { getPresets, createPreset, deletePreset, updateBike } from './db.js';
-import { showToast, openModal, closeModal } from './app.js';
+import { showToast, openModal, closeModal } from './utils.js';
 
 export async function renderPresetsTab(bike) {
   const grid  = document.getElementById('presets-grid');

@@ -1,5 +1,5 @@
 import { getTestSessions, createTestSession, updateTestSession, deleteTestSession, updateBike } from './db.js';
-import { showToast, openModal, closeModal } from './app.js';
+import { showToast, openModal, closeModal } from './utils.js';
 
 let _activeBike = null;
 let _sessions = [];

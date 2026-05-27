@@ -1,5 +1,5 @@
 import { updateBike } from './db.js';
-import { showToast } from './app.js';
+import { showToast } from './utils.js';
 
 // Bike type helpers
 const isDropBar = t => ['gravel','road'].includes(t);
