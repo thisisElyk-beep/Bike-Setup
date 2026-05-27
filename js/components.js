@@ -1,5 +1,5 @@
 import { getComponents, createComponent, updateComponent, deleteComponent } from './db.js';
-import { showToast, openModal, closeModal } from './app.js';
+import { showToast, openModal, closeModal } from './utils.js';
 
 // ── ICONS ─────────────────────────────────────────────────
 function icon(path, vb = '0 0 20 20') {
