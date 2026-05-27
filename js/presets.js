@@ -2,26 +2,44 @@ import { getPresets, createPreset, updatePreset, deletePreset, updateBike } from
 import { showToast, openModal, closeModal } from './utils.js';
 
 // ── TUNABLE FIELDS ────────────────────────────────────────
+// Base list — filtered at render time by damperType stored in baseline
 const TUNABLE = [
   { section: 'Fork', fields: [
-    { key: 'fork.psi',  label: 'Air Pressure', unit: 'psi',    path: ['fork','psi'],  step: 1,   min: 20, max: 350 },
-    { key: 'fork.lsr',  label: 'Rebound (LSR)', unit: 'clicks', path: ['fork','lsr'],  step: 1,   min: 0,  max: 40  },
-    { key: 'fork.hsr',  label: 'Rebound (HSR)', unit: 'clicks', path: ['fork','hsr'],  step: 1,   min: 0,  max: 40  },
-    { key: 'fork.lsc',  label: 'Compression (LSC)', unit: 'clicks', path: ['fork','lsc'], step: 1, min: 0, max: 40  },
-    { key: 'fork.hsc',  label: 'Compression (HSC)', unit: 'clicks', path: ['fork','hsc'], step: 1, min: 0, max: 40  },
+    { key: 'fork.psi',  label: 'Air Pressure',       unit: 'psi',    path: ['fork','psi'],  step: 1,   min: 20, max: 350, always: true },
+    { key: 'fork.lsr',  label: 'Rebound',             unit: 'clicks', path: ['fork','lsr'],  step: 1,   min: 0,  max: 40,  always: true },
+    { key: 'fork.hsr',  label: 'Rebound (HSR)',       unit: 'clicks', path: ['fork','hsr'],  step: 1,   min: 0,  max: 40,  damper: ['3way','4way'] },
+    { key: 'fork.lsc',  label: 'Compression (LSC)',   unit: 'clicks', path: ['fork','lsc'],  step: 1,   min: 0,  max: 40,  damper: ['2way','3way','4way'] },
+    { key: 'fork.hsc',  label: 'Compression (HSC)',   unit: 'clicks', path: ['fork','hsc'],  step: 1,   min: 0,  max: 40,  damper: ['4way'] },
   ]},
   { section: 'Rear Shock', fields: [
-    { key: 'shock.psi', label: 'Air Pressure', unit: 'psi',    path: ['shock','psi'], step: 1,   min: 20, max: 350 },
-    { key: 'shock.lsr', label: 'Rebound (LSR)', unit: 'clicks', path: ['shock','lsr'], step: 1,  min: 0,  max: 40  },
-    { key: 'shock.hsr', label: 'Rebound (HSR)', unit: 'clicks', path: ['shock','hsr'], step: 1,  min: 0,  max: 40  },
-    { key: 'shock.lsc', label: 'Compression (LSC)', unit: 'clicks', path: ['shock','lsc'], step: 1, min: 0, max: 40 },
-    { key: 'shock.hsc', label: 'Compression (HSC)', unit: 'clicks', path: ['shock','hsc'], step: 1, min: 0, max: 40 },
+    { key: 'shock.psi', label: 'Air Pressure',        unit: 'psi',    path: ['shock','psi'], step: 1,   min: 20, max: 350, always: true },
+    { key: 'shock.lsr', label: 'Rebound',             unit: 'clicks', path: ['shock','lsr'], step: 1,   min: 0,  max: 40,  always: true },
+    { key: 'shock.hsr', label: 'Rebound (HSR)',       unit: 'clicks', path: ['shock','hsr'], step: 1,   min: 0,  max: 40,  damper: ['3way','4way'] },
+    { key: 'shock.lsc', label: 'Compression (LSC)',   unit: 'clicks', path: ['shock','lsc'], step: 1,   min: 0,  max: 40,  damper: ['2way','3way','4way'] },
+    { key: 'shock.hsc', label: 'Compression (HSC)',   unit: 'clicks', path: ['shock','hsc'], step: 1,   min: 0,  max: 40,  damper: ['4way'] },
   ]},
   { section: 'Tires', fields: [
-    { key: 'frontTire.psi', label: 'Front PSI', unit: 'psi', path: ['frontTire','psi'], step: 0.5, min: 10, max: 160 },
-    { key: 'rearTire.psi',  label: 'Rear PSI',  unit: 'psi', path: ['rearTire','psi'],  step: 0.5, min: 10, max: 160 },
+    { key: 'frontTire.psi', label: 'Front PSI', unit: 'psi', path: ['frontTire','psi'], step: 0.5, min: 10, max: 160, always: true },
+    { key: 'rearTire.psi',  label: 'Rear PSI',  unit: 'psi', path: ['rearTire','psi'],  step: 0.5, min: 10, max: 160, always: true },
   ]},
 ];
+
+// Return only fields relevant for the given baseline's damperType settings
+function getActiveFields(baseline, sectionKey) {
+  const fkDt = baseline?.fork?.damperType  || '4way';
+  const skDt = baseline?.shock?.damperType || '4way';
+  return TUNABLE.map(section => ({
+    ...section,
+    fields: section.fields.filter(f => {
+      if (f.always) return true;
+      if (!f.damper) return true;
+      const dt = f.key.startsWith('fork.')  ? fkDt
+               : f.key.startsWith('shock.') ? skDt
+               : '4way';
+      return f.damper.includes(dt);
+    })
+  }));
+}
 
 const ALL_FIELDS = TUNABLE.flatMap(s => s.fields);
 
@@ -29,12 +47,12 @@ function getPath(obj, path) {
   return path.reduce((o, k) => o?.[k], obj);
 }
 
-function computeDiff(overrides, baseline) {
+function computeDiff(overrides, baseline, fields = ALL_FIELDS) {
   return Object.entries(overrides || {}).map(([key, presetVal]) => {
-    const f = ALL_FIELDS.find(f => f.key === key);
+    const f = fields.find(f => f.key === key);
     if (!f) return null;
     const baseVal = getPath(baseline, f.path);
-    return { key, section: f.section, label: f.label, unit: f.unit, baseVal, presetVal };
+    return { key, section: f.key.split('.')[0], label: f.label, unit: f.unit, baseVal, presetVal };
   }).filter(Boolean);
 }
 
@@ -115,7 +133,8 @@ function applyOverrides(baseline, overrides) {
 function presetCard(p, baseline) {
   // Support both new (overrides) and legacy (data) formats
   const overrides = p.overrides || {};
-  const diff = computeDiff(overrides, baseline);
+  const activeFields = getActiveFields(baseline).flatMap(s => s.fields);
+  const diff = computeDiff(overrides, baseline, activeFields);
 
   const date = p.createdAt?.toDate?.()
     ? p.createdAt.toDate().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
@@ -168,8 +187,9 @@ function presetCard(p, baseline) {
 function showNewPresetModal(bike, existingPresets, onSaved) {
   const baseline = bike.baseline || {};
 
-  // Build fields — only show sections where baseline has data
-  const sectionHtml = TUNABLE.map(section => {
+  // Build fields — only show sections where baseline has data, filtered by damperType
+  const activeTunable = getActiveFields(baseline);
+  const sectionHtml = activeTunable.map(section => {
     const fieldHtml = section.fields.map(f => {
       const baseVal = getPath(baseline, f.path);
       if (baseVal == null) return ''; // skip fields with no baseline
@@ -231,8 +251,10 @@ function showNewPresetModal(bike, existingPresets, onSaved) {
     if (!name) { showToast('Enter a name', 'error'); return; }
 
     // Compute overrides — only store values that differ from baseline
+    // Uses active fields filtered by damperType
+    const activeFields = getActiveFields(baseline).flatMap(s => s.fields);
     const overrides = {};
-    ALL_FIELDS.forEach(f => {
+    activeFields.forEach(f => {
       const inp = document.getElementById(`pf-${f.key}`);
       if (!inp) return;
       const inputVal = parseFloat(inp.value);
