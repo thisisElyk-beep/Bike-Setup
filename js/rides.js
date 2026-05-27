@@ -17,6 +17,7 @@ export async function renderRidesTab(bike) {
 // ── LIST VIEW ─────────────────────────────────────────────
 function renderRidesList(container, rides, bike) {
   const routes = [...new Set(rides.map(r => r.routeName).filter(Boolean))].sort();
+  const isRoadGravel = ['road','gravel'].includes(bike.type);
 
   container.innerHTML = `
     <div class="rides-toolbar">
@@ -32,11 +33,26 @@ function renderRidesList(container, rides, bike) {
         ${rides.length >= 2 ? `<button class="btn-secondary" id="btn-compare-rides">Compare</button>` : ''}
         <button class="btn-primary" id="btn-new-ride">
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          New Ride
+          Log Ride
         </button>
       </div>
     </div>
-    <div id="rides-list-container"></div>`;
+    <div id="rides-list-container"></div>
+
+    ${isRoadGravel ? `
+    <div class="session-notes-section">
+      <div class="session-notes-header">
+        <div>
+          <div class="session-notes-title">Session Notes</div>
+          <div class="session-notes-sub">Quick feel-based notes — conditions, tweaks, observations</div>
+        </div>
+        <button class="btn-primary" id="btn-new-session-note" style="font-size:.78rem;padding:.35rem .7rem;display:flex;align-items:center;gap:.35rem">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Add Note
+        </button>
+      </div>
+      <div id="session-notes-list"></div>
+    </div>` : ''}`;
 
   renderFilteredList(rides, bike);
 
@@ -47,6 +63,11 @@ function renderRidesList(container, rides, bike) {
   if (filter) filter.onchange = () => renderFilteredList(
     filter.value ? rides.filter(r => r.routeName === filter.value) : rides, bike
   );
+
+  if (isRoadGravel) {
+    renderSessionNotes(bike);
+    document.getElementById('btn-new-session-note').onclick = () => showSessionNoteModal(bike);
+  }
 }
 
 function renderFilteredList(rides, bike) {
@@ -647,6 +668,97 @@ function renderCompareResult(el, base, test) {
         <div class="cmp-note-wrap"><div class="cmp-note-label">Test</div><div class="cmp-note">${escHtml(test.notes || '—')}</div></div>
       </div>` : ''}
     </div>`;
+}
+
+// ── SESSION NOTES ─────────────────────────────────────────
+// Lightweight feel-based notes stored in localStorage per bike
+function sessionNotesKey(bike) { return `dialed_session_notes_${bike.id}`; }
+
+function getSessionNotes(bike) {
+  try { return JSON.parse(localStorage.getItem(sessionNotesKey(bike)) || '[]'); }
+  catch { return []; }
+}
+
+function saveSessionNotes(bike, notes) {
+  localStorage.setItem(sessionNotesKey(bike), JSON.stringify(notes));
+}
+
+function renderSessionNotes(bike) {
+  const el = document.getElementById('session-notes-list');
+  if (!el) return;
+  const notes = getSessionNotes(bike);
+  if (notes.length === 0) {
+    el.innerHTML = `<div class="session-notes-empty">No notes yet — jot down how changes felt, conditions, or anything worth remembering.</div>`;
+    return;
+  }
+  el.innerHTML = notes.slice().reverse().map(n => `
+    <div class="session-note-card" data-id="${n.id}">
+      <div class="session-note-meta">
+        <span class="session-note-date">${fmtDate(n.date)}</span>
+        ${n.tag ? `<span class="session-note-tag">${escHtml(n.tag)}</span>` : ''}
+      </div>
+      <div class="session-note-body">${escHtml(n.text)}</div>
+      <button class="session-note-delete" data-id="${n.id}" title="Delete">×</button>
+    </div>`).join('');
+
+  el.querySelectorAll('.session-note-delete').forEach(btn => {
+    btn.onclick = () => {
+      const updated = getSessionNotes(bike).filter(n => n.id !== btn.dataset.id);
+      saveSessionNotes(bike, updated);
+      renderSessionNotes(bike);
+    };
+  });
+}
+
+function showSessionNoteModal(bike) {
+  const today = new Date().toISOString().slice(0,10);
+  const body = `
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Date</label>
+        <input id="sn-date" class="field-input" type="date" value="${today}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Tag</label>
+        <select id="sn-tag" class="field-select">
+          <option value="">— optional —</option>
+          <option>Feel</option>
+          <option>Tire Pressure</option>
+          <option>Position</option>
+          <option>Conditions</option>
+          <option>Equipment</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-group" style="margin-top:.5rem">
+      <label class="field-label">Note</label>
+      <textarea id="sn-text" class="field-input" rows="4"
+        placeholder="e.g. Dropped rear PSI 1 psi — felt more compliant on rougher sections, no noticeable rolling resistance penalty"></textarea>
+    </div>`;
+
+  const footer = `
+    <button class="btn-secondary" id="modal-cancel">Cancel</button>
+    <button class="btn-primary" id="modal-save-note">Save Note</button>`;
+
+  openModal('Session Note', body, footer);
+  document.getElementById('sn-text').focus();
+  document.getElementById('modal-cancel').onclick = closeModal;
+  document.getElementById('modal-save-note').onclick = () => {
+    const text = document.getElementById('sn-text').value.trim();
+    if (!text) { showToast('Write something first', 'error'); return; }
+    const notes = getSessionNotes(bike);
+    notes.push({
+      id: Date.now().toString(),
+      date: document.getElementById('sn-date').value,
+      tag:  document.getElementById('sn-tag').value,
+      text,
+    });
+    saveSessionNotes(bike, notes);
+    closeModal();
+    renderSessionNotes(bike);
+    showToast('Note saved', 'success');
+  };
 }
 
 // ── GPX PARSER ────────────────────────────────────────────
