@@ -7,15 +7,17 @@
 const VB_DEFAULT = [0, 0, 800, 480];
 
 const ZONE_META = {
-  // vb: [x, y, width, height] — wider = more context shown
-  'front-wheel': { label: 'Front Wheel / Tire', vb: [380, 160, 420, 280], key: 'frontTire' },
-  'rear-wheel':  { label: 'Rear Wheel / Tire',  vb: [ -30, 160, 420, 280], key: 'rearTire' },
-  'fork':        { label: 'Fork',               vb: [370, 100, 420, 280], key: 'fork' },
-  'shock':       { label: 'Rear Shock',         vb: [160, 140, 440, 300], key: 'shock' },
-  'handlebar':   { label: 'Cockpit',            vb: [360,  20, 440, 300], key: 'handlebar' },
-  'drivetrain':  { label: 'Drivetrain',         vb: [160, 200, 420, 280], key: 'drivetrain' },
-  'dropper':     { label: 'Dropper / Saddle',   vb: [130,  20, 420, 280], key: 'dropper' },
-  'frame':       { label: 'Frame / Geometry',   vb: [  0,   0, 800, 480], key: 'frame' },
+  // vb: [x, y, width, height]
+  // y=0, height=480 always → full bike visible, no vertical cutoff
+  // width controls horizontal zoom; narrower = more zoomed in
+  'front-wheel': { label: 'Front Wheel / Tire', vb: [350,   0, 450, 480], key: 'frontTire' },
+  'rear-wheel':  { label: 'Rear Wheel / Tire',  vb: [-70,   0, 450, 480], key: 'rearTire'  },
+  'fork':        { label: 'Fork',               vb: [340,   0, 450, 480], key: 'fork'      },
+  'shock':       { label: 'Rear Shock',         vb: [120,   0, 460, 480], key: 'shock'     },
+  'handlebar':   { label: 'Cockpit',            vb: [360,   0, 440, 480], key: 'handlebar' },
+  'drivetrain':  { label: 'Drivetrain',         vb: [150,   0, 450, 480], key: 'drivetrain'},
+  'dropper':     { label: 'Dropper / Saddle',   vb: [ 80,   0, 430, 480], key: 'dropper'   },
+  'frame':       { label: 'Frame / Geometry',   vb: [  0,   0, 800, 480], key: 'frame'     },
 };
 
 // ── WHEELS ────────────────────────────────────────────────
@@ -186,7 +188,6 @@ function svgMTBFS(hasMotor = false) {
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
 
   ${roadWheel(RW.x,RW.y,'rear-wheel',14)}
-  ${roadWheel(FW.x,FW.y,'front-wheel',14)}
 
   <!-- FRAME: main triangle + rear triangle -->
   <g id="g-frame" class="bike-zone" data-zone="frame">
@@ -232,7 +233,7 @@ function svgMTBFS(hasMotor = false) {
     <line x1="${F.rS.x}" y1="${F.rS.y}" x2="${F.rB.x}" y2="${F.rB.y}" stroke-width="15" stroke-linecap="round"/>
   </g>
 
-  <!-- Front wheel renders between rear and front fork stanchions -->
+  ${mtbWheel(FW.x,FW.y,'front-wheel')}
 
   <!-- Fork front stanchion + crown + hitbox (in front of wheel) -->
   <g id="g-fork" class="bike-zone" data-zone="fork">
