@@ -110,6 +110,8 @@ function renderFilteredList(rides, bike) {
       const ride = rides.find(r => r.id === id);
       showEditRideModal(bike, ride, () => renderRidesTab(bike));
     });
+
+    card.querySelector('.ride-card-compare')?.addEventListener('click', e => {
       e.stopPropagation();
       showCompareView(container, rides, bike, id);
     });
