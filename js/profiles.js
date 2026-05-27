@@ -1,3 +1,5 @@
+import { showToast } from './app.js';
+
 import { setActiveProfile } from './db.js';
 
 const STORAGE_KEY_PROFILES = 'dialed_profiles';
@@ -81,7 +83,7 @@ export function showProfilePicker(onSelected) {
           <line x1="2" y1="16" x2="8" y2="16" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/>
           <line x1="24" y1="16" x2="30" y2="16" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
-        <span class="profile-picker-app-name">Dialed</span>
+        <span class="profile-picker-app-name">Quiver</span>
       </div>
       <h2 class="profile-picker-title">Who's riding?</h2>
       <p class="profile-picker-sub">Select your profile to view your fleet and settings</p>
@@ -237,7 +239,9 @@ function showProfileDropdown(activeId, anchor, onSwitch) {
 
   // Position below chip
   const rect = anchor.getBoundingClientRect();
-  drop.style.cssText = `position:fixed;top:${rect.bottom+6}px;left:${rect.left}px;z-index:9999`;
+  // Anchor to right edge of anchor so it doesn't overflow off screen
+  const rightEdge = window.innerWidth - rect.right;
+  drop.style.cssText = `position:fixed;top:${rect.bottom+6}px;right:${rightEdge}px;min-width:220px;z-index:9999`;
   document.body.appendChild(drop);
 
   drop.querySelectorAll('.profile-drop-item').forEach(btn => {
