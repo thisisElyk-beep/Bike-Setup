@@ -2,6 +2,64 @@ import { showToast } from './app.js';
 
 import { setActiveProfile } from './db.js';
 
+
+// ── THEME MANAGEMENT ──────────────────────────────────────
+export const THEMES = [
+  { id: 'dark',   name: 'Classic',        swatch: ['#0a0909','#f59e0b'] },
+  { id: 'amber',  name: 'Amber',          swatch: ['#0c0b09','#f59e0b'] },
+  { id: 'teal',   name: 'Midnight Teal',  swatch: ['#070c10','#00d4b8'] },
+  { id: 'carbon', name: 'Carbon',         swatch: ['#0a0a0a','#ff4d4d'] },
+  { id: 'slate',  name: 'Slate',          swatch: ['#0b0d14','#818cf8'] },
+  { id: 'light',  name: 'Light',          swatch: ['#f2f0ef','#d97706'] },
+];
+
+function themeKey(profileId) { return `quiver_theme_${profileId}`; }
+
+export function getProfileTheme(profileId) {
+  return localStorage.getItem(themeKey(profileId)) || 'dark';
+}
+
+export function setProfileTheme(profileId, themeId) {
+  localStorage.setItem(themeKey(profileId), themeId);
+  applyTheme(themeId);
+}
+
+export function applyTheme(themeId) {
+  document.documentElement.setAttribute('data-theme', themeId);
+}
+
+export function buildThemeSwitcher(profileId, containerEl) {
+  const current = getProfileTheme(profileId);
+  containerEl.innerHTML = `
+    <div class="theme-switcher-label">Theme</div>
+    <div class="theme-swatches">
+      ${THEMES.map(t => `
+        <button class="theme-swatch ${t.id === current ? 'active' : ''}"
+                data-theme="${t.id}" title="${t.name}"
+                style="--swatch-bg:${t.swatch[0]};--swatch-accent:${t.swatch[1]}">
+          <div class="swatch-preview">
+            <div class="swatch-bg"></div>
+            <div class="swatch-accent"></div>
+          </div>
+          <div class="theme-swatch-name">${t.name}</div>
+        </button>`).join('')}
+    </div>`;
+
+  containerEl.querySelectorAll('.theme-swatch').forEach(btn => {
+    btn.onclick = () => {
+      setProfileTheme(profileId, btn.dataset.theme);
+      containerEl.querySelectorAll('.theme-swatch').forEach(b =>
+        b.classList.toggle('active', b === btn)
+      );
+      // Update the logo accent if needed
+      const chip = document.getElementById('profile-chip');
+      if (chip) {
+        // Chip avatar color stays accent, auto-updates via CSS var
+      }
+    };
+  });
+}
+
 const STORAGE_KEY_PROFILES = 'dialed_profiles';
 const STORAGE_KEY_ACTIVE   = 'dialed_active_profile';
 
@@ -30,6 +88,7 @@ export function getActiveProfileId() {
 export function activateProfile(profileId) {
   localStorage.setItem(STORAGE_KEY_ACTIVE, profileId);
   setActiveProfile(profileId);
+  applyTheme(getProfileTheme(profileId));
 }
 
 export function createProfile(name) {
@@ -252,6 +311,10 @@ function showProfileDropdown(activeId, anchor, onSwitch) {
       onSwitch(btn.dataset.id);
     };
   });
+
+  // Render theme switcher inline in dropdown
+  const themeSwitcherEl = document.getElementById('profile-drop-theme-switcher');
+  if (themeSwitcherEl) buildThemeSwitcher(activeId, themeSwitcherEl);
 
   document.getElementById('profile-drop-rename-active')?.addEventListener('click', e => {
     e.stopPropagation();
