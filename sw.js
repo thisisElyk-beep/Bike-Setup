@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dialed-v2';
+const CACHE_NAME = 'quiver-v1';
 const BASE = '/Bike-Setup';
 const APP_SHELL = [
   `${BASE}/`,
@@ -11,6 +11,7 @@ const APP_SHELL = [
   `${BASE}/js/setup.js`,
   `${BASE}/js/components.js`,
   `${BASE}/js/quickadjust.js`,
+  `${BASE}/js/utils.js`,
   `${BASE}/js/rides.js`,
   `${BASE}/js/testing.js`,
   `${BASE}/js/presets.js`,
