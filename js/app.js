@@ -131,9 +131,12 @@ function openBike(bike) {
   nameBtn.innerHTML = `${escHtml(bike.name)}<svg class="rename-icon" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7 1.5l2.5 2.5L3 10H.5V7.5L7 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
   nameBtn.classList.remove('hidden');
   nameBtn.onclick = () => showRenameBikeModal(bike);
-  // Show Rides tab only for road and gravel
-  const ridesTab = $('tab-btn-rides');
-  if (ridesTab) ridesTab.classList.toggle('hidden', !['road','gravel'].includes(bike.type));
+  // Rides tab: road/gravel only. Test Mode tab: MTB/DJ/hardtail only.
+  const ridesTab   = $('tab-btn-rides');
+  const testingTab = $('tab-btn-testing');
+  const isRoadGravel = ['road','gravel'].includes(bike.type);
+  if (ridesTab)   ridesTab.classList.toggle('hidden',   !isRoadGravel);
+  if (testingTab) testingTab.classList.toggle('hidden',  isRoadGravel);
   $('btn-export').classList.remove('hidden');
   $('btn-add-bike-header').classList.add('hidden');
   showView('detail');
