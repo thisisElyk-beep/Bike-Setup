@@ -105,7 +105,11 @@ function renderFilteredList(rides, bike) {
       } catch(err) { showToast('Save failed', 'error'); }
     });
 
-    card.querySelector('.ride-card-compare')?.addEventListener('click', e => {
+    card.querySelector('.ride-card-edit-btn')?.addEventListener('click', e => {
+      e.stopPropagation();
+      const ride = rides.find(r => r.id === id);
+      showEditRideModal(bike, ride, () => renderRidesTab(bike));
+    });
       e.stopPropagation();
       showCompareView(container, rides, bike, id);
     });
@@ -148,6 +152,10 @@ function rideCard(r) {
         <button class="btn-text ride-card-note-btn" title="Add/edit note" style="font-size:.75rem;color:var(--text-muted);display:flex;align-items:center;gap:.25rem">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 9V7l5-5 2 2-5 5H2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
           ${r.notes ? 'Edit note' : 'Add note'}
+        </button>
+        <button class="btn-text ride-card-edit-btn" title="Edit ride" style="font-size:.75rem;color:var(--text-muted);display:flex;align-items:center;gap:.25rem">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 1.5l2.5 2.5L3.5 10.5H1V8L8 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+          Edit
         </button>
         <button class="btn-icon-sm ride-card-compare" title="Compare">
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5h9M8 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -681,6 +689,192 @@ function renderCompareResult(el, base, test) {
         <div class="cmp-note-wrap"><div class="cmp-note-label">Test</div><div class="cmp-note">${escHtml(test.notes || '—')}</div></div>
       </div>` : ''}
     </div>`;
+}
+
+// ── EDIT RIDE MODAL ───────────────────────────────────────
+function showEditRideModal(bike, ride, onSaved) {
+  const s = ride.settings   || {};
+  const c = ride.conditions || {};
+
+  const body = `
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Route Name</label>
+        <input id="edit-route" class="field-input" type="text" value="${escHtml(ride.routeName || '')}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Date</label>
+        <input id="edit-date" class="field-input" type="date" value="${ride.date || ''}">
+      </div>
+    </div>
+
+    <div class="settings-section-divider">Performance</div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Distance (km)</label>
+        <input id="edit-distance" class="field-input" type="number" step="0.1" value="${ride.distance || ''}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Elapsed Time</label>
+        <input id="edit-time" class="field-input" type="text" value="${ride.elapsedTime ? fmtTime(ride.elapsedTime) : ''}" placeholder="1:18:45">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Elevation Gain (m)</label>
+        <input id="edit-elev" class="field-input" type="number" value="${ride.elevationGain != null ? Math.round(ride.elevationGain) : ''}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Avg Speed (km/h)</label>
+        <input id="edit-speed" class="field-input" type="number" step="0.1" value="${ride.avgSpeed != null ? ride.avgSpeed.toFixed(1) : ''}">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Avg Heart Rate</label>
+        <input id="edit-hr" class="field-input" type="number" value="${ride.avgHR != null ? Math.round(ride.avgHR) : ''}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Avg Power (w)</label>
+        <input id="edit-power" class="field-input" type="number" value="${ride.avgPower != null ? Math.round(ride.avgPower) : ''}">
+      </div>
+    </div>
+
+    <div class="settings-section-divider">Settings Used</div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Seat Height (mm)</label>
+        <input id="edit-seatHeight" class="field-input" type="number" value="${s.seatHeight || ''}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Stack / Spacers (mm)</label>
+        <input id="edit-stackHeight" class="field-input" type="number" value="${s.stackHeight || ''}">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Crank Length (mm)</label>
+        <input id="edit-crankLength" class="field-input" type="number" value="${s.crankLength || ''}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Seat Offset (mm)</label>
+        <input id="edit-seatOffset" class="field-input" type="number" value="${s.seatOffset || ''}">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Reach (mm)</label>
+        <input id="edit-reach" class="field-input" type="number" value="${s.reach || ''}">
+      </div>
+      <div class="field-group"></div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Tire PSI — Front</label>
+        <input id="edit-tirePsiF" class="field-input" type="number" step="0.5" value="${s.tirePsiF || ''}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Tire PSI — Rear</label>
+        <input id="edit-tirePsiR" class="field-input" type="number" step="0.5" value="${s.tirePsiR || ''}">
+      </div>
+    </div>
+
+    <div class="settings-section-divider">Conditions</div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Temperature (°C)</label>
+        <input id="edit-temp" class="field-input" type="number" value="${c.temp != null ? c.temp : ''}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Surface</label>
+        <select id="edit-surface" class="field-select">
+          <option value="">—</option>
+          ${['Tarmac','Gravel','Mixed'].map(v => `<option ${c.surface===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Wind</label>
+        <select id="edit-wind" class="field-select">
+          <option value="">—</option>
+          ${['None','Light','Moderate','Strong'].map(v => `<option ${c.wind===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Wind Direction</label>
+        <select id="edit-windDir" class="field-select">
+          <option value="">—</option>
+          ${['Headwind','Tailwind','Crosswind','Variable'].map(v => `<option ${c.windDir===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Weather</label>
+        <select id="edit-weather" class="field-select">
+          <option value="">—</option>
+          ${['Sunny','Cloudy','Overcast','Wet'].map(v => `<option ${c.weather===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field-group"></div>
+    </div>
+
+    <div class="field-group" style="margin-top:.75rem">
+      <label class="field-label">Notes</label>
+      <textarea id="edit-notes" class="field-input" rows="2">${escHtml(ride.notes || '')}</textarea>
+    </div>`;
+
+  const footer = `
+    <button class="btn-secondary" id="modal-cancel">Cancel</button>
+    <button class="btn-primary" id="modal-save-edit">Save Changes</button>`;
+
+  openModal(`Edit Ride — ${fmtDate(ride.date)}`, body, footer);
+
+  document.getElementById('modal-cancel').onclick = closeModal;
+  document.getElementById('modal-save-edit').onclick = async () => {
+    const v  = id => document.getElementById(id)?.value?.trim() || '';
+    const n  = id => { const val = document.getElementById(id)?.value; return val ? parseFloat(val) : null; };
+    const sl = id => document.getElementById(id)?.value || null;
+
+    const timeStr = v('edit-time');
+    const updated = {
+      routeName:     v('edit-route'),
+      date:          v('edit-date'),
+      distance:      n('edit-distance'),
+      elapsedTime:   parseTimeStr(timeStr),
+      elevationGain: n('edit-elev'),
+      avgSpeed:      n('edit-speed'),
+      avgHR:         n('edit-hr'),
+      avgPower:      n('edit-power'),
+      notes:         v('edit-notes'),
+      settings: {
+        seatHeight:  n('edit-seatHeight'),
+        stackHeight: n('edit-stackHeight'),
+        crankLength: n('edit-crankLength'),
+        seatOffset:  n('edit-seatOffset'),
+        reach:       n('edit-reach'),
+        tirePsiF:    n('edit-tirePsiF'),
+        tirePsiR:    n('edit-tirePsiR'),
+      },
+      conditions: {
+        temp:    n('edit-temp'),
+        wind:    sl('edit-wind'),
+        windDir: sl('edit-windDir'),
+        surface: sl('edit-surface'),
+        weather: sl('edit-weather'),
+      },
+    };
+
+    try {
+      await updateRide(bike.id, ride.id, updated);
+      showToast('Ride updated', 'success');
+      closeModal();
+      onSaved && onSaved();
+    } catch(e) {
+      showToast('Save failed: ' + e.message, 'error');
+    }
+  };
 }
 
 // ── SESSION NOTES ─────────────────────────────────────────
