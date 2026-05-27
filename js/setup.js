@@ -51,6 +51,47 @@ export function renderZoneSettings(zoneId, bike, container, onSaved) {
   `;
   container.parentElement.appendChild(saveBar);
 
+  // Bind damper preset buttons
+  container.querySelectorAll('.damper-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.key;
+      container.querySelectorAll(`.damper-preset-btn[data-key="${key}"]`).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Re-render the damper fields based on new preset
+      const dt = btn.dataset.preset;
+      const fieldsEl = container.querySelector(`#${key}-damper-fields`);
+      if (!fieldsEl) return;
+      const single = dt === 'single';
+      const showLSR = true, showHSR = ['3way','4way'].includes(dt);
+      const showLSC = ['2way','3way','4way'].includes(dt);
+      const showHSC = dt === '4way';
+      // Get current values from hidden inputs or visible inputs
+      const getVal = id => container.querySelector(`#${id}`)?.value || '';
+      const lsr=getVal(`${key}-lsr`), hsr=getVal(`${key}-hsr`);
+      const lsc=getVal(`${key}-lsc`), hsc=getVal(`${key}-hsc`);
+      fieldsEl.innerHTML = `
+        <div class="settings-section-divider">Damper — Rebound</div>
+        ${showLSR ? spinner(single?'Rebound':'Low Speed Rebound',`${key}-lsr`,lsr||10,1,0,40,'clicks') : `<input type="hidden" id="${key}-lsr" value="${lsr}">`}
+        ${showHSR ? spinner('High Speed Rebound',`${key}-hsr`,hsr||5,1,0,40,'clicks') : `<input type="hidden" id="${key}-hsr" value="${hsr}">`}
+        ${(showLSC||showHSC) ? '<div class="settings-section-divider">Damper — Compression</div>' : ''}
+        ${showLSC ? spinner('Low Speed Compression',`${key}-lsc`,lsc||8,1,0,40,'clicks') : `<input type="hidden" id="${key}-lsc" value="${lsc}">`}
+        ${showHSC ? spinner('High Speed Compression',`${key}-hsc`,hsc||4,1,0,40,'clicks') : `<input type="hidden" id="${key}-hsc" value="${hsc}">`}
+      `;
+      // Re-bind spinners in new content
+      fieldsEl.querySelectorAll('.spinner-btn').forEach(sb => {
+        sb.addEventListener('click', () => {
+          const inp = container.querySelector(`#${sb.dataset.id}`);
+          if (!inp) return;
+          const step=parseFloat(sb.dataset.step||1), min=parseFloat(sb.dataset.min??0), max=parseFloat(sb.dataset.max??999);
+          const cur=parseFloat(inp.value)||0;
+          inp.value = sb.classList.contains('spinner-minus')
+            ? Math.max(min,parseFloat((cur-step).toFixed(3)))
+            : Math.min(max,parseFloat((cur+step).toFixed(3)));
+        });
+      });
+    });
+  });
+
   // Bind spinner −/+ buttons
   container.querySelectorAll('.spinner-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -146,6 +187,17 @@ function suspensionForm(key, label, data = {}, isShock = false) {
     <div class="field-row">
       ${field('Brand', `${key}-brand`, data.brand)}
       ${field('Model', `${key}-model`, data.model)}
+    </div>
+    <div class="field-group">
+      <label class="field-label">Damper Type</label>
+      <div class="damper-presets" id="${key}-damper-type">
+        ${[
+          {id:'single',  label:'Rebound Only'},
+          {id:'2way',    label:'2-Way'},
+          {id:'3way',    label:'3-Way'},
+          {id:'4way',    label:'Full 4-Way'},
+        ].map(p => `<button type="button" class="damper-preset-btn ${(data.damperType||'4way')===p.id?'active':''}" data-key="${key}" data-preset="${p.id}">${p.label}</button>`).join('')}
+      </div>
     </div>
     ${!isShock ? `<div class="field-row">
       ${field('Travel', `${key}-travel`, data.travel, 'e.g. 160mm')}
@@ -520,6 +572,7 @@ function collectSuspension(key, container) {
     oilWeight:   val(`${key}-oilWeight`)   || undefined,
     lowerLegOil: val(`${key}-lowerLegOil`) || undefined,
     lastService: val(`${key}-lastService`) || undefined,
+    damperType: container.querySelector(`.damper-preset-btn.active[data-key='${key}']`)?.dataset.preset || data.damperType || '4way',
     notes: val(`${key}-notes`),
   };
 }

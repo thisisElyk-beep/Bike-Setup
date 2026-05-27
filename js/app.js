@@ -7,6 +7,7 @@ import { renderZoneSettings, renderSettingsPlaceholder, renderCockpitSubZone } f
 import { renderComponentsTab } from './components.js';
 import { renderQuickAdjustTab } from './quickadjust.js';
 import { renderRidesTab } from './rides.js';
+import { renderServiceTab } from './service.js';
 import { renderTestingTab } from './testing.js';
 import { renderPresetsTab } from './presets.js';
 import { exportBikePDF, copySetupSummary } from './export.js';
@@ -301,6 +302,7 @@ function activateTab(tab) {
     case 'components': renderComponentsTab(_bike);    break;
     case 'adjust':     renderQuickAdjustTab(_bike);   break;
     case 'rides':      renderRidesTab(_bike);          break;
+    case 'service':    renderServiceTab(_bike);       break;
     case 'testing':    renderTestingTab(_bike);       break;
     case 'presets':    renderPresetsTab(_bike);       break;
   }

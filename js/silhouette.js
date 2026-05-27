@@ -225,12 +225,20 @@ function svgMTBFS(hasMotor = false) {
   </g>
 
   <!-- FORK -->
+  <!-- Fork rear stanchion (behind wheel) -->
+  <g id="g-fork-rear">
+    <line x1="${F.rT.x}" y1="${F.rT.y}" x2="${F.rS.x}" y2="${F.rS.y}" stroke-width="10" stroke-linecap="round"/>
+    <line x1="${F.rS.x}" y1="${F.rS.y}" x2="${F.rB.x}" y2="${F.rB.y}" stroke-width="15" stroke-linecap="round"/>
+  </g>
+
+  <!-- Front wheel renders between rear and front fork stanchions -->
+  ${mtbWheel(FW.x,FW.y,'front-wheel')}
+
+  <!-- Fork front stanchion + crown + hitbox (in front of wheel) -->
   <g id="g-fork" class="bike-zone" data-zone="fork">
     <line x1="${F.lT.x-2}" y1="${F.lT.y+1}" x2="${F.rT.x+2}" y2="${F.rT.y+1}" stroke-width="10" stroke-linecap="round"/>
     <line x1="${F.lT.x}" y1="${F.lT.y}" x2="${F.lS.x}" y2="${F.lS.y}" stroke-width="10" stroke-linecap="round"/>
-    <line x1="${F.rT.x}" y1="${F.rT.y}" x2="${F.rS.x}" y2="${F.rS.y}" stroke-width="10" stroke-linecap="round"/>
     <line x1="${F.lS.x}" y1="${F.lS.y}" x2="${F.lB.x}" y2="${F.lB.y}" stroke-width="15" stroke-linecap="round"/>
-    <line x1="${F.rS.x}" y1="${F.rS.y}" x2="${F.rB.x}" y2="${F.rB.y}" stroke-width="15" stroke-linecap="round"/>
     <line x1="${F.lS.x-3}" y1="${F.lS.y}" x2="${F.rS.x+3}" y2="${F.rS.y}" stroke-width="8" stroke-linecap="round" opacity="0.62"/>
     <line x1="${F.lB.x-2}" y1="${F.lB.y-22}" x2="${F.rB.x+2}" y2="${F.rB.y-22}" stroke-width="6" stroke-linecap="round" opacity="0.64"/>
     <rect x="${F.lB.x-20}" y="${F.lB.y-62}" width="14" height="28" rx="3" fill="none" stroke-width="3" opacity="0.58"/>
@@ -306,7 +314,6 @@ function svgHardtail(isDJ = false) {
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
 
   ${isDJ ? roadWheel(RW.x,RW.y,'rear-wheel',12) : mtbWheel(RW.x,RW.y,'rear-wheel')}
-  ${isDJ ? roadWheel(FW.x,FW.y,'front-wheel',12) : mtbWheel(FW.x,FW.y,'front-wheel')}
 
   <!-- FRAME: rigid rear triangle + main triangle -->
   <g id="g-frame" class="bike-zone" data-zone="frame">
@@ -346,18 +353,27 @@ function svgHardtail(isDJ = false) {
   </g>
 
   <!-- FORK -->
+  <!-- Fork rear stanchion (behind wheel) -->
+  <g id="g-fork-rear">
+    ${isDJ ? `
+    <line x1="${F.rT.x}" y1="${F.rT.y}" x2="${F.rB.x}" y2="${F.rB.y}" stroke-width="8" stroke-linecap="round"/>
+    ` : `
+    <line x1="${F.rT.x}" y1="${F.rT.y}" x2="${F.rS.x}" y2="${F.rS.y}" stroke-width="10" stroke-linecap="round"/>
+    <line x1="${F.rS.x}" y1="${F.rS.y}" x2="${F.rB.x}" y2="${F.rB.y}" stroke-width="15" stroke-linecap="round"/>
+    `}
+  </g>
+
+  <!-- Front wheel renders between rear and front stanchions -->
+  ${isDJ ? roadWheel(FW.x,FW.y,'front-wheel',12) : mtbWheel(FW.x,FW.y,'front-wheel')}
+
+  <!-- Fork front stanchion + crown + hitbox (in front of wheel) -->
   <g id="g-fork" class="bike-zone" data-zone="fork">
     <line x1="${F.lT.x-2}" y1="${F.lT.y+1}" x2="${F.rT.x+2}" y2="${F.rT.y+1}" stroke-width="10" stroke-linecap="round"/>
     ${isDJ ? `
-    <!-- Rigid fork: full-length straight legs, same width top to bottom -->
     <line x1="${F.lT.x}" y1="${F.lT.y}" x2="${F.lB.x}" y2="${F.lB.y}" stroke-width="8" stroke-linecap="round"/>
-    <line x1="${F.rT.x}" y1="${F.rT.y}" x2="${F.rB.x}" y2="${F.rB.y}" stroke-width="8" stroke-linecap="round"/>
     ` : `
-    <!-- Suspension fork: thin stanchions + fat lowers -->
     <line x1="${F.lT.x}" y1="${F.lT.y}" x2="${F.lS.x}" y2="${F.lS.y}" stroke-width="10" stroke-linecap="round"/>
-    <line x1="${F.rT.x}" y1="${F.rT.y}" x2="${F.rS.x}" y2="${F.rS.y}" stroke-width="10" stroke-linecap="round"/>
     <line x1="${F.lS.x}" y1="${F.lS.y}" x2="${F.lB.x}" y2="${F.lB.y}" stroke-width="15" stroke-linecap="round"/>
-    <line x1="${F.rS.x}" y1="${F.rS.y}" x2="${F.rB.x}" y2="${F.rB.y}" stroke-width="15" stroke-linecap="round"/>
     <line x1="${F.lS.x-3}" y1="${F.lS.y}" x2="${F.rS.x+3}" y2="${F.rS.y}" stroke-width="8" stroke-linecap="round" opacity="0.62"/>
     <line x1="${F.lB.x-2}" y1="${F.lB.y-22}" x2="${F.rB.x+2}" y2="${F.rB.y-22}" stroke-width="6" stroke-linecap="round" opacity="0.62"/>
     <rect x="${F.lB.x-20}" y="${F.lB.y-62}" width="14" height="28" rx="3" fill="none" stroke-width="3" opacity="0.58"/>
@@ -687,6 +703,8 @@ export function setupZoneInteraction(container,bike,onZoneClick){
         if(group)group.classList.add('zone-active');
         const meta=ZONE_META[zoneId];if(meta)animateViewBox(svg,meta.vb);
         document.getElementById('btn-zoom-reset')?.classList.remove('hidden');
+        // Scroll silhouette into view on zone click (fixes offset on laptop)
+        container.scrollIntoView({behavior:'smooth',block:'nearest'});
         onZoneClick(zoneId);
       }
     });
