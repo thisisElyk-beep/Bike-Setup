@@ -1,7 +1,7 @@
 {
-  "name": "Dialed — Bike Setup",
-  "short_name": "Dialed",
-  "description": "Mountain bike setup tracker and tuning log",
+  "name": "Quiver — Bike Setup",
+  "short_name": "Quiver",
+  "description": "Bike setup tracker and ride performance tool",
   "start_url": "/Bike-Setup/",
   "scope": "/Bike-Setup/",
   "display": "standalone",
