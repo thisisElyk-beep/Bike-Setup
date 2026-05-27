@@ -226,13 +226,12 @@ function svgMTBFS(hasMotor = false) {
 
   <!-- FORK -->
   <!-- Fork rear stanchion (behind wheel) -->
-  <g id="g-fork-rear">
+  <g id="g-fork-rear" class="bike-zone" data-zone="fork">
     <line x1="${F.rT.x}" y1="${F.rT.y}" x2="${F.rS.x}" y2="${F.rS.y}" stroke-width="10" stroke-linecap="round"/>
     <line x1="${F.rS.x}" y1="${F.rS.y}" x2="${F.rB.x}" y2="${F.rB.y}" stroke-width="15" stroke-linecap="round"/>
   </g>
 
   <!-- Front wheel renders between rear and front fork stanchions -->
-  ${mtbWheel(FW.x,FW.y,'front-wheel')}
 
   <!-- Fork front stanchion + crown + hitbox (in front of wheel) -->
   <g id="g-fork" class="bike-zone" data-zone="fork">
@@ -354,7 +353,7 @@ function svgHardtail(isDJ = false) {
 
   <!-- FORK -->
   <!-- Fork rear stanchion (behind wheel) -->
-  <g id="g-fork-rear">
+  <g id="g-fork-rear" class="bike-zone" data-zone="fork">
     ${isDJ ? `
     <line x1="${F.rT.x}" y1="${F.rT.y}" x2="${F.rB.x}" y2="${F.rB.y}" stroke-width="8" stroke-linecap="round"/>
     ` : `
@@ -677,13 +676,19 @@ export function setupZoneInteraction(container,bike,onZoneClick){
     const zoneId=overlay.getAttribute('data-zone');
     if(!available.includes(zoneId)){overlay.style.display='none';return;}
     const group=svg.querySelector(`#g-${zoneId}`);
+    // For fork: also target the rear stanchion group
+    const group2 = zoneId === 'fork' ? svg.querySelector('#g-fork-rear') : null;
+
+    const addZoneClass = (cls) => { if(group) group.classList.add(cls); if(group2) group2.classList.add(cls); };
+    const removeZoneClass = (cls) => { if(group) group.classList.remove(cls); if(group2) group2.classList.remove(cls); };
+
     overlay.addEventListener('mouseenter',e=>{
-      if(group)group.classList.add('zone-hovered');
+      addZoneClass('zone-hovered');
       showTooltip(tooltip,zoneId,bike,e,container);
       document.querySelector('.silhouette-hint')?.style.setProperty('opacity','0');
     });
     overlay.addEventListener('mouseleave',()=>{
-      if(group&&_activeZone!==zoneId)group.classList.remove('zone-hovered');
+      if(_activeZone!==zoneId) removeZoneClass('zone-hovered');
       tooltip.classList.add('hidden');
       document.querySelector('.silhouette-hint')?.style.setProperty('opacity','');
     });
@@ -700,7 +705,7 @@ export function setupZoneInteraction(container,bike,onZoneClick){
         onZoneClick(null);
       } else {
         _activeZone=zoneId;
-        if(group)group.classList.add('zone-active');
+        addZoneClass('zone-active');
         const meta=ZONE_META[zoneId];if(meta)animateViewBox(svg,meta.vb);
         document.getElementById('btn-zoom-reset')?.classList.remove('hidden');
         // Scroll silhouette into view on zone click (fixes offset on laptop)
