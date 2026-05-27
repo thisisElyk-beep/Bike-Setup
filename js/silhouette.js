@@ -406,7 +406,6 @@ function svgGravel() {
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
 
   ${roadWheel(RW.x,RW.y,'rear-wheel',14)}
-  ${roadWheel(FW.x,FW.y,'front-wheel',14)}
 
   <g id="g-frame" class="bike-zone" data-zone="frame">
     <!-- Chainstay -->
@@ -445,6 +444,17 @@ function svgGravel() {
   </g>
 
   <!-- Drop bars — side-view profile -->
+
+  <!-- Straight fork (modern gravel — no curve) -->
+  <g id="g-fork" class="bike-zone" data-zone="fork">
+    <line x1="${lT.x-1}" y1="${lT.y}" x2="${rT.x+1}" y2="${rT.y}" stroke-width="8" stroke-linecap="round"/>
+    <line x1="${lT.x}" y1="${lT.y}" x2="${lB.x}" y2="${lB.y}" stroke-width="7" stroke-linecap="round"/>
+    <line x1="${rT.x}" y1="${rT.y}" x2="${rB.x}" y2="${rB.y}" stroke-width="7" stroke-linecap="round"/>
+    <line x1="${lB.x-1}" y1="${lB.y-20}" x2="${rB.x+1}" y2="${rB.y-20}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+    <line x1="${lB.x-8}" y1="${lB.y+2}" x2="${rB.x+8}" y2="${rB.y+2}" stroke-width="6" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="543" y="218" width="72" height="148" rx="12" data-zone="fork"/>
+  </g>
+
   <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
     <!-- Stem: forward from HT, nearly horizontal -->
     <line x1="${HT.x}" y1="${HT.y}" x2="${StemTip.x}" y2="${StemTip.y}"
@@ -472,16 +482,9 @@ function svgGravel() {
           fill="none" stroke-width="6.5" stroke-linecap="round"/>
     <rect class="zone-overlay" x="${BarRear.x-16}" y="${HT.y-24}" width="120" height="108" rx="10" data-zone="handlebar"/>
   </g>
-
-  <!-- Straight fork (modern gravel — no curve) -->
-  <g id="g-fork" class="bike-zone" data-zone="fork">
-    <line x1="${lT.x-1}" y1="${lT.y}" x2="${rT.x+1}" y2="${rT.y}" stroke-width="8" stroke-linecap="round"/>
-    <line x1="${lT.x}" y1="${lT.y}" x2="${lB.x}" y2="${lB.y}" stroke-width="7" stroke-linecap="round"/>
-    <line x1="${rT.x}" y1="${rT.y}" x2="${rB.x}" y2="${rB.y}" stroke-width="7" stroke-linecap="round"/>
-    <line x1="${lB.x-1}" y1="${lB.y-20}" x2="${rB.x+1}" y2="${rB.y-20}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
-    <line x1="${lB.x-8}" y1="${lB.y+2}" x2="${rB.x+8}" y2="${rB.y+2}" stroke-width="6" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="543" y="218" width="72" height="148" rx="12" data-zone="fork"/>
   </g>
+
+  ${roadWheel(FW.x,FW.y,'front-wheel',14)}
 </svg>`;
 }
 
@@ -509,7 +512,6 @@ function svgRoad() {
   class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
 
   ${roadWheel(RW.x,RW.y,'rear-wheel',6)}
-  ${roadWheel(FW.x,FW.y,'front-wheel',6)}
 
   <g id="g-frame" class="bike-zone" data-zone="frame">
     <path d="M ${BB.x} ${BB.y} C ${BB.x-50} ${BB.y} ${RW.x+80} ${RW.y-2} ${RW.x} ${RW.y}"
@@ -551,6 +553,26 @@ function svgRoad() {
   </g>
 
   <!-- Drop bars — side-view profile (matching gravel style) -->
+
+  <!-- Curved fork (road — raked) -->
+  <g id="g-fork" class="bike-zone" data-zone="fork">
+    <!-- Crown -->
+    <line x1="${HC.x-6}" y1="${HC.y+2}" x2="${HC.x+8}" y2="${HC.y+2}" stroke-width="8" stroke-linecap="round"/>
+    <!-- Left leg: curved bezier -->
+    <path d="M ${HC.x-5} ${HC.y+3}
+             C ${fCx1-2} ${fCy1} ${fCx2-2} ${fCy2} ${FW.x+6} ${FW.y}"
+          fill="none" stroke-width="5.5" stroke-linecap="round"/>
+    <!-- Right leg -->
+    <path d="M ${HC.x+7} ${HC.y+3}
+             C ${fCx1r} ${fCy1r} ${fCx2r} ${fCy2r} ${FW.x+16} ${FW.y}"
+          fill="none" stroke-width="5.5" stroke-linecap="round"/>
+    <!-- Lower brace -->
+    <line x1="${FW.x+4}" y1="${FW.y-18}" x2="${FW.x+18}" y2="${FW.y-18}" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+    <!-- Axle -->
+    <line x1="${FW.x-2}" y1="${FW.y+2}" x2="${FW.x+22}" y2="${FW.y+2}" stroke-width="5.5" stroke-linecap="round"/>
+    <rect class="zone-overlay" x="553" y="240" width="58" height="120" rx="12" data-zone="fork"/>
+  </g>
+
   <g id="g-handlebar" class="bike-zone" data-zone="handlebar">
     <!-- Stem: forward from HT, nearly horizontal -->
     <line x1="${HT.x}" y1="${HT.y}" x2="607" y2="199"
@@ -572,25 +594,9 @@ function svgRoad() {
           fill="none" stroke-width="6.5" stroke-linecap="round"/>
     <rect class="zone-overlay" x="561" y="180" width="106" height="112" rx="10" data-zone="handlebar"/>
   </g>
-
-  <!-- Curved fork (road — raked) -->
-  <g id="g-fork" class="bike-zone" data-zone="fork">
-    <!-- Crown -->
-    <line x1="${HC.x-6}" y1="${HC.y+2}" x2="${HC.x+8}" y2="${HC.y+2}" stroke-width="8" stroke-linecap="round"/>
-    <!-- Left leg: curved bezier -->
-    <path d="M ${HC.x-5} ${HC.y+3}
-             C ${fCx1-2} ${fCy1} ${fCx2-2} ${fCy2} ${FW.x+6} ${FW.y}"
-          fill="none" stroke-width="5.5" stroke-linecap="round"/>
-    <!-- Right leg -->
-    <path d="M ${HC.x+7} ${HC.y+3}
-             C ${fCx1r} ${fCy1r} ${fCx2r} ${fCy2r} ${FW.x+16} ${FW.y}"
-          fill="none" stroke-width="5.5" stroke-linecap="round"/>
-    <!-- Lower brace -->
-    <line x1="${FW.x+4}" y1="${FW.y-18}" x2="${FW.x+18}" y2="${FW.y-18}" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
-    <!-- Axle -->
-    <line x1="${FW.x-2}" y1="${FW.y+2}" x2="${FW.x+22}" y2="${FW.y+2}" stroke-width="5.5" stroke-linecap="round"/>
-    <rect class="zone-overlay" x="553" y="240" width="58" height="120" rx="12" data-zone="fork"/>
   </g>
+
+  ${roadWheel(FW.x,FW.y,'front-wheel',6)}
 </svg>`;
 }
 
