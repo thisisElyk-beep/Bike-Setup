@@ -324,7 +324,7 @@ function showView(name) {
 function bindHeader() {
   $('logo-home').onclick  = () => showView('bikes');
   $('btn-back').onclick   = () => showView('bikes');
-  $('btn-theme').onclick  = toggleTheme;
+  $('btn-theme').onclick  = (e) => showThemeDropdown(e);
   $('btn-export').onclick = () => _bike && exportBikePDF(_bike);
   $('btn-add-bike-header').onclick = showAddBikeModal;
   $('btn-add-bike-empty').onclick  = showAddBikeModal;
@@ -601,15 +601,47 @@ function initTheme() {
   document.documentElement.setAttribute('data-theme', saved);
 }
 
-function toggleTheme() {
-  // Cycle through all themes for the active profile
-  const profileId = localStorage.getItem('dialed_active_profile') || 'default';
+function showThemeDropdown(e) {
+  e.stopPropagation();
+  const existing = document.getElementById('theme-dropdown');
+  if (existing) { existing.remove(); return; }
+
   const cur = document.documentElement.getAttribute('data-theme') || 'dark';
-  const ids = THEMES.map(t => t.id);
-  const next = ids[(ids.indexOf(cur) + 1) % ids.length];
-  setProfileTheme(profileId, next);
-  updateThemeBtn(next);
+  const profileId = localStorage.getItem('dialed_active_profile') || 'default';
+  const rect = e.currentTarget.getBoundingClientRect();
+
+  const drop = document.createElement('div');
+  drop.id = 'theme-dropdown';
+  drop.className = 'profile-dropdown theme-dropdown-panel';
+  drop.style.cssText = `position:fixed;top:${rect.bottom+6}px;left:${rect.left}px;z-index:9999;min-width:220px`;
+  drop.innerHTML = `
+    <div class="profile-drop-header">Choose Theme</div>
+    ${THEMES.map(t => `
+      <button class="theme-drop-item ${t.id === cur ? 'active' : ''}" data-theme="${t.id}">
+        <div class="theme-drop-swatch" style="background:${t.swatch[0]};border-color:${t.swatch[1]}22">
+          <div class="theme-drop-accent" style="background:${t.swatch[1]}"></div>
+        </div>
+        <span>${t.name}</span>
+        ${t.id === cur ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+      </button>`).join('')}`;
+
+  document.body.appendChild(drop);
+
+  drop.querySelectorAll('.theme-drop-item').forEach(btn => {
+    btn.onclick = () => {
+      const themeId = btn.dataset.theme;
+      setProfileTheme(profileId, themeId);
+      updateThemeBtn(themeId);
+      drop.remove();
+    };
+  });
+
+  setTimeout(() => {
+    document.addEventListener('click', function h() { drop.remove(); document.removeEventListener('click', h); });
+  }, 0);
 }
+
+function toggleTheme() { showThemeDropdown({stopPropagation:()=>{},currentTarget:$('btn-theme')}); }
 
 function updateThemeBtn(themeId) {
   const btn = $('btn-theme');
