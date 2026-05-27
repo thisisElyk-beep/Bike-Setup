@@ -214,7 +214,7 @@ function showProfileDropdown(activeId, anchor, onSwitch) {
           <span>${escHtml(p.name)}</span>
           ${p.id === activeId ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
         </button>
-        <button class="profile-drop-rename" data-id="${p.id}" title="Rename">
+        <button class="profile-drop-rename" data-id="${p.id}" data-name="${escHtml(p.name)}" title="Rename">
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7 1.5l2.5 2.5L3 10H.5V7.5L7 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
         </button>
       </div>`).join('')}
@@ -245,36 +245,10 @@ function showProfileDropdown(activeId, anchor, onSwitch) {
   drop.querySelectorAll('.profile-drop-rename').forEach(btn => {
     btn.onclick = e => {
       e.stopPropagation();
+      drop.remove();
       const id = btn.dataset.id;
-      const profile = profiles.find(p => p.id === id);
-      const row = btn.closest('.profile-drop-row');
-      // Replace the row with an inline rename input
-      row.innerHTML = `
-        <input class="field-input profile-rename-input" type="text"
-               value="${escHtml(profile.name)}" maxlength="32"
-               style="flex:1;font-size:.85rem;padding:.3rem .5rem;height:auto">
-        <button class="profile-drop-rename profile-rename-save" title="Save">
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 5.5l3 3 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>`;
-      const input = row.querySelector('.profile-rename-input');
-      input.focus();
-      input.select();
-      const save = () => {
-        const newName = input.value.trim();
-        if (!newName) return;
-        renameProfile(id, newName);
-        // If renaming the active profile, update the chip
-        if (id === activeId) {
-          const chip = document.getElementById('profile-chip');
-          if (chip) {
-            chip.querySelector('.profile-chip-avatar').textContent = newName.charAt(0).toUpperCase();
-            chip.querySelector('.profile-chip-name').textContent = newName;
-          }
-        }
-        drop.remove();
-      };
-      row.querySelector('.profile-rename-save').onclick = e => { e.stopPropagation(); save(); };
-      input.onkeydown = e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') drop.remove(); };
+      const currentName = btn.dataset.name;
+      showRenameProfileModal(id, currentName, activeId, onSwitch);
     };
   });
 
@@ -341,6 +315,49 @@ function showNewProfileInline(onSwitch) {
   };
   document.getElementById('profile-new-save-inline').onclick = save;
   document.getElementById('profile-new-name-inline').onkeydown = e => { if (e.key === 'Enter') save(); };
+}
+
+function showRenameProfileModal(profileId, currentName, activeId, onSwitch) {
+  const overlay = document.createElement('div');
+  overlay.id = 'profile-picker-overlay';
+  overlay.innerHTML = `
+    <div class="profile-picker-card" style="max-width:340px">
+      <h2 class="profile-picker-title" style="margin-bottom:.35rem">Rename Profile</h2>
+      <p class="profile-picker-sub">Enter a new name for this profile</p>
+      <input id="profile-rename-modal-input" class="field-input" type="text"
+             value="${escHtml(currentName)}" maxlength="32"
+             style="margin:.75rem 0 .5rem;font-size:1rem">
+      <div id="profile-rename-error" style="font-size:.78rem;color:var(--danger);margin-bottom:.5rem;display:none"></div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn-secondary" id="profile-rename-cancel" style="flex:1">Cancel</button>
+        <button class="btn-primary" id="profile-rename-save" style="flex:1">Save</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+  const input = document.getElementById('profile-rename-modal-input');
+  input.focus(); input.select();
+
+  const close = () => { overlay.remove(); document.body.style.overflow = ''; };
+  document.getElementById('profile-rename-cancel').onclick = close;
+
+  const save = () => {
+    const newName = input.value.trim();
+    const errEl = document.getElementById('profile-rename-error');
+    if (!newName) { errEl.textContent = 'Name cannot be empty'; errEl.style.display = 'block'; return; }
+    renameProfile(profileId, newName);
+    if (profileId === activeId) {
+      const chip = document.getElementById('profile-chip');
+      if (chip) {
+        chip.querySelector('.profile-chip-avatar').textContent = newName.charAt(0).toUpperCase();
+        chip.querySelector('.profile-chip-name').textContent = newName;
+      }
+    }
+    close();
+    showToast('Profile renamed', 'success');
+  };
+  document.getElementById('profile-rename-save').onclick = save;
+  input.onkeydown = e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') close(); };
 }
 
 function escHtml(s) {
