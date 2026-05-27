@@ -193,9 +193,9 @@ function suspensionForm(key, label, data = {}, isShock = false) {
       <div class="damper-presets" id="${key}-damper-type">
         ${[
           {id:'single',  label:'Rebound Only'},
-          {id:'2way',    label:'2-Way'},
-          {id:'3way',    label:'3-Way'},
-          {id:'4way',    label:'Full 4-Way'},
+          {id:'2way',    label:'LSR + LSC'},
+          {id:'3way',    label:'LSR + HSR + LSC'},
+          {id:'4way',    label:'LSR + HSR + LSC + HSC'},
         ].map(p => `<button type="button" class="damper-preset-btn ${(data.damperType||'4way')===p.id?'active':''}" data-key="${key}" data-preset="${p.id}">${p.label}</button>`).join('')}
       </div>
     </div>
