@@ -19,8 +19,8 @@ const TUNABLE = [
     { key: 'shock.hsc', label: 'Compression (HSC)',   unit: 'clicks', path: ['shock','hsc'], step: 1,   min: 0,  max: 40,  damper: ['4way'] },
   ]},
   { section: 'Tires', fields: [
-    { key: 'frontTire.psi', label: 'Front PSI', unit: 'psi', path: ['frontTire','psi'], step: 0.5, min: 10, max: 160, always: true },
-    { key: 'rearTire.psi',  label: 'Rear PSI',  unit: 'psi', path: ['rearTire','psi'],  step: 0.5, min: 10, max: 160, always: true },
+    { key: 'frontTire.psi', label: 'PSI', unit: 'psi', path: ['frontTire','psi'], step: 0.5, min: 10, max: 160, always: true },
+    { key: 'rearTire.psi',  label: 'PSI', unit: 'psi', path: ['rearTire','psi'],  step: 0.5, min: 10, max: 160, always: true },
   ]},
 ];
 
@@ -52,7 +52,9 @@ function computeDiff(overrides, baseline, fields = ALL_FIELDS) {
     const f = fields.find(f => f.key === key);
     if (!f) return null;
     const baseVal = getPath(baseline, f.path);
-    return { key, section: f.key.split('.')[0], label: f.label, unit: f.unit, baseVal, presetVal };
+    const sectionNames = { fork: 'Fork', shock: 'Shock', frontTire: 'Front Tire', rearTire: 'Rear Tire' };
+    const rawSection = f.key.split('.')[0];
+    return { key, section: sectionNames[rawSection] || rawSection, label: f.label, unit: f.unit, baseVal, presetVal };
   }).filter(Boolean);
 }
 
@@ -146,9 +148,9 @@ function presetCard(p, baseline) {
       <div class="preset-diff-row">
         <span class="preset-diff-label">${d.section} ${d.label}</span>
         <span class="preset-diff-vals">
-          <span class="preset-diff-base">${d.baseVal ?? '—'}${d.unit}</span>
+          <span class="preset-diff-base">${d.baseVal ?? '—'} ${d.unit}</span>
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 5h8M6 2l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span class="preset-diff-new">${d.presetVal}${d.unit}</span>
+          <span class="preset-diff-new">${d.presetVal} ${d.unit}</span>
         </span>
       </div>`).join('')
     : `<div class="preset-diff-empty">Identical to current baseline</div>`;

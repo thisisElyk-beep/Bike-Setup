@@ -633,15 +633,25 @@ export function createSilhouette(bike) {
   }
 }
 
-export function createMiniSilhouette(bikeType) {
-  const fake={
-    mtb:{type:'mtb',suspensionType:'full'}, emtb:{type:'emtb',suspensionType:'full'},
-    dirtjumper:{type:'dirtjumper',suspensionType:'hardtail'}, gravel:{type:'gravel'}, road:{type:'road'},
-  };
-  let svg=createSilhouette(fake[bikeType]||fake.mtb);
-  svg=svg.replace(/id="bike-svg"/,'class="mini-silhouette"');
-  svg=svg.replace(/<(?:circle|ellipse|rect|polygon)[^>]*class="zone-overlay[^"]*"[^/]*\/>/g,'');
-  svg=svg.replace(/id="g-[^"]*"/g,'');
+export function createMiniSilhouette(bikeOrType) {
+  // Accept either a full bike object or a type string (legacy)
+  let bike;
+  if (typeof bikeOrType === 'string') {
+    const fake = {
+      mtb:        { type:'mtb',        suspensionType:'full'     },
+      emtb:       { type:'emtb',       suspensionType:'full'     },
+      dirtjumper: { type:'dirtjumper', suspensionType:'hardtail' },
+      gravel:     { type:'gravel' },
+      road:       { type:'road'   },
+    };
+    bike = fake[bikeOrType] || fake.mtb;
+  } else {
+    bike = bikeOrType;
+  }
+  let svg = createSilhouette(bike);
+  svg = svg.replace(/id="bike-svg"/, 'class="mini-silhouette"');
+  svg = svg.replace(/<(?:circle|ellipse|rect|polygon)[^>]*class="zone-overlay[^"]*"[^/]*\/>/g, '');
+  svg = svg.replace(/id="g-[^"]*"/g, '');
   return svg;
 }
 

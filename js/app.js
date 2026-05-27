@@ -234,7 +234,7 @@ function buildBikeCard(bike) {
   card.className = 'bike-card';
   card.dataset.id = bike.id;
 
-  const mini  = createMiniSilhouette(bike.type);
+  const mini  = createMiniSilhouette(bike);
   const label = bikeTypeLabel(bike.type);
   const susp  = bike.type === 'mtb' ? (bike.suspensionType === 'hardtail' ? 'Hardtail' : 'Full Suspension') : '';
 

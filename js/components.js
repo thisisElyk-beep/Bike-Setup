@@ -84,27 +84,6 @@ export async function renderComponentsTab(bike) {
     } else {
       list.classList.remove('hidden');
       empty.classList.add('hidden');
-
-      // Service summary banner
-              let banner = document.getElementById('svc-summary-banner');
-      if (!banner) {
-        banner = document.createElement('div');
-        banner.id = 'svc-summary-banner';
-        list.parentElement.insertBefore(banner, list);
-      }
-      if (overdue || soon) {
-        const parts = [];
-        if (overdue) parts.push(`<span style="color:var(--danger);font-weight:600">${overdue} overdue</span>`);
-        if (soon)    parts.push(`<span style="color:var(--accent);font-weight:600">${soon} coming up</span>`);
-        banner.innerHTML = `
-          <div class="svc-summary-banner">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M7 4v3.5M7 9.5v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            ${parts.join(' · ')} for service
-          </div>`;
-      } else {
-        banner.innerHTML = '';
-      }
-
       renderComponentList(list, components, bike);
     }
   } catch (e) {
