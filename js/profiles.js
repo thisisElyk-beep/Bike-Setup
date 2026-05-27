@@ -1,4 +1,12 @@
-import { showToast } from './app.js';
+// Standalone toast — avoids circular import with app.js
+function _toast(msg, type = 'info') {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('toast-visible'));
+  setTimeout(() => { t.classList.remove('toast-visible'); setTimeout(() => t.remove(), 300); }, 2800);
+}
 
 import { setActiveProfile } from './db.js';
 
@@ -425,7 +433,7 @@ function showRenameProfileModal(profileId, currentName, activeId, onSwitch) {
       }
     }
     close();
-    showToast('Profile renamed', 'success');
+    _toast('Profile renamed', 'success');
   };
   document.getElementById('profile-rename-save').onclick = save;
   input.onkeydown = e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') close(); };
