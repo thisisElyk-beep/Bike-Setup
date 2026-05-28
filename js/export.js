@@ -22,6 +22,22 @@ function getThemePalette() {
   return THEME_PALETTES[theme] || THEME_PALETTES.dark;
 }
 
+
+// Returns array of [label, value] pairs for damper fields, respecting damperType
+function getDamperFields(comp, prefix = '') {
+  if (!comp) return [];
+  const dt = comp.damperType || '4way';
+  const single = dt === 'single';
+  const showHSR = dt === '3way' || dt === '4way';
+  const showLSC = dt === '2way' || dt === '3way' || dt === '4way';
+  const showHSC = dt === '4way';
+  const fields = [];
+  if (comp.lsr != null) fields.push([single ? (prefix ? prefix+' Rebound' : 'Rebound') : (prefix ? prefix+' LSR' : 'LSR'), `${comp.lsr} clicks`]);
+  if (showHSR && comp.hsr != null) fields.push([(prefix ? prefix+' HSR' : 'HSR'), `${comp.hsr} clicks`]);
+  if (showLSC && comp.lsc != null) fields.push([(prefix ? prefix+' LSC' : 'LSC'), `${comp.lsc} clicks`]);
+  if (showHSC && comp.hsc != null) fields.push([(prefix ? prefix+' HSC' : 'HSC'), `${comp.hsc} clicks`]);
+  return fields;
+}
 // ── TEXT SUMMARY (clipboard) ───────────────────────────────
 export function copySetupSummary(bike) {
   const bl = bike.baseline || {};
@@ -47,20 +63,14 @@ export function copySetupSummary(bike) {
     ['Brand / Model', [fk.brand, fk.model].filter(Boolean).join(' ')],
     ['Travel', fk.travel], ['Offset', fk.offset],
     ['Air Pressure', fk.psi ? `${fk.psi} psi` : null],
-    ['LSR', fk.lsr != null ? `${fk.lsr} clicks` : null],
-    ['HSR', fk.hsr != null ? `${fk.hsr} clicks` : null],
-    ['LSC', fk.lsc != null ? `${fk.lsc} clicks` : null],
-    ['HSC', fk.hsc != null ? `${fk.hsc} clicks` : null],
+    ...getDamperFields(fk),
   ]);
 
   const sk = bl.shock || {};
   if (sk.brand || sk.psi) section('Rear Shock', [
     ['Brand / Model', [sk.brand, sk.model].filter(Boolean).join(' ')],
     ['Air Pressure', sk.psi ? `${sk.psi} psi` : null],
-    ['LSR', sk.lsr != null ? `${sk.lsr} clicks` : null],
-    ['HSR', sk.hsr != null ? `${sk.hsr} clicks` : null],
-    ['LSC', sk.lsc != null ? `${sk.lsc} clicks` : null],
-    ['HSC', sk.hsc != null ? `${sk.hsc} clicks` : null],
+    ...getDamperFields(sk),
   ]);
 
   const ft = bl.frontTire || {}, rt = bl.rearTire || {};
@@ -277,11 +287,7 @@ export async function exportBikePDF(bike) {
     } else {
       kv('Spring Rate', fk.springRate); kv('Spring Brand', fk.springBrand);
     }
-    const dt = fk.damperType || '4way';
-    kv('Rebound (LSR)', fk.lsr != null ? `${fk.lsr} clicks` : null);
-    if (dt === '3way' || dt === '4way') kv('Rebound (HSR)', fk.hsr != null ? `${fk.hsr} clicks` : null);
-    if (dt !== 'single') kv('Compression (LSC)', fk.lsc != null ? `${fk.lsc} clicks` : null);
-    if (dt === '4way') kv('Compression (HSC)', fk.hsc != null ? `${fk.hsc} clicks` : null);
+    getDamperFields(fk, 'Fork').forEach(([k,v]) => kv(k, v));
     if (fk.notes) kv('Notes', fk.notes);
   }
 
@@ -297,11 +303,7 @@ export async function exportBikePDF(bike) {
     } else {
       kv('Spring Rate', sk.springRate); kv('Spring Brand', sk.springBrand);
     }
-    const dt = sk.damperType || '4way';
-    kv('Rebound (LSR)', sk.lsr != null ? `${sk.lsr} clicks` : null);
-    if (dt === '3way' || dt === '4way') kv('Rebound (HSR)', sk.hsr != null ? `${sk.hsr} clicks` : null);
-    if (dt !== 'single') kv('Compression (LSC)', sk.lsc != null ? `${sk.lsc} clicks` : null);
-    if (dt === '4way') kv('Compression (HSC)', sk.hsc != null ? `${sk.hsc} clicks` : null);
+    getDamperFields(sk, 'Shock').forEach(([k,v]) => kv(k, v));
     if (sk.notes) kv('Notes', sk.notes);
   }
 

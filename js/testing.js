@@ -180,14 +180,28 @@ function computeDelta(baseline, testSettings) {
     { param: 'R Tire PSI',  base: baseline.rearTire?.psi,   test: testSettings.rearTire?.psi,   unit: 'psi' },
     { param: 'Fork PSI',    base: baseline.fork?.psi,       test: testSettings.fork?.psi,       unit: 'psi' },
     { param: 'Shock PSI',   base: baseline.shock?.psi,      test: testSettings.shock?.psi,      unit: 'psi' },
-    { param: 'Fork LSR',    base: baseline.fork?.lsr,       test: testSettings.fork?.lsr,       unit: 'clicks' },
-    { param: 'Fork HSR',    base: baseline.fork?.hsr,       test: testSettings.fork?.hsr,       unit: 'clicks' },
-    { param: 'Fork LSC',    base: baseline.fork?.lsc,       test: testSettings.fork?.lsc,       unit: 'clicks' },
-    { param: 'Fork HSC',    base: baseline.fork?.hsc,       test: testSettings.fork?.hsc,       unit: 'clicks' },
-    { param: 'Shock LSR',   base: baseline.shock?.lsr,      test: testSettings.shock?.lsr,      unit: 'clicks' },
-    { param: 'Shock HSR',   base: baseline.shock?.hsr,      test: testSettings.shock?.hsr,      unit: 'clicks' },
-    { param: 'Shock LSC',   base: baseline.shock?.lsc,      test: testSettings.shock?.lsc,      unit: 'clicks' },
-    { param: 'Shock HSC',   base: baseline.shock?.hsc,      test: testSettings.shock?.hsc,      unit: 'clicks' },
+    // Fork damper rows — filtered by damperType
+    ...(() => {
+      const dt = baseline.fork?.damperType || '4way';
+      const single = dt === 'single';
+      const rows = [];
+      rows.push({ param: single ? 'Fork Rebound' : 'Fork LSR', base: baseline.fork?.lsr, test: testSettings.fork?.lsr, unit: 'clicks' });
+      if (dt === '3way' || dt === '4way') rows.push({ param: 'Fork HSR', base: baseline.fork?.hsr, test: testSettings.fork?.hsr, unit: 'clicks' });
+      if (dt !== 'single') rows.push({ param: 'Fork LSC', base: baseline.fork?.lsc, test: testSettings.fork?.lsc, unit: 'clicks' });
+      if (dt === '4way') rows.push({ param: 'Fork HSC', base: baseline.fork?.hsc, test: testSettings.fork?.hsc, unit: 'clicks' });
+      return rows;
+    })(),
+    // Shock damper rows — filtered by damperType
+    ...(() => {
+      const dt = baseline.shock?.damperType || '4way';
+      const single = dt === 'single';
+      const rows = [];
+      rows.push({ param: single ? 'Shock Rebound' : 'Shock LSR', base: baseline.shock?.lsr, test: testSettings.shock?.lsr, unit: 'clicks' });
+      if (dt === '3way' || dt === '4way') rows.push({ param: 'Shock HSR', base: baseline.shock?.hsr, test: testSettings.shock?.hsr, unit: 'clicks' });
+      if (dt !== 'single') rows.push({ param: 'Shock LSC', base: baseline.shock?.lsc, test: testSettings.shock?.lsc, unit: 'clicks' });
+      if (dt === '4way') rows.push({ param: 'Shock HSC', base: baseline.shock?.hsc, test: testSettings.shock?.hsc, unit: 'clicks' });
+      return rows;
+    })(),
   ];
 
   checks.forEach(({ param, base, test, unit }) => {

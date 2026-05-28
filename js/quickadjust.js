@@ -24,10 +24,12 @@ function buildQuickAdjust(bike) {
     const f = bl.fork;
     const fields = [];
     if (f.type !== 'coil') fields.push(psiSpinner('fork-psi', 'Air Pressure', f.psi, 0.5, 20, 300, 'psi'));
-    fields.push(clickSpinner('fork-lsr', 'LSR', f.lsr, 1, 0, 40));
-    fields.push(clickSpinner('fork-hsr', 'HSR', f.hsr, 1, 0, 40));
-    fields.push(clickSpinner('fork-lsc', 'LSC', f.lsc, 1, 0, 40));
-    fields.push(clickSpinner('fork-hsc', 'HSC', f.hsc, 1, 0, 40));
+    const fDt = f.damperType || '4way';
+    const fSingle = fDt === 'single';
+    fields.push(clickSpinner('fork-lsr', fSingle ? 'Rebound' : 'LSR', f.lsr, 1, 0, 40));
+    if (fDt === '3way' || fDt === '4way') fields.push(clickSpinner('fork-hsr', 'HSR', f.hsr, 1, 0, 40));
+    if (fDt !== 'single') fields.push(clickSpinner('fork-lsc', 'LSC', f.lsc, 1, 0, 40));
+    if (fDt === '4way') fields.push(clickSpinner('fork-hsc', 'HSC', f.hsc, 1, 0, 40));
     sections.push(section('Fork', f.brand ? `${f.brand} ${f.model || ''}`.trim() : '', fields));
   }
 
@@ -36,10 +38,12 @@ function buildQuickAdjust(bike) {
     const s = bl.shock;
     const fields = [];
     if (s.type !== 'coil') fields.push(psiSpinner('shock-psi', 'Air Pressure', s.psi, 0.5, 50, 350, 'psi'));
-    fields.push(clickSpinner('shock-lsr', 'LSR', s.lsr, 1, 0, 40));
-    fields.push(clickSpinner('shock-hsr', 'HSR', s.hsr, 1, 0, 40));
-    fields.push(clickSpinner('shock-lsc', 'LSC', s.lsc, 1, 0, 40));
-    fields.push(clickSpinner('shock-hsc', 'HSC', s.hsc, 1, 0, 40));
+    const sDt = s.damperType || '4way';
+    const sSingle = sDt === 'single';
+    fields.push(clickSpinner('shock-lsr', sSingle ? 'Rebound' : 'LSR', s.lsr, 1, 0, 40));
+    if (sDt === '3way' || sDt === '4way') fields.push(clickSpinner('shock-hsr', 'HSR', s.hsr, 1, 0, 40));
+    if (sDt !== 'single') fields.push(clickSpinner('shock-lsc', 'LSC', s.lsc, 1, 0, 40));
+    if (sDt === '4way') fields.push(clickSpinner('shock-hsc', 'HSC', s.hsc, 1, 0, 40));
     sections.push(section('Rear Shock', s.brand ? `${s.brand} ${s.model || ''}`.trim() : '', fields));
   }
 
