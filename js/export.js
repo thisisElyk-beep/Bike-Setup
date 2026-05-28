@@ -139,18 +139,22 @@ export async function exportBikePDF(bike) {
   ]);
 
   // ── Theme-aware colors ────────────────────────────────────
+  // Strategy: page body always white/near-black for readability.
+  // Accent color provides theme personality on headers, bars, key values.
   const pal    = getThemePalette();
   const isLight = (document.documentElement.getAttribute('data-theme') || 'dark') === 'light';
 
-  const C_BG      = hex2rgb(pal.bg);
-  const C_SURFACE = hex2rgb(pal.surface);
-  const C_ACCENT  = hex2rgb(pal.accent);
-  const C_TEXT    = hex2rgb(pal.text);
-  const C_MUTED   = hex2rgb(pal.muted);
-  const C_BORDER  = hex2rgb(pal.border);
-  // For light theme the cover needs dark text on light bg
-  const C_HEADER_TEXT = isLight ? [30, 24, 20] : [240, 238, 236];
-  const C_HEADER_SUB  = isLight ? C_MUTED : C_ACCENT;
+  const C_ACCENT     = hex2rgb(pal.accent);
+  const C_COVER_BG   = hex2rgb(pal.bg);      // dark bg for cover header only
+  const C_COVER_TEXT = isLight ? [25, 20, 16] : [245, 242, 238]; // cover text
+
+  // Body pages: always high-contrast for readability
+  const C_PAGE_BG   = [255, 255, 255];        // white page
+  const C_TEXT      = [20, 18, 16];           // near-black body text
+  const C_MUTED     = [100, 95, 90];          // medium grey labels
+  const C_SUBTLE    = [150, 145, 140];        // lighter metadata
+  const C_BORDER    = [220, 215, 208];        // light rule lines
+  const C_SURFACE   = [248, 246, 243];        // off-white section bg
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210, ML = 18, MR = 18, TW = W - ML - MR;
@@ -169,7 +173,7 @@ export async function exportBikePDF(bike) {
     doc.text(String(str ?? ''), x, yy, opts.align ? { align: opts.align } : undefined);
   };
 
-  const hRule = (yy, color = C_BORDER, w = 0.25) => {
+  const hRule = (yy, color = C_BORDER, w = 0.2) => {
     doc.setDrawColor(...color);
     doc.setLineWidth(w);
     doc.line(ML, yy, W - MR, yy);
@@ -179,29 +183,31 @@ export async function exportBikePDF(bike) {
   const sectionHeader = (title) => {
     checkPage(16);
     y += 7;
-    // Background strip
+    // Light off-white background strip
     doc.setFillColor(...C_SURFACE);
-    doc.rect(ML, y - 4, TW, 9, 'F');
-    // Left accent bar
+    doc.rect(ML - 2, y - 4.5, TW + 4, 9.5, 'F');
+    // Left accent bar — theme color
     doc.setFillColor(...C_ACCENT);
-    doc.rect(ML, y - 4, 2.5, 9, 'F');
-    // Title
+    doc.rect(ML - 2, y - 4.5, 3, 9.5, 'F');
+    // Title in accent color on light background
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...C_ACCENT);
-    doc.text(title.toUpperCase(), ML + 6, y + 1.5);
-    y += 10;
+    doc.text(title.toUpperCase(), ML + 4, y + 1.5);
+    y += 11;
   };
 
   // Key-value row — two columns
   const kv = (key, val, opts = {}) => {
     if (val == null || val === '') return;
     checkPage(7);
+    // Key: medium grey, readable on white
     doc.setFontSize(8.5);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('helvetica', 'normal');
     doc.setTextColor(...C_MUTED);
     doc.text(String(key), ML + (opts.indent || 0), y);
-    doc.setFont('helvetica', 'normal');
+    // Value: near-black, strong
+    doc.setFont('helvetica', 'bold');
     doc.setTextColor(...C_TEXT);
     const valX = ML + TW * 0.44;
     doc.text(String(val), valX, y, { maxWidth: TW * 0.56 });
@@ -227,7 +233,7 @@ export async function exportBikePDF(bike) {
 
   // ── COVER HEADER ──────────────────────────────────────────
   const HEADER_H = 48;
-  doc.setFillColor(...C_BG);
+  doc.setFillColor(...C_COVER_BG);
   doc.rect(0, 0, W, HEADER_H, 'F');
 
   // Accent left bar
@@ -237,7 +243,7 @@ export async function exportBikePDF(bike) {
   // Bike name
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...C_HEADER_TEXT);
+  doc.setTextColor(...C_COVER_TEXT);
   doc.text(bike.name || 'Untitled Bike', ML + 4, 22);
 
   // Bike type badge
@@ -314,7 +320,7 @@ export async function exportBikePDF(bike) {
     sectionHeader('Wheels & Tires');
     if (ft.brand || ft.psi) {
       checkPage(6);
-      doc.setFontSize(7.5); doc.setFont('helvetica','bold'); doc.setTextColor(...C_MUTED);
+      doc.setFontSize(7.5); doc.setFont('helvetica','bold'); doc.setTextColor(...C_SUBTLE);
       doc.text('FRONT', ML, y); y += 5;
       kv('Brand / Model', [ft.brand, ft.model].filter(Boolean).join(' '));
       kv('Size / Width', ft.size); kv('Compound', ft.compound); kv('Casing', ft.casing); kv('Inserts', ft.inserts);
@@ -323,7 +329,7 @@ export async function exportBikePDF(bike) {
     if (rt.brand || rt.psi) {
       checkPage(6);
       y += 2;
-      doc.setFontSize(7.5); doc.setFont('helvetica','bold'); doc.setTextColor(...C_MUTED);
+      doc.setFontSize(7.5); doc.setFont('helvetica','bold'); doc.setTextColor(...C_SUBTLE);
       doc.text('REAR', ML, y); y += 5;
       kv('Brand / Model', [rt.brand, rt.model].filter(Boolean).join(' '));
       kv('Size / Width', rt.size); kv('Compound', rt.compound); kv('Casing', rt.casing); kv('Inserts', rt.inserts);
@@ -381,18 +387,16 @@ export async function exportBikePDF(bike) {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    // Footer bar
-    doc.setFillColor(...C_BG);
-    doc.rect(0, 282, W, 15, 'F');
+    // Thin accent rule above footer
     doc.setDrawColor(...C_ACCENT);
-    doc.setLineWidth(0.4);
-    doc.line(0, 282, W, 282);
-    // Footer text
+    doc.setLineWidth(0.5);
+    doc.line(ML, 284, W - MR, 284);
+    // Footer text — subtle grey on white
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...C_MUTED);
-    doc.text(`QUIVER — ${bike.name || 'Bike Setup'}`, ML, 288);
-    doc.text(`${i} / ${pageCount}`, W - MR, 288, { align: 'right' });
+    doc.setTextColor(...C_SUBTLE);
+    doc.text(`QUIVER — ${bike.name || 'Bike Setup'}`, ML, 289);
+    doc.text(`${i} / ${pageCount}`, W - MR, 289, { align: 'right' });
   }
 
   const filename = `quiver-${(bike.name || 'bike').toLowerCase().replace(/\s+/g,'-')}-${new Date().toISOString().slice(0,10)}.pdf`;
