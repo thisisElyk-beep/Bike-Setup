@@ -13,15 +13,15 @@ import { setActiveProfile } from './db.js';
 
 // ── THEME MANAGEMENT ──────────────────────────────────────
 export const THEMES = [
+  { id: 'light',   name: 'Light',          swatch: ['#f2f0ef','#c2610e'] },
+  { id: 'carbon',  name: 'Carbon',         swatch: ['#0a0a0a','#ff4d4d'] },
   { id: 'amber',   name: 'Amber',          swatch: ['#0c0b09','#f59e0b'] },
   { id: 'teal',    name: 'Midnight Teal',  swatch: ['#070c10','#00d4b8'] },
-  { id: 'carbon',  name: 'Carbon',         swatch: ['#0a0a0a','#ff4d4d'] },
   { id: 'slate',   name: 'Slate',          swatch: ['#0b0d14','#818cf8'] },
   { id: 'forest',  name: 'Forest',         swatch: ['#080e09','#4ade80'] },
   { id: 'orange',  name: 'Blood Orange',   swatch: ['#0e0804','#f97316'] },
   { id: 'glacier', name: 'Glacier',        swatch: ['#050c12','#38bdf8'] },
   { id: 'rose',    name: 'Rose Gold',      swatch: ['#120a0c','#f472b6'] },
-  { id: 'light',   name: 'Light',          swatch: ['#f2f0ef','#c2610e'] },
 ];
 
 function themeKey(profileId) { return `quiver_theme_${profileId}`; }
