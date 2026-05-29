@@ -3002,3 +3002,33 @@ textarea.field-input {
   --scrollbar-thumb: #522c40;
   --silhouette-stroke: #8a4060;
 }
+
+/* Preset diff section header */
+.preset-diff-section-header {
+  font-family: var(--font-display);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: .5rem 0 .2rem;
+}
+.preset-diff-section-header:first-child { margin-top: 0; }
+
+.preset-diff-count {
+  font-family: var(--font-display);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: .5rem;
+}
+
+/* Highlight fields that already have overrides when editing */
+.preset-field-changed {
+  background: var(--accent-dim);
+  border-radius: var(--radius-sm);
+  padding: .2rem .4rem;
+  margin: 0 -.4rem;
+}
