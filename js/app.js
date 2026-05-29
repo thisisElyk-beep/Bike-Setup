@@ -735,7 +735,7 @@ function initTheme() {
   } else {
     // No saved theme or legacy 'dark' → follow system preference
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.setAttribute('data-theme', prefersDark ? 'amber' : 'light');
+    document.documentElement.setAttribute('data-theme', prefersDark ? 'carbon' : 'light');
   }
 }
 
