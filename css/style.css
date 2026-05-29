@@ -71,7 +71,7 @@
   --shadow-lg:    0 8px 40px rgba(0,0,0,0.16);
   --scrollbar-bg: #f2f0ef;
   --scrollbar-thumb: #d4d0cd;
-  --silhouette-stroke: #5a5048;
+  --silhouette-stroke: #3a3028;
 }
 [data-theme="teal"] {
   --bg-base:     #070c10;
@@ -99,7 +99,7 @@
   --shadow-lg:    0 8px 40px rgba(0,0,0,0.7);
   --scrollbar-bg: #0d1620;
   --scrollbar-thumb: #2a4060;
-  --silhouette-stroke: #4a9aaf;
+  --silhouette-stroke: #80c8d8;
 }
 
 /* ─── THEME B: CARBON + CORAL ───────────────────────── */
@@ -129,7 +129,7 @@
   --shadow-lg:    0 8px 40px rgba(0,0,0,0.8);
   --scrollbar-bg: #111111;
   --scrollbar-thumb: #333333;
-  --silhouette-stroke: #d4d4d4;
+  --silhouette-stroke: #f0f0f0;
 }
 
 /* ─── THEME C: SLATE + INDIGO ───────────────────────── */
@@ -159,7 +159,7 @@
   --shadow-lg:    0 8px 40px rgba(0,0,0,0.7);
   --scrollbar-bg: #10141f;
   --scrollbar-thumb: #313b55;
-  --silhouette-stroke: #9099e8;
+  --silhouette-stroke: #c0c8ff;
 }
 
 /* ─── THEME D: REFINED AMBER (enhanced dark) ────────── */
@@ -189,7 +189,7 @@
   --shadow-lg:    0 8px 48px rgba(0,0,0,0.7);
   --scrollbar-bg: #141210;
   --scrollbar-thumb: #3d3828;
-  --silhouette-stroke: #c8b888;
+  --silhouette-stroke: #e0d0a0;
 }
 
 /* ─── RESET ────────────────────────────────────────── */
@@ -2907,7 +2907,7 @@ textarea.field-input {
   --shadow-lg:    0 8px 40px rgba(0,0,0,.7);
   --scrollbar-bg: #0e1a10;
   --scrollbar-thumb: #2a4832;
-  --silhouette-stroke: #7ed870;
+  --silhouette-stroke: #b0f0a0;
 }
 
 /* ─── THEME: BLOOD ORANGE ────────────────────────────────── */
@@ -2937,7 +2937,7 @@ textarea.field-input {
   --shadow-lg:    0 8px 40px rgba(0,0,0,.75);
   --scrollbar-bg: #1a1008;
   --scrollbar-thumb: #502c14;
-  --silhouette-stroke: #d4886a;
+  --silhouette-stroke: #edb898;
 }
 
 /* ─── THEME: GLACIER ─────────────────────────────────────── */
@@ -2997,7 +2997,7 @@ textarea.field-input {
   --shadow-lg:    0 8px 40px rgba(0,0,0,.7);
   --scrollbar-bg: #1e1014;
   --scrollbar-thumb: #522c40;
-  --silhouette-stroke: #c878a8;
+  --silhouette-stroke: #e8a8d0;
 }
 
 /* Preset diff section header */
