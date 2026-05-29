@@ -1,67 +1,77 @@
-import { getPresets, createPreset, updatePreset, deletePreset, updateBike } from './db.js';
+import { getPresets, createPreset, updatePreset, deletePreset } from './db.js';
 import { showToast, openModal, closeModal } from './utils.js';
 
 // ── TUNABLE FIELDS ────────────────────────────────────────
-// Base list — filtered at render time by damperType stored in baseline
+// Order: Fork (PSI first, then damper) → Shock (same) → Tires
 const TUNABLE = [
-  { section: 'Fork', fields: [
-    { key: 'fork.psi',  label: 'Air Pressure',       unit: 'psi',    path: ['fork','psi'],  step: 1,   min: 20, max: 350, always: true },
-    { key: 'fork.lsr',  label: 'Rebound (LSR)',        unit: 'clicks', path: ['fork','lsr'],  step: 1,   min: 0,  max: 40,  always: true },
-    { key: 'fork.hsr',  label: 'Rebound (HSR)',       unit: 'clicks', path: ['fork','hsr'],  step: 1,   min: 0,  max: 40,  damper: ['3way','4way'] },
-    { key: 'fork.lsc',  label: 'Compression (LSC)',   unit: 'clicks', path: ['fork','lsc'],  step: 1,   min: 0,  max: 40,  damper: ['2way','3way','4way'] },
-    { key: 'fork.hsc',  label: 'Compression (HSC)',   unit: 'clicks', path: ['fork','hsc'],  step: 1,   min: 0,  max: 40,  damper: ['4way'] },
+  { section: 'Fork', compKey: 'fork', fields: [
+    { key: 'fork.psi',  label: 'Air Pressure',       unit: 'psi',    path: ['fork','psi'],  step: 1, min: 20, max: 350, always: true },
+    { key: 'fork.lsr',  label: 'Rebound (LSR)',       unit: 'clicks', path: ['fork','lsr'],  step: 1, min: 0,  max: 40,  always: true },
+    { key: 'fork.hsr',  label: 'Rebound (HSR)',       unit: 'clicks', path: ['fork','hsr'],  step: 1, min: 0,  max: 40,  damper: ['3way','4way'] },
+    { key: 'fork.lsc',  label: 'Compression (LSC)',   unit: 'clicks', path: ['fork','lsc'],  step: 1, min: 0,  max: 40,  damper: ['2way','3way','4way'] },
+    { key: 'fork.hsc',  label: 'Compression (HSC)',   unit: 'clicks', path: ['fork','hsc'],  step: 1, min: 0,  max: 40,  damper: ['4way'] },
   ]},
-  { section: 'Rear Shock', fields: [
-    { key: 'shock.psi', label: 'Air Pressure',        unit: 'psi',    path: ['shock','psi'], step: 1,   min: 20, max: 350, always: true },
-    { key: 'shock.lsr', label: 'Rebound (LSR)',        unit: 'clicks', path: ['shock','lsr'], step: 1,   min: 0,  max: 40,  always: true },
-    { key: 'shock.hsr', label: 'Rebound (HSR)',       unit: 'clicks', path: ['shock','hsr'], step: 1,   min: 0,  max: 40,  damper: ['3way','4way'] },
-    { key: 'shock.lsc', label: 'Compression (LSC)',   unit: 'clicks', path: ['shock','lsc'], step: 1,   min: 0,  max: 40,  damper: ['2way','3way','4way'] },
-    { key: 'shock.hsc', label: 'Compression (HSC)',   unit: 'clicks', path: ['shock','hsc'], step: 1,   min: 0,  max: 40,  damper: ['4way'] },
+  { section: 'Rear Shock', compKey: 'shock', fields: [
+    { key: 'shock.psi', label: 'Air Pressure',        unit: 'psi',    path: ['shock','psi'], step: 1, min: 20, max: 350, always: true },
+    { key: 'shock.lsr', label: 'Rebound (LSR)',        unit: 'clicks', path: ['shock','lsr'], step: 1, min: 0,  max: 40,  always: true },
+    { key: 'shock.hsr', label: 'Rebound (HSR)',        unit: 'clicks', path: ['shock','hsr'], step: 1, min: 0,  max: 40,  damper: ['3way','4way'] },
+    { key: 'shock.lsc', label: 'Compression (LSC)',    unit: 'clicks', path: ['shock','lsc'], step: 1, min: 0,  max: 40,  damper: ['2way','3way','4way'] },
+    { key: 'shock.hsc', label: 'Compression (HSC)',    unit: 'clicks', path: ['shock','hsc'], step: 1, min: 0,  max: 40,  damper: ['4way'] },
   ]},
-  { section: 'Tires', fields: [
-    { key: 'frontTire.psi', label: 'PSI', unit: 'psi', path: ['frontTire','psi'], step: 1, min: 10, max: 160, always: true },
-    { key: 'rearTire.psi',  label: 'PSI', unit: 'psi', path: ['rearTire','psi'],  step: 1, min: 10, max: 160, always: true },
+  { section: 'Tires', compKey: null, fields: [
+    { key: 'frontTire.psi', label: 'Front Tire PSI', unit: 'psi', path: ['frontTire','psi'], step: 1, min: 10, max: 160, always: true },
+    { key: 'rearTire.psi',  label: 'Rear Tire PSI',  unit: 'psi', path: ['rearTire','psi'],  step: 1, min: 10, max: 160, always: true },
   ]},
 ];
 
-// Return only fields relevant for the given baseline's damperType settings
-function getActiveFields(baseline, sectionKey) {
-  const fkDt = baseline?.fork?.damperType  || '4way';
-  const skDt = baseline?.shock?.damperType || '4way';
-  return TUNABLE.map(section => ({
-    ...section,
-    fields: section.fields.filter(f => {
-      if (f.always) return true;
-      if (!f.damper) return true;
-      const dt = f.key.startsWith('fork.')  ? fkDt
-               : f.key.startsWith('shock.') ? skDt
-               : '4way';
-      return f.damper.includes(dt);
-    })
-  }));
-}
-
 const ALL_FIELDS = TUNABLE.flatMap(s => s.fields);
+
+const SECTION_ORDER = ['Fork', 'Rear Shock', 'Tires'];
 
 function getPath(obj, path) {
   return path.reduce((o, k) => o?.[k], obj);
 }
 
+// Return only fields relevant for the given baseline's damperType settings
+function getActiveFields(baseline) {
+  return TUNABLE.map(section => ({
+    ...section,
+    fields: section.fields.filter(f => {
+      if (f.always) return true;
+      if (!f.damper) return true;
+      const dt = section.compKey ? (baseline?.[section.compKey]?.damperType || '4way') : '4way';
+      return f.damper.includes(dt);
+    })
+  }));
+}
+
 function computeDiff(overrides, baseline, fields = ALL_FIELDS) {
-  return Object.entries(overrides || {}).map(([key, presetVal]) => {
+  // Build diff grouped by section order
+  const sectionNames = { fork: 'Fork', shock: 'Rear Shock', frontTire: 'Tires', rearTire: 'Tires' };
+  const grouped = {};
+  SECTION_ORDER.forEach(s => { grouped[s] = []; });
+
+  Object.entries(overrides || {}).forEach(([key, presetVal]) => {
     let f = fields.find(f => f.key === key);
-    if (!f) return null;
+    if (!f) return;
     const baseVal = getPath(baseline, f.path);
-    const sectionNames = { fork: 'Fork', shock: 'Shock', frontTire: 'Front Tire', rearTire: 'Rear Tire' };
-    // Single-dial: "Rebound (LSR)" → "Rebound"
-    if (f.key.endsWith('.lsr')) {
-      const compKey = f.key.split('.')[0];
-      const dt = baseline?.[compKey]?.damperType || '4way';
-      if (dt === 'single') f = { ...f, label: 'Rebound' };
-    }
     const rawSection = f.key.split('.')[0];
-    return { key, section: sectionNames[rawSection] || rawSection, label: f.label, unit: f.unit, baseVal, presetVal };
-  }).filter(Boolean);
+    const section = sectionNames[rawSection] || rawSection;
+
+    // Single-dial label
+    let label = f.label;
+    if (f.key.endsWith('.lsr') && rawSection !== 'frontTire' && rawSection !== 'rearTire') {
+      const dt = baseline?.[rawSection]?.damperType || '4way';
+      if (dt === 'single') label = 'Rebound';
+    }
+
+    if (grouped[section]) {
+      grouped[section].push({ key, section, label, unit: f.unit, baseVal, presetVal });
+    }
+  });
+
+  // Flatten in section order
+  return SECTION_ORDER.flatMap(s => grouped[s] || []);
 }
 
 // ── ENTRY POINT ───────────────────────────────────────────
@@ -89,14 +99,14 @@ function renderPresetsList(container, presets, bike) {
     ${presets.length === 0 ? `
     <div class="empty-state">
       <h3>No saved setups yet</h3>
-      <p>Save your current baseline as a preset — great for bike park day, race day, wet conditions, etc. Presets track only the settings that differ from your baseline.</p>
+      <p>Save contextual settings for different conditions — bike park day, race day, wet conditions. Presets show only what differs from your baseline so you know exactly what to change.</p>
     </div>` : `
     <div class="presets-grid">
       ${presets.map(p => presetCard(p, baseline)).join('')}
     </div>`}`;
 
   document.getElementById('btn-new-preset').onclick = () =>
-    showNewPresetModal(bike, presets, () => renderPresetsTab(bike));
+    showPresetModal(bike, null, presets, () => renderPresetsTab(bike));
 
   container.querySelectorAll('.preset-delete-btn').forEach(btn => {
     btn.onclick = async () => {
@@ -109,57 +119,46 @@ function renderPresetsList(container, presets, bike) {
     };
   });
 
-  container.querySelectorAll('.preset-adjust-btn').forEach(btn => {
+  container.querySelectorAll('.preset-edit-btn').forEach(btn => {
     btn.onclick = () => {
       const preset = presets.find(p => p.id === btn.dataset.id);
-      if (!preset) return;
-      // Merge overrides into a temporary object stored for Quick Adjust to read
-      const merged = JSON.parse(JSON.stringify(baseline));
-      applyOverrides(merged, preset.overrides || {});
-      localStorage.setItem(`quiver_preset_active_${bike.id}`, JSON.stringify({
-        id: preset.id, name: preset.name, merged
-      }));
-      showToast(`"${preset.name}" loaded into Quick Adjust`, 'success');
-      document.querySelector('[data-tab="adjust"]')?.click();
+      if (preset) showPresetModal(bike, preset, presets, () => renderPresetsTab(bike));
     };
   });
 }
 
-function applyOverrides(baseline, overrides) {
-  for (const [key, val] of Object.entries(overrides)) {
-    const f = ALL_FIELDS.find(f => f.key === key);
-    if (!f || val == null) continue;
-    let obj = baseline;
-    for (let i = 0; i < f.path.length - 1; i++) {
-      if (!obj[f.path[i]]) obj[f.path[i]] = {};
-      obj = obj[f.path[i]];
-    }
-    obj[f.path[f.path.length - 1]] = val;
-  }
-}
-
 function presetCard(p, baseline) {
-  // Support both new (overrides) and legacy (data) formats
-  const overrides = p.overrides || {};
+  const overrides    = p.overrides || {};
   const activeFields = getActiveFields(baseline).flatMap(s => s.fields);
-  const diff = computeDiff(overrides, baseline, activeFields);
+  const diff         = computeDiff(overrides, baseline, activeFields);
 
   const date = p.createdAt?.toDate?.()
     ? p.createdAt.toDate().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
     : p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
     : '';
 
-  const diffRows = diff.length > 0
-    ? diff.map(d => `
-      <div class="preset-diff-row">
-        <span class="preset-diff-label">${d.section} ${d.label}</span>
-        <span class="preset-diff-vals">
-          <span class="preset-diff-base">${d.baseVal ?? '—'} ${d.unit}</span>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 5h8M6 2l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span class="preset-diff-new">${d.presetVal} ${d.unit}</span>
-        </span>
-      </div>`).join('')
-    : `<div class="preset-diff-empty">Identical to current baseline</div>`;
+  // Group diff rows by section for display
+  const grouped = {};
+  SECTION_ORDER.forEach(s => { grouped[s] = []; });
+  diff.forEach(d => { if (grouped[d.section]) grouped[d.section].push(d); });
+
+  const diffHtml = diff.length === 0
+    ? `<div class="preset-diff-empty">No changes from baseline</div>`
+    : SECTION_ORDER.map(section => {
+        const rows = grouped[section];
+        if (!rows || rows.length === 0) return '';
+        return `
+          <div class="preset-diff-section-header">${section}</div>
+          ${rows.map(d => `
+            <div class="preset-diff-row">
+              <span class="preset-diff-label">${d.label}</span>
+              <span class="preset-diff-vals">
+                <span class="preset-diff-base">${d.baseVal ?? '—'} ${d.unit}</span>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 5h8M6 2l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="preset-diff-new">${d.presetVal} ${d.unit}</span>
+              </span>
+            </div>`).join('')}`;
+      }).join('');
 
   return `
     <div class="preset-card">
@@ -169,48 +168,49 @@ function presetCard(p, baseline) {
           ${date ? `<div class="preset-card-date">${date}</div>` : ''}
           ${p.notes ? `<div class="preset-card-notes">${escHtml(p.notes)}</div>` : ''}
         </div>
-        <button class="btn-icon-sm preset-delete-btn" data-id="${p.id}" title="Delete" style="color:var(--text-muted)">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4.5 3V2a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v1M4.5 5v4M7.5 5v4M2.5 3l.6 6.5a.5.5 0 00.5.5h5a.5.5 0 00.5-.5L9.5 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </div>
-
-      <div class="preset-diff-section">
-        <div class="preset-diff-title">
-          ${diff.length > 0
-            ? `<span class="preset-diff-count">${diff.length} change${diff.length !== 1 ? 's' : ''} from baseline</span>`
-            : ''}
+        <div style="display:flex;gap:.25rem;align-items:center">
+          <button class="btn-icon-sm preset-edit-btn" data-id="${p.id}" title="Edit preset">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 1.5l2.5 2.5L3.5 10.5H1V8L8 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="btn-icon-sm preset-delete-btn" data-id="${p.id}" title="Delete" style="color:var(--text-muted)">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4.5 3V2a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v1M4.5 5v4M7.5 5v4M2.5 3l.6 6.5a.5.5 0 00.5.5h5a.5.5 0 00.5-.5L9.5 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
         </div>
-        <div class="preset-diff-list">${diffRows}</div>
       </div>
 
-      <div class="preset-card-actions">
-        <button class="btn-primary preset-adjust-btn" data-id="${p.id}" style="font-size:.78rem;padding:.35rem .75rem">
-          Load into Adjust
-        </button>
+      <div class="preset-diff-list">
+        ${diff.length > 0
+          ? `<div class="preset-diff-count">${diff.length} change${diff.length !== 1 ? 's' : ''} from baseline</div>`
+          : ''}
+        ${diffHtml}
       </div>
     </div>`;
 }
 
-// ── NEW PRESET MODAL ──────────────────────────────────────
-function showNewPresetModal(bike, existingPresets, onSaved) {
-  const baseline = bike.baseline || {};
+// ── PRESET MODAL (create + edit) ──────────────────────────
+function showPresetModal(bike, existingPreset, allPresets, onSaved) {
+  const baseline  = bike.baseline || {};
+  const isEdit    = !!existingPreset;
+  const overrides = existingPreset?.overrides || {};
 
-  // Build fields — only show sections where baseline has data, filtered by damperType
   const activeTunable = getActiveFields(baseline);
   const sectionHtml = activeTunable.map(section => {
     const fieldHtml = section.fields.map(f => {
       const baseVal = getPath(baseline, f.path);
-      if (baseVal == null) return ''; // skip fields with no baseline
+      if (baseVal == null) return '';
+      // Pre-fill with existing override if editing, otherwise baseline
+      const currentVal = overrides[f.key] ?? baseVal;
+      const isChanged  = isEdit && overrides[f.key] != null;
       return `
-        <div class="preset-field-row">
+        <div class="preset-field-row ${isChanged ? 'preset-field-changed' : ''}">
           <label class="preset-field-label">${f.label}
-            <span class="preset-field-base">baseline: ${baseVal}${f.unit}</span>
+            <span class="preset-field-base">baseline: ${baseVal} ${f.unit}</span>
           </label>
           <div class="spinner-row" style="max-width:140px">
             <button type="button" class="spinner-btn spinner-minus"
                     data-id="pf-${f.key}" data-step="${f.step}" data-min="${f.min}" data-max="${f.max}">−</button>
             <input type="number" id="pf-${f.key}" class="field-input spinner-input"
-                   value="${baseVal}" min="${f.min}" max="${f.max}" step="${f.step}">
+                   value="${currentVal}" min="${f.min}" max="${f.max}" step="${f.step}">
             <button type="button" class="spinner-btn spinner-plus"
                     data-id="pf-${f.key}" data-step="${f.step}" data-min="${f.min}" data-max="${f.max}">+</button>
           </div>
@@ -224,58 +224,67 @@ function showNewPresetModal(bike, existingPresets, onSaved) {
     <div class="field-row">
       <div class="field-group">
         <label class="field-label">Preset Name</label>
-        <input id="preset-name" class="field-input" type="text" placeholder="e.g. Bike Park Day, Wet Conditions">
+        <input id="preset-name" class="field-input" type="text"
+               value="${escHtml(existingPreset?.name || '')}"
+               placeholder="e.g. Bike Park Day, Wet Conditions">
       </div>
     </div>
     <div class="field-group" style="margin-bottom:.75rem">
       <label class="field-label">Notes (optional)</label>
-      <input id="preset-notes" class="field-input" type="text" placeholder="e.g. -7psi front, +2 clicks LSC">
+      <input id="preset-notes" class="field-input" type="text"
+             value="${escHtml(existingPreset?.notes || '')}"
+             placeholder="e.g. -7 psi front, +2 clicks LSC">
     </div>
-    <p class="preset-modal-hint">Adjust only the settings that differ for this context. Unchanged values won't be stored.</p>
+    <p class="preset-modal-hint">Adjust only the settings that differ for this context. Fields highlighted in amber already have overrides saved.</p>
     ${sectionHtml || '<p style="color:var(--text-muted);font-size:.85rem">Fill in your baseline setup first before creating presets.</p>'}`;
 
   const footer = `
     <button class="btn-secondary" id="modal-cancel">Cancel</button>
-    <button class="btn-primary" id="modal-save-preset">Save Preset</button>`;
+    <button class="btn-primary" id="modal-save-preset">${isEdit ? 'Save Changes' : 'Save Preset'}</button>`;
 
-  openModal('New Preset', body, footer);
+  openModal(isEdit ? `Edit — ${existingPreset.name}` : 'New Preset', body, footer);
 
-  // Bind spinners
-  document.querySelectorAll('#modal-body .spinner-btn').forEach(btn => {
-    btn.onclick = () => {
-      const inp = document.getElementById(btn.dataset.id);
-      if (!inp) return;
-      const step = parseFloat(btn.dataset.step), min = parseFloat(btn.dataset.min), max = parseFloat(btn.dataset.max);
-      const cur  = parseFloat(inp.value) || 0;
-      inp.value  = Math.max(min, Math.min(max,
-        parseFloat((cur + (btn.classList.contains('spinner-minus') ? -step : step)).toFixed(3))
-      ));
-    };
+  // Spinner binding via delegation
+  document.getElementById('modal-body').addEventListener('click', e => {
+    const btn = e.target.closest('.spinner-btn');
+    if (!btn) return;
+    const inp = document.getElementById(btn.dataset.id);
+    if (!inp) return;
+    const step = parseFloat(btn.dataset.step || 1);
+    const min  = parseFloat(btn.dataset.min ?? 0);
+    const max  = parseFloat(btn.dataset.max ?? 9999);
+    const cur  = parseFloat(inp.value) || 0;
+    inp.value  = btn.classList.contains('spinner-minus')
+      ? Math.max(min, Math.round(cur - step))
+      : Math.min(max, Math.round(cur + step));
   });
 
   document.getElementById('modal-cancel').onclick = closeModal;
+
   document.getElementById('modal-save-preset').onclick = async () => {
     const name = document.getElementById('preset-name')?.value.trim();
     if (!name) { showToast('Enter a name', 'error'); return; }
 
-    // Compute overrides — only store values that differ from baseline
-    // Uses active fields filtered by damperType
     const activeFields = getActiveFields(baseline).flatMap(s => s.fields);
-    const overrides = {};
+    const newOverrides = {};
     activeFields.forEach(f => {
       const inp = document.getElementById(`pf-${f.key}`);
       if (!inp) return;
       const inputVal = parseFloat(inp.value);
       const baseVal  = getPath(baseline, f.path);
       if (baseVal != null && inputVal !== baseVal) {
-        overrides[f.key] = inputVal;
+        newOverrides[f.key] = inputVal;
       }
     });
 
     const notes = document.getElementById('preset-notes')?.value.trim() || '';
     try {
-      await createPreset(bike.id, { name, notes, overrides, createdAt: Date.now() });
-      showToast('Preset saved', 'success');
+      if (isEdit) {
+        await updatePreset(bike.id, existingPreset.id, { name, notes, overrides: newOverrides });
+      } else {
+        await createPreset(bike.id, { name, notes, overrides: newOverrides, createdAt: Date.now() });
+      }
+      showToast(isEdit ? 'Preset updated' : 'Preset saved', 'success');
       closeModal();
       onSaved();
     } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
