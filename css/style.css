@@ -71,11 +71,8 @@
   --shadow-lg:    0 8px 40px rgba(0,0,0,0.16);
   --scrollbar-bg: #f2f0ef;
   --scrollbar-thumb: #d4d0cd;
-  --silhouette-stroke: #706c6a;
+  --silhouette-stroke: #5a5048;
 }
-
-
-/* ─── THEME A: MIDNIGHT TEAL ────────────────────────── */
 [data-theme="teal"] {
   --bg-base:     #070c10;
   --bg-surface:  #0d1620;
@@ -132,7 +129,7 @@
   --shadow-lg:    0 8px 40px rgba(0,0,0,0.8);
   --scrollbar-bg: #111111;
   --scrollbar-thumb: #333333;
-  --silhouette-stroke: #888888;
+  --silhouette-stroke: #d4d4d4;
 }
 
 /* ─── THEME C: SLATE + INDIGO ───────────────────────── */
@@ -162,7 +159,7 @@
   --shadow-lg:    0 8px 40px rgba(0,0,0,0.7);
   --scrollbar-bg: #10141f;
   --scrollbar-thumb: #313b55;
-  --silhouette-stroke: #5060a0;
+  --silhouette-stroke: #9099e8;
 }
 
 /* ─── THEME D: REFINED AMBER (enhanced dark) ────────── */
@@ -192,7 +189,7 @@
   --shadow-lg:    0 8px 48px rgba(0,0,0,0.7);
   --scrollbar-bg: #141210;
   --scrollbar-thumb: #3d3828;
-  --silhouette-stroke: #a09070;
+  --silhouette-stroke: #c8b888;
 }
 
 /* ─── RESET ────────────────────────────────────────── */
@@ -2910,7 +2907,7 @@ textarea.field-input {
   --shadow-lg:    0 8px 40px rgba(0,0,0,.7);
   --scrollbar-bg: #0e1a10;
   --scrollbar-thumb: #2a4832;
-  --silhouette-stroke: #4a8c48;
+  --silhouette-stroke: #7ed870;
 }
 
 /* ─── THEME: BLOOD ORANGE ────────────────────────────────── */
@@ -2940,7 +2937,7 @@ textarea.field-input {
   --shadow-lg:    0 8px 40px rgba(0,0,0,.75);
   --scrollbar-bg: #1a1008;
   --scrollbar-thumb: #502c14;
-  --silhouette-stroke: #a05028;
+  --silhouette-stroke: #d4886a;
 }
 
 /* ─── THEME: GLACIER ─────────────────────────────────────── */
@@ -3000,7 +2997,7 @@ textarea.field-input {
   --shadow-lg:    0 8px 40px rgba(0,0,0,.7);
   --scrollbar-bg: #1e1014;
   --scrollbar-thumb: #522c40;
-  --silhouette-stroke: #8a4060;
+  --silhouette-stroke: #c878a8;
 }
 
 /* Preset diff section header */
