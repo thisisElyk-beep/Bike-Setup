@@ -6,14 +6,14 @@ import { showToast, openModal, closeModal } from './utils.js';
 const TUNABLE = [
   { section: 'Fork', fields: [
     { key: 'fork.psi',  label: 'Air Pressure',       unit: 'psi',    path: ['fork','psi'],  step: 1,   min: 20, max: 350, always: true },
-    { key: 'fork.lsr',  label: 'Rebound',             unit: 'clicks', path: ['fork','lsr'],  step: 1,   min: 0,  max: 40,  always: true },
+    { key: 'fork.lsr',  label: 'Rebound (LSR)',        unit: 'clicks', path: ['fork','lsr'],  step: 1,   min: 0,  max: 40,  always: true },
     { key: 'fork.hsr',  label: 'Rebound (HSR)',       unit: 'clicks', path: ['fork','hsr'],  step: 1,   min: 0,  max: 40,  damper: ['3way','4way'] },
     { key: 'fork.lsc',  label: 'Compression (LSC)',   unit: 'clicks', path: ['fork','lsc'],  step: 1,   min: 0,  max: 40,  damper: ['2way','3way','4way'] },
     { key: 'fork.hsc',  label: 'Compression (HSC)',   unit: 'clicks', path: ['fork','hsc'],  step: 1,   min: 0,  max: 40,  damper: ['4way'] },
   ]},
   { section: 'Rear Shock', fields: [
     { key: 'shock.psi', label: 'Air Pressure',        unit: 'psi',    path: ['shock','psi'], step: 1,   min: 20, max: 350, always: true },
-    { key: 'shock.lsr', label: 'Rebound',             unit: 'clicks', path: ['shock','lsr'], step: 1,   min: 0,  max: 40,  always: true },
+    { key: 'shock.lsr', label: 'Rebound (LSR)',        unit: 'clicks', path: ['shock','lsr'], step: 1,   min: 0,  max: 40,  always: true },
     { key: 'shock.hsr', label: 'Rebound (HSR)',       unit: 'clicks', path: ['shock','hsr'], step: 1,   min: 0,  max: 40,  damper: ['3way','4way'] },
     { key: 'shock.lsc', label: 'Compression (LSC)',   unit: 'clicks', path: ['shock','lsc'], step: 1,   min: 0,  max: 40,  damper: ['2way','3way','4way'] },
     { key: 'shock.hsc', label: 'Compression (HSC)',   unit: 'clicks', path: ['shock','hsc'], step: 1,   min: 0,  max: 40,  damper: ['4way'] },
@@ -53,6 +53,12 @@ function computeDiff(overrides, baseline, fields = ALL_FIELDS) {
     if (!f) return null;
     const baseVal = getPath(baseline, f.path);
     const sectionNames = { fork: 'Fork', shock: 'Shock', frontTire: 'Front Tire', rearTire: 'Rear Tire' };
+    // Clean up label for single-dial: "Rebound (LSR)" → "Rebound"
+    if (f.key.endsWith('.lsr')) {
+      const compKey = f.key.split('.')[0];
+      const dt = baseline?.[compKey]?.damperType || '4way';
+      if (dt === 'single') f = { ...f, label: 'Rebound' };
+    }
     const rawSection = f.key.split('.')[0];
     return { key, section: sectionNames[rawSection] || rawSection, label: f.label, unit: f.unit, baseVal, presetVal };
   }).filter(Boolean);

@@ -267,6 +267,21 @@ function showNewTestModal(bike) {
 
   openModal('New Test Session', body, footer);
 
+  // Bind spinners via delegation — works after innerHTML is set
+  document.getElementById('modal-body').addEventListener('click', function spinHandler(e) {
+    const btn = e.target.closest('.spinner-btn');
+    if (!btn) return;
+    const inp = document.getElementById(btn.dataset.id);
+    if (!inp) return;
+    const step = parseFloat(btn.dataset.step || 1);
+    const min  = parseFloat(btn.dataset.min ?? 0);
+    const max  = parseFloat(btn.dataset.max ?? 9999);
+    const cur  = parseFloat(inp.value) || 0;
+    inp.value = btn.classList.contains('spinner-minus')
+      ? Math.max(min, parseFloat((cur - step).toFixed(3)))
+      : Math.min(max, parseFloat((cur + step).toFixed(3)));
+  });
+
   // Range live update
   document.querySelectorAll('#modal-body input[type="range"]').forEach(r => {
     const valEl = document.querySelector(`#val-${r.id}`);

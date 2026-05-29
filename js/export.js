@@ -4,12 +4,16 @@ import { showToast } from './utils.js';
 // ── THEME COLOR MAP ────────────────────────────────────────
 // Resolved hex values per theme (can't use CSS vars in jsPDF)
 const THEME_PALETTES = {
-  dark:   { bg: '#141210', surface: '#1c1916', accent: '#f59e0b', text: '#f5f0e8', muted: '#504840', border: '#3d3828' },
-  amber:  { bg: '#0c0b09', surface: '#1c1916', accent: '#f59e0b', text: '#f5f0e8', muted: '#504840', border: '#3d3828' },
-  teal:   { bg: '#070c10', surface: '#131f2e', accent: '#00d4b8', text: '#e8f4f8', muted: '#3a6070', border: '#2a4060' },
-  carbon: { bg: '#0a0a0a', surface: '#1a1a1a', accent: '#ff4d4d', text: '#f5f5f5', muted: '#444444', border: '#333333' },
-  slate:  { bg: '#0b0d14', surface: '#171c2c', accent: '#818cf8', text: '#e8eaf6', muted: '#404870', border: '#313b55' },
-  light:  { bg: '#f7f4f0', surface: '#ffffff', accent: '#c2610e', text: '#1c1814', muted: '#9c9080', border: '#e0d8cf' },
+  dark:    { bg: '#141210', surface: '#1c1916', accent: '#f59e0b', text: '#f5f0e8', muted: '#504840', border: '#3d3828' },
+  amber:   { bg: '#0c0b09', surface: '#1c1916', accent: '#f59e0b', text: '#f5f0e8', muted: '#504840', border: '#3d3828' },
+  teal:    { bg: '#070c10', surface: '#131f2e', accent: '#00d4b8', text: '#e8f4f8', muted: '#3a6070', border: '#2a4060' },
+  carbon:  { bg: '#0a0a0a', surface: '#1a1a1a', accent: '#ff4d4d', text: '#f5f5f5', muted: '#444444', border: '#333333' },
+  slate:   { bg: '#0b0d14', surface: '#171c2c', accent: '#818cf8', text: '#e8eaf6', muted: '#404870', border: '#313b55' },
+  forest:  { bg: '#080e09', surface: '#0e1a10', accent: '#4ade80', text: '#d8edd6', muted: '#3a6038', border: '#1e3323' },
+  orange:  { bg: '#0e0804', surface: '#1a1008', accent: '#f97316', text: '#f5ece0', muted: '#6a4428', border: '#3a2010' },
+  glacier: { bg: '#050c12', surface: '#0a1822', accent: '#38bdf8', text: '#dceeff', muted: '#2a5070', border: '#1a3048' },
+  rose:    { bg: '#120a0c', surface: '#1e1014', accent: '#f472b6', text: '#f5e0e8', muted: '#6a3850', border: '#3c2030' },
+  light:   { bg: '#f7f4f0', surface: '#ffffff', accent: '#c2610e', text: '#1c1814', muted: '#9c9080', border: '#e0d8cf' },
 };
 
 function hex2rgb(hex) {
