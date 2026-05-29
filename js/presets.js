@@ -6,16 +6,16 @@ import { showToast, openModal, closeModal } from './utils.js';
 const TUNABLE = [
   { section: 'Fork', compKey: 'fork', fields: [
     { key: 'fork.psi',  label: 'Air Pressure',       unit: 'psi',    path: ['fork','psi'],  step: 1, min: 20, max: 350, always: true },
-    { key: 'fork.lsr',  label: 'Rebound (LSR)',       unit: 'clicks', path: ['fork','lsr'],  step: 1, min: 0,  max: 40,  always: true },
+    { key: 'fork.lsr',  label: 'Rebound (LSR)',       unit: 'clicks', path: ['fork','lsr'],  step: 1, min: 0,  max: 40,  damper: ['single','2way','3way','4way'] },
     { key: 'fork.hsr',  label: 'Rebound (HSR)',       unit: 'clicks', path: ['fork','hsr'],  step: 1, min: 0,  max: 40,  damper: ['3way','4way'] },
-    { key: 'fork.lsc',  label: 'Compression (LSC)',   unit: 'clicks', path: ['fork','lsc'],  step: 1, min: 0,  max: 40,  damper: ['2way','3way','4way'] },
+    { key: 'fork.lsc',  label: 'Compression (LSC)',   unit: 'clicks', path: ['fork','lsc'],  step: 1, min: 0,  max: 40,  damper: ['comp','2way','3way','4way'] },
     { key: 'fork.hsc',  label: 'Compression (HSC)',   unit: 'clicks', path: ['fork','hsc'],  step: 1, min: 0,  max: 40,  damper: ['4way'] },
   ]},
   { section: 'Rear Shock', compKey: 'shock', fields: [
     { key: 'shock.psi', label: 'Air Pressure',        unit: 'psi',    path: ['shock','psi'], step: 1, min: 20, max: 350, always: true },
-    { key: 'shock.lsr', label: 'Rebound (LSR)',        unit: 'clicks', path: ['shock','lsr'], step: 1, min: 0,  max: 40,  always: true },
+    { key: 'shock.lsr', label: 'Rebound (LSR)',        unit: 'clicks', path: ['shock','lsr'], step: 1, min: 0,  max: 40,  damper: ['single','2way','3way','4way'] },
     { key: 'shock.hsr', label: 'Rebound (HSR)',        unit: 'clicks', path: ['shock','hsr'], step: 1, min: 0,  max: 40,  damper: ['3way','4way'] },
-    { key: 'shock.lsc', label: 'Compression (LSC)',    unit: 'clicks', path: ['shock','lsc'], step: 1, min: 0,  max: 40,  damper: ['2way','3way','4way'] },
+    { key: 'shock.lsc', label: 'Compression (LSC)',    unit: 'clicks', path: ['shock','lsc'], step: 1, min: 0,  max: 40,  damper: ['comp','2way','3way','4way'] },
     { key: 'shock.hsc', label: 'Compression (HSC)',    unit: 'clicks', path: ['shock','hsc'], step: 1, min: 0,  max: 40,  damper: ['4way'] },
   ]},
   { section: 'Tires', compKey: null, fields: [
@@ -40,6 +40,8 @@ function getActiveFields(baseline) {
       if (f.always) return true;
       if (!f.damper) return true;
       const dt = section.compKey ? (baseline?.[section.compKey]?.damperType || '4way') : '4way';
+      // 'none' hides all damper fields; 'comp' hides rebound
+      if (dt === 'none' && !f.always) return false;
       return f.damper.includes(dt);
     })
   }));

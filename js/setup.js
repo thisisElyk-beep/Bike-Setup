@@ -93,7 +93,6 @@ export function renderZoneSettings(zoneId, bike, container, onSaved) {
       const dt = btn.dataset.preset;
       const fieldsEl = container.querySelector(`#${key}-damper-fields`);
       if (!fieldsEl) return;
-      // Get current values before wiping
       const getVal = id => { const el = container.querySelector(`#${id}`); return el ? parseFloat(el.value) || null : null; };
       const fakeData = {
         damperType: dt,
@@ -237,7 +236,9 @@ function suspensionForm(key, label, data = {}, isShock = false) {
       <label class="field-label">Damper Type</label>
       <div class="damper-presets" id="${key}-damper-type">
         ${[
+          {id:'none',    label:'None (PSI only)'},
           {id:'single',  label:'Rebound Only'},
+          {id:'comp',    label:'Compression Only'},
           {id:'2way',    label:'LSR + LSC'},
           {id:'3way',    label:'LSR + HSR + LSC'},
           {id:'4way',    label:'LSR + HSR + LSC + HSC'},

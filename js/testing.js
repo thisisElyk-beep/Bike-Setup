@@ -183,22 +183,20 @@ function computeDelta(baseline, testSettings) {
     // Fork damper rows — filtered by damperType
     ...(() => {
       const dt = baseline.fork?.damperType || '4way';
-      const single = dt === 'single';
       const rows = [];
-      rows.push({ param: single ? 'Fork Rebound' : 'Fork LSR', base: baseline.fork?.lsr, test: testSettings.fork?.lsr, unit: 'clicks' });
-      if (dt === '3way' || dt === '4way') rows.push({ param: 'Fork HSR', base: baseline.fork?.hsr, test: testSettings.fork?.hsr, unit: 'clicks' });
-      if (dt !== 'single') rows.push({ param: 'Fork LSC', base: baseline.fork?.lsc, test: testSettings.fork?.lsc, unit: 'clicks' });
+      if (dt !== 'none' && dt !== 'comp') rows.push({ param: dt==='single'?'Fork Rebound':'Fork LSR', base: baseline.fork?.lsr, test: testSettings.fork?.lsr, unit: 'clicks' });
+      if (dt === '3way' || dt === '4way')  rows.push({ param: 'Fork HSR', base: baseline.fork?.hsr, test: testSettings.fork?.hsr, unit: 'clicks' });
+      if (dt === 'comp' || dt === '2way' || dt === '3way' || dt === '4way') rows.push({ param: dt==='comp'?'Fork Compression':'Fork LSC', base: baseline.fork?.lsc, test: testSettings.fork?.lsc, unit: 'clicks' });
       if (dt === '4way') rows.push({ param: 'Fork HSC', base: baseline.fork?.hsc, test: testSettings.fork?.hsc, unit: 'clicks' });
       return rows;
     })(),
     // Shock damper rows — filtered by damperType
     ...(() => {
       const dt = baseline.shock?.damperType || '4way';
-      const single = dt === 'single';
       const rows = [];
-      rows.push({ param: single ? 'Shock Rebound' : 'Shock LSR', base: baseline.shock?.lsr, test: testSettings.shock?.lsr, unit: 'clicks' });
-      if (dt === '3way' || dt === '4way') rows.push({ param: 'Shock HSR', base: baseline.shock?.hsr, test: testSettings.shock?.hsr, unit: 'clicks' });
-      if (dt !== 'single') rows.push({ param: 'Shock LSC', base: baseline.shock?.lsc, test: testSettings.shock?.lsc, unit: 'clicks' });
+      if (dt !== 'none' && dt !== 'comp') rows.push({ param: dt==='single'?'Shock Rebound':'Shock LSR', base: baseline.shock?.lsr, test: testSettings.shock?.lsr, unit: 'clicks' });
+      if (dt === '3way' || dt === '4way')  rows.push({ param: 'Shock HSR', base: baseline.shock?.hsr, test: testSettings.shock?.hsr, unit: 'clicks' });
+      if (dt === 'comp' || dt === '2way' || dt === '3way' || dt === '4way') rows.push({ param: dt==='comp'?'Shock Compression':'Shock LSC', base: baseline.shock?.lsc, test: testSettings.shock?.lsc, unit: 'clicks' });
       if (dt === '4way') rows.push({ param: 'Shock HSC', base: baseline.shock?.hsc, test: testSettings.shock?.hsc, unit: 'clicks' });
       return rows;
     })(),
@@ -336,14 +334,14 @@ function testSettingsForm(baseline) {
   // Helper: render damper fields respecting damperType setting
   const damperFields = (prefix, data) => {
     const dt = data.damperType || '4way';
-    const single = dt === 'single';
+    const showLSR = dt !== 'none' && dt !== 'comp';
     const showHSR = dt === '3way' || dt === '4way';
-    const showLSC = dt === '2way' || dt === '3way' || dt === '4way';
+    const showLSC = dt === 'comp' || dt === '2way' || dt === '3way' || dt === '4way';
     const showHSC = dt === '4way';
     let html = '';
-    html += spinnerField(single ? 'Rebound' : 'LSR', prefix+'-lsr', 0, 40, 1, data.lsr ?? 10, 'clicks');
+    if (showLSR) html += spinnerField(dt==='single'?'Rebound':'LSR', prefix+'-lsr', 0, 40, 1, data.lsr ?? 10, 'clicks');
     if (showHSR) html += spinnerField('HSR', prefix+'-hsr', 0, 40, 1, data.hsr ?? 5, 'clicks');
-    if (showLSC) html += spinnerField('LSC', prefix+'-lsc', 0, 40, 1, data.lsc ?? 8, 'clicks');
+    if (showLSC) html += spinnerField(dt==='comp'?'Compression':'LSC', prefix+'-lsc', 0, 40, 1, data.lsc ?? 8, 'clicks');
     if (showHSC) html += spinnerField('HSC', prefix+'-hsc', 0, 40, 1, data.hsc ?? 4, 'clicks');
     return html;
   };

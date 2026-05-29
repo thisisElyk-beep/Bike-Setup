@@ -31,15 +31,17 @@ function getThemePalette() {
 function getDamperFields(comp, prefix = '') {
   if (!comp) return [];
   const dt = comp.damperType || '4way';
-  const single = dt === 'single';
+  if (dt === 'none') return [];
+  const showLSR = dt !== 'comp';
   const showHSR = dt === '3way' || dt === '4way';
-  const showLSC = dt === '2way' || dt === '3way' || dt === '4way';
+  const showLSC = dt === 'comp' || dt === '2way' || dt === '3way' || dt === '4way';
   const showHSC = dt === '4way';
+  const lbl = (name) => prefix ? `${prefix} ${name}` : name;
   const fields = [];
-  if (comp.lsr != null) fields.push([single ? (prefix ? prefix+' Rebound' : 'Rebound') : (prefix ? prefix+' LSR' : 'LSR'), `${comp.lsr} clicks`]);
-  if (showHSR && comp.hsr != null) fields.push([(prefix ? prefix+' HSR' : 'HSR'), `${comp.hsr} clicks`]);
-  if (showLSC && comp.lsc != null) fields.push([(prefix ? prefix+' LSC' : 'LSC'), `${comp.lsc} clicks`]);
-  if (showHSC && comp.hsc != null) fields.push([(prefix ? prefix+' HSC' : 'HSC'), `${comp.hsc} clicks`]);
+  if (showLSR && comp.lsr != null) fields.push([lbl(dt==='single'?'Rebound':'LSR'), `${comp.lsr} clicks`]);
+  if (showHSR && comp.hsr != null) fields.push([lbl('HSR'), `${comp.hsr} clicks`]);
+  if (showLSC && comp.lsc != null) fields.push([lbl(dt==='comp'?'Compression':'LSC'), `${comp.lsc} clicks`]);
+  if (showHSC && comp.hsc != null) fields.push([lbl('HSC'), `${comp.hsc} clicks`]);
   return fields;
 }
 // ── TEXT SUMMARY (clipboard) ───────────────────────────────
