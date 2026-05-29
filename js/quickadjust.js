@@ -23,7 +23,7 @@ function buildQuickAdjust(bike) {
   if (isMTB && bl.fork) {
     const f = bl.fork;
     const fields = [];
-    if (f.type !== 'coil') fields.push(psiSpinner('fork-psi', 'Air Pressure', f.psi, 0.5, 20, 300, 'psi'));
+    if (f.type !== 'coil') fields.push(psiSpinner('fork-psi', 'Air Pressure', f.psi, 1, 20, 300, 'psi'));
     const fDt = f.damperType || '4way';
     const fSingle = fDt === 'single';
     fields.push(clickSpinner('fork-lsr', fSingle ? 'Rebound' : 'LSR', f.lsr, 1, 0, 40));
@@ -37,7 +37,7 @@ function buildQuickAdjust(bike) {
   if (isMTB && isFS && bl.shock) {
     const s = bl.shock;
     const fields = [];
-    if (s.type !== 'coil') fields.push(psiSpinner('shock-psi', 'Air Pressure', s.psi, 0.5, 50, 350, 'psi'));
+    if (s.type !== 'coil') fields.push(psiSpinner('shock-psi', 'Air Pressure', s.psi, 1, 50, 350, 'psi'));
     const sDt = s.damperType || '4way';
     const sSingle = sDt === 'single';
     fields.push(clickSpinner('shock-lsr', sSingle ? 'Rebound' : 'LSR', s.lsr, 1, 0, 40));
@@ -52,7 +52,7 @@ function buildQuickAdjust(bike) {
   const hasRear  = bl.rearTire  && (bl.rearTire.psi  != null || bl.rearTire.brand);
   if (hasFront || hasRear) {
     const fields = [];
-    if (hasFront) fields.push(psiSpinner('ftire-psi', 'Front', bl.frontTire.psi, 0.5, 10, 80, 'psi'));
+    if (hasFront) fields.push(psiSpinner('ftire-psi', 'Front', bl.frontTire.psi, 1, 10, 80, 'psi'));
     if (hasRear)  fields.push(psiSpinner('rtire-psi', 'Rear',  bl.rearTire.psi,  0.5, 10, 80, 'psi'));
     const tireLabel = [bl.frontTire?.brand, bl.rearTire?.brand].filter(Boolean)[0] || '';
     sections.push(section('Tires', tireLabel, fields));

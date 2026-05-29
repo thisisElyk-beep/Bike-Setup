@@ -351,8 +351,8 @@ function testSettingsForm(baseline) {
   return `
     <div class="settings-section-divider">Tire Pressure</div>
     <div class="field-row">
-      ${spinnerField('Front PSI', 'ts-ft-psi', 10, 160, 0.5, ft.psi ?? 25, 'psi')}
-      ${spinnerField('Rear PSI',  'ts-rt-psi', 10, 160, 0.5, rt.psi ?? 25, 'psi')}
+      ${spinnerField('Front PSI', 'ts-ft-psi', 10, 160, 1, ft.psi ?? 25, 'psi')}
+      ${spinnerField('Rear PSI',  'ts-rt-psi', 10, 160, 1,   rt.psi ?? 25, 'psi')}
     </div>
 
     ${fk.brand ? `

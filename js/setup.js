@@ -126,8 +126,8 @@ export function renderZoneSettings(zoneId, bike, container, onSaved) {
       const max  = parseFloat(btn.dataset.max ?? Infinity);
       const cur  = parseFloat(input.value) || 0;
       const next = btn.classList.contains('spinner-minus')
-        ? Math.max(min, parseFloat((cur - step).toFixed(3)))
-        : Math.min(max, parseFloat((cur + step).toFixed(3)));
+        ? Math.max(min, step % 1 === 0 ? Math.round(cur - step) : parseFloat((cur - step).toFixed(2)))
+        : Math.min(max, step % 1 === 0 ? Math.round(cur + step) : parseFloat((cur + step).toFixed(2)));
       input.value = next;
     });
   });
@@ -193,7 +193,7 @@ function tireForm(key, tireData = {}, wheelData = {}, bikeType = 'mtb') {
       ${field('Compound', `${key}-compound`, tireData.compound, isDropBar(bikeType) ? 'e.g. Clincher, Tubeless' : 'e.g. 3C MaxxTerra')}
     </div>
     <div class="settings-section-divider">Pressure</div>
-    ${spinner('Pressure', `${key}-psi`, tireData.psi ?? 25, 0.5, 10, isDropBar(bikeType) ? 160 : 65, 'psi')}
+    ${spinner('Pressure', `${key}-psi`, tireData.psi ?? 25, 1, 10, isDropBar(bikeType) ? 160 : 65, 'psi')}
     <div class="field-row">
       ${field('Casing', `${key}-casing`, tireData.casing, isDropBar(bikeType) ? 'e.g. Folding, Wire' : 'e.g. EXO+, DD')}
       ${showInserts ? field('Inserts', `${key}-inserts`, tireData.inserts, 'e.g. Cushcore, none') : ''}

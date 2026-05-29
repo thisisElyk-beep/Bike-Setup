@@ -592,17 +592,17 @@ function showOnboarding(bike) {
       <div class="field-group">
         <label class="field-label">Front PSI</label>
         <div class="spinner-row">
-          <button type="button" class="spinner-btn spinner-minus" data-id="ob-ft-psi" data-step="0.5" data-min="10" data-max="160">−</button>
-          <input type="number" id="ob-ft-psi" class="field-input spinner-input" value="25" min="10" max="160" step="0.5">
-          <button type="button" class="spinner-btn spinner-plus" data-id="ob-ft-psi" data-step="0.5" data-min="10" data-max="160">+</button>
+          <button type="button" class="spinner-btn spinner-minus" data-id="ob-ft-psi" data-step="1" data-min="10" data-max="160">−</button>
+          <input type="number" id="ob-ft-psi" class="field-input spinner-input" value="25" min="10" max="160" step="1">
+          <button type="button" class="spinner-btn spinner-plus" data-id="ob-ft-psi" data-step="1" data-min="10" data-max="160">+</button>
         </div>
       </div>
       <div class="field-group">
         <label class="field-label">Rear PSI</label>
         <div class="spinner-row">
-          <button type="button" class="spinner-btn spinner-minus" data-id="ob-rt-psi" data-step="0.5" data-min="10" data-max="160">−</button>
-          <input type="number" id="ob-rt-psi" class="field-input spinner-input" value="27" min="10" max="160" step="0.5">
-          <button type="button" class="spinner-btn spinner-plus" data-id="ob-rt-psi" data-step="0.5" data-min="10" data-max="160">+</button>
+          <button type="button" class="spinner-btn spinner-minus" data-id="ob-rt-psi" data-step="1" data-min="10" data-max="160">−</button>
+          <input type="number" id="ob-rt-psi" class="field-input spinner-input" value="27" min="10" max="160" step="1">
+          <button type="button" class="spinner-btn spinner-plus" data-id="ob-rt-psi" data-step="1" data-min="10" data-max="160">+</button>
         </div>
       </div>
     </div>
@@ -625,8 +625,8 @@ function showOnboarding(bike) {
       const max  = parseFloat(btn.dataset.max ?? 9999);
       const cur  = parseFloat(input.value) || 0;
       input.value = btn.classList.contains('spinner-minus')
-        ? Math.max(min, parseFloat((cur - step).toFixed(3)))
-        : Math.min(max, parseFloat((cur + step).toFixed(3)));
+        ? Math.max(min, step % 1 === 0 ? Math.round(cur - step) : parseFloat((cur - step).toFixed(2)))
+        : Math.min(max, step % 1 === 0 ? Math.round(cur + step) : parseFloat((cur + step).toFixed(2)));
     });
   });
 

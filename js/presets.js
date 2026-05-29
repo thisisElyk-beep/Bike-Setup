@@ -19,8 +19,8 @@ const TUNABLE = [
     { key: 'shock.hsc', label: 'Compression (HSC)',   unit: 'clicks', path: ['shock','hsc'], step: 1,   min: 0,  max: 40,  damper: ['4way'] },
   ]},
   { section: 'Tires', fields: [
-    { key: 'frontTire.psi', label: 'PSI', unit: 'psi', path: ['frontTire','psi'], step: 0.5, min: 10, max: 160, always: true },
-    { key: 'rearTire.psi',  label: 'PSI', unit: 'psi', path: ['rearTire','psi'],  step: 0.5, min: 10, max: 160, always: true },
+    { key: 'frontTire.psi', label: 'PSI', unit: 'psi', path: ['frontTire','psi'], step: 1, min: 10, max: 160, always: true },
+    { key: 'rearTire.psi',  label: 'PSI', unit: 'psi', path: ['rearTire','psi'],  step: 1, min: 10, max: 160, always: true },
   ]},
 ];
 
@@ -49,11 +49,11 @@ function getPath(obj, path) {
 
 function computeDiff(overrides, baseline, fields = ALL_FIELDS) {
   return Object.entries(overrides || {}).map(([key, presetVal]) => {
-    const f = fields.find(f => f.key === key);
+    let f = fields.find(f => f.key === key);
     if (!f) return null;
     const baseVal = getPath(baseline, f.path);
     const sectionNames = { fork: 'Fork', shock: 'Shock', frontTire: 'Front Tire', rearTire: 'Rear Tire' };
-    // Clean up label for single-dial: "Rebound (LSR)" → "Rebound"
+    // Single-dial: "Rebound (LSR)" → "Rebound"
     if (f.key.endsWith('.lsr')) {
       const compKey = f.key.split('.')[0];
       const dt = baseline?.[compKey]?.damperType || '4way';

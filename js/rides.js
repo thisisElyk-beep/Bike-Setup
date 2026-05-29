@@ -272,11 +272,11 @@ function showNewRideModal(bike, existingRides, onSaved) {
     <div class="field-row">
       <div class="field-group">
         <label class="field-label">Tire PSI — Front</label>
-        <input id="rs-tirePsiF" class="field-input" type="number" step="0.5" value="${settingVal('tirePsiF', bl.frontTire?.psi)}">
+        <input id="rs-tirePsiF" class="field-input" type="number" step="1" value="${settingVal('tirePsiF', bl.frontTire?.psi)}">
       </div>
       <div class="field-group">
         <label class="field-label">Tire PSI — Rear</label>
-        <input id="rs-tirePsiR" class="field-input" type="number" step="0.5" value="${settingVal('tirePsiR', bl.rearTire?.psi)}">
+        <input id="rs-tirePsiR" class="field-input" type="number" step="1" value="${settingVal('tirePsiR', bl.rearTire?.psi)}">
       </div>
     </div>
 
@@ -778,11 +778,11 @@ function showEditRideModal(bike, ride, onSaved) {
     <div class="field-row">
       <div class="field-group">
         <label class="field-label">Tire PSI — Front</label>
-        <input id="edit-tirePsiF" class="field-input" type="number" step="0.5" value="${s.tirePsiF || ''}">
+        <input id="edit-tirePsiF" class="field-input" type="number" step="1" value="${s.tirePsiF || ''}">
       </div>
       <div class="field-group">
         <label class="field-label">Tire PSI — Rear</label>
-        <input id="edit-tirePsiR" class="field-input" type="number" step="0.5" value="${s.tirePsiR || ''}">
+        <input id="edit-tirePsiR" class="field-input" type="number" step="1" value="${s.tirePsiR || ''}">
       </div>
     </div>
 
