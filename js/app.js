@@ -729,12 +729,13 @@ function bindModal() {
 function initTheme() {
   const profileId = localStorage.getItem('dialed_active_profile');
   const saved = profileId ? localStorage.getItem(`quiver_theme_${profileId}`) : null;
-  if (saved) {
+  if (saved && saved !== 'dark') {
+    // Saved theme — apply it ('dark' → treat as 'amber' since Classic is removed)
     document.documentElement.setAttribute('data-theme', saved);
   } else {
-    // No saved theme — follow system preference
+    // No saved theme or legacy 'dark' → follow system preference
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', prefersDark ? 'amber' : 'light');
   }
 }
 
