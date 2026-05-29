@@ -102,7 +102,7 @@
   --scrollbar-bg: #0d1620;
   --scrollbar-thumb: #2a4060;
   --silhouette-stroke: #58aec0;
-  --zone-highlight:    #c8eef8;
+  --zone-highlight:    #dff4fc;
 }
 
 /* ─── THEME B: CARBON + CORAL ───────────────────────── */
@@ -164,7 +164,7 @@
   --scrollbar-bg: #10141f;
   --scrollbar-thumb: #313b55;
   --silhouette-stroke: #8899ee;
-  --zone-highlight:    #cdd2fc;
+  --zone-highlight:    #dfe2fd;
 }
 
 /* ─── THEME D: REFINED AMBER (enhanced dark) ────────── */
@@ -195,7 +195,7 @@
   --scrollbar-bg: #141210;
   --scrollbar-thumb: #3d3828;
   --silhouette-stroke: #ccc090;
-  --zone-highlight:    #f2e8b8;
+  --zone-highlight:    #f8f2d4;
 }
 
 /* ─── RESET ────────────────────────────────────────── */
@@ -2913,7 +2913,7 @@ textarea.field-input {
   --scrollbar-bg: #0e1a10;
   --scrollbar-thumb: #2a4832;
   --silhouette-stroke: #80d870;
-  --zone-highlight:    #caf5bc;
+  --zone-highlight:    #dffad6;
 }
 
 /* ─── THEME: BLOOD ORANGE ────────────────────────────────── */
@@ -2944,7 +2944,7 @@ textarea.field-input {
   --scrollbar-bg: #1a1008;
   --scrollbar-thumb: #502c14;
   --silhouette-stroke: #d89070;
-  --zone-highlight:    #f8dcc0;
+  --zone-highlight:    #fcebd8;
 }
 
 /* ─── THEME: GLACIER ─────────────────────────────────────── */
@@ -2975,7 +2975,7 @@ textarea.field-input {
   --scrollbar-bg: #0a1822;
   --scrollbar-thumb: #244060;
   --silhouette-stroke: #68b8d4;
-  --zone-highlight:    #c4e8f8;
+  --zone-highlight:    #d8f0fc;
 }
 
 /* ─── THEME: ROSE GOLD ───────────────────────────────────── */
@@ -3006,7 +3006,7 @@ textarea.field-input {
   --scrollbar-bg: #1e1014;
   --scrollbar-thumb: #522c40;
   --silhouette-stroke: #cc80b8;
-  --zone-highlight:    #f8c8e8;
+  --zone-highlight:    #fcddf0;
 }
 
 /* Preset diff section header */
