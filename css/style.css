@@ -99,7 +99,7 @@
   --shadow-lg:    0 8px 40px rgba(0,0,0,0.7);
   --scrollbar-bg: #0d1620;
   --scrollbar-thumb: #2a4060;
-  --silhouette-stroke: #80c8d8;
+  --silhouette-stroke: #58aec0;
 }
 
 /* ─── THEME B: CARBON + CORAL ───────────────────────── */
@@ -129,7 +129,7 @@
   --shadow-lg:    0 8px 40px rgba(0,0,0,0.8);
   --scrollbar-bg: #111111;
   --scrollbar-thumb: #333333;
-  --silhouette-stroke: #f0f0f0;
+  --silhouette-stroke: #d8d8d8;
 }
 
 /* ─── THEME C: SLATE + INDIGO ───────────────────────── */
@@ -159,7 +159,7 @@
   --shadow-lg:    0 8px 40px rgba(0,0,0,0.7);
   --scrollbar-bg: #10141f;
   --scrollbar-thumb: #313b55;
-  --silhouette-stroke: #c0c8ff;
+  --silhouette-stroke: #8899ee;
 }
 
 /* ─── THEME D: REFINED AMBER (enhanced dark) ────────── */
@@ -189,7 +189,7 @@
   --shadow-lg:    0 8px 48px rgba(0,0,0,0.7);
   --scrollbar-bg: #141210;
   --scrollbar-thumb: #3d3828;
-  --silhouette-stroke: #e0d0a0;
+  --silhouette-stroke: #ccc090;
 }
 
 /* ─── RESET ────────────────────────────────────────── */
@@ -396,8 +396,7 @@ svg { display: block; flex-shrink: 0; }
 .bike-card-silhouette svg {
   max-width: 100%;
   height: auto;
-  opacity: 0.75;
-  stroke: var(--text-secondary);
+  stroke: var(--silhouette-stroke);
 }
 
 .bike-card-body {
@@ -2907,7 +2906,7 @@ textarea.field-input {
   --shadow-lg:    0 8px 40px rgba(0,0,0,.7);
   --scrollbar-bg: #0e1a10;
   --scrollbar-thumb: #2a4832;
-  --silhouette-stroke: #b0f0a0;
+  --silhouette-stroke: #80d870;
 }
 
 /* ─── THEME: BLOOD ORANGE ────────────────────────────────── */
@@ -2937,7 +2936,7 @@ textarea.field-input {
   --shadow-lg:    0 8px 40px rgba(0,0,0,.75);
   --scrollbar-bg: #1a1008;
   --scrollbar-thumb: #502c14;
-  --silhouette-stroke: #edb898;
+  --silhouette-stroke: #d89070;
 }
 
 /* ─── THEME: GLACIER ─────────────────────────────────────── */
@@ -2997,7 +2996,7 @@ textarea.field-input {
   --shadow-lg:    0 8px 40px rgba(0,0,0,.7);
   --scrollbar-bg: #1e1014;
   --scrollbar-thumb: #522c40;
-  --silhouette-stroke: #e8a8d0;
+  --silhouette-stroke: #cc80b8;
 }
 
 /* Preset diff section header */
