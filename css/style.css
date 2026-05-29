@@ -43,6 +43,7 @@
   --scrollbar-bg: #111010;
   --scrollbar-thumb: #2e2c2c;
   --silhouette-stroke: #9a9898;
+  --zone-highlight:    #f0f0f0;
 }
 
 [data-theme="light"] {
@@ -72,6 +73,7 @@
   --scrollbar-bg: #f2f0ef;
   --scrollbar-thumb: #d4d0cd;
   --silhouette-stroke: #3a3028;
+  --zone-highlight:    #b45309;
 }
 [data-theme="teal"] {
   --bg-base:     #070c10;
@@ -100,6 +102,7 @@
   --scrollbar-bg: #0d1620;
   --scrollbar-thumb: #2a4060;
   --silhouette-stroke: #58aec0;
+  --zone-highlight:    #e8f8fc;
 }
 
 /* ─── THEME B: CARBON + CORAL ───────────────────────── */
@@ -130,6 +133,7 @@
   --scrollbar-bg: #111111;
   --scrollbar-thumb: #333333;
   --silhouette-stroke: #d8d8d8;
+  --zone-highlight:    #ff4d4d;
 }
 
 /* ─── THEME C: SLATE + INDIGO ───────────────────────── */
@@ -160,6 +164,7 @@
   --scrollbar-bg: #10141f;
   --scrollbar-thumb: #313b55;
   --silhouette-stroke: #8899ee;
+  --zone-highlight:    #eeeffe;
 }
 
 /* ─── THEME D: REFINED AMBER (enhanced dark) ────────── */
@@ -190,6 +195,7 @@
   --scrollbar-bg: #141210;
   --scrollbar-thumb: #3d3828;
   --silhouette-stroke: #ccc090;
+  --zone-highlight:    #f8f2e0;
 }
 
 /* ─── RESET ────────────────────────────────────────── */
@@ -594,7 +600,7 @@ svg { display: block; flex-shrink: 0; }
 .bike-zone.zone-hovered circle,
 .bike-zone.zone-hovered rect,
 .bike-zone.zone-hovered polyline {
-  stroke: var(--accent);
+  stroke: var(--zone-highlight);
 }
 
 .bike-zone.zone-active path,
@@ -602,7 +608,7 @@ svg { display: block; flex-shrink: 0; }
 .bike-zone.zone-active circle,
 .bike-zone.zone-active rect,
 .bike-zone.zone-active polyline {
-  stroke: var(--accent);
+  stroke: var(--zone-highlight);
 }
 
 .bike-zone.zone-active {
@@ -2907,6 +2913,7 @@ textarea.field-input {
   --scrollbar-bg: #0e1a10;
   --scrollbar-thumb: #2a4832;
   --silhouette-stroke: #80d870;
+  --zone-highlight:    #f0fff0;
 }
 
 /* ─── THEME: BLOOD ORANGE ────────────────────────────────── */
@@ -2937,6 +2944,7 @@ textarea.field-input {
   --scrollbar-bg: #1a1008;
   --scrollbar-thumb: #502c14;
   --silhouette-stroke: #d89070;
+  --zone-highlight:    #fff0e8;
 }
 
 /* ─── THEME: GLACIER ─────────────────────────────────────── */
@@ -2967,6 +2975,7 @@ textarea.field-input {
   --scrollbar-bg: #0a1822;
   --scrollbar-thumb: #244060;
   --silhouette-stroke: #2a7090;
+  --zone-highlight:    #e0f4ff;
 }
 
 /* ─── THEME: ROSE GOLD ───────────────────────────────────── */
@@ -2997,6 +3006,7 @@ textarea.field-input {
   --scrollbar-bg: #1e1014;
   --scrollbar-thumb: #522c40;
   --silhouette-stroke: #cc80b8;
+  --zone-highlight:    #fff0f8;
 }
 
 /* Preset diff section header */
