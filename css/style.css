@@ -2882,3 +2882,123 @@ textarea.field-input {
 @media (max-width: 640px) {
   .presets-grid { grid-template-columns: 1fr; padding: 0 1rem 1rem; }
 }
+
+/* ─── THEME: FOREST ──────────────────────────────────────── */
+[data-theme="forest"] {
+  --bg-base:     #080e09;
+  --bg-surface:  #0e1a10;
+  --bg-raised:   #162219;
+  --bg-elevated: #1e2e22;
+  --bg-input:    #111e14;
+  --border:      #1e3323;
+  --border-md:   #2a4832;
+  --border-strong: #386042;
+  --text-primary:   #d8edd6;
+  --text-secondary: #72a870;
+  --text-muted:     #3a6038;
+  --accent:       #4ade80;
+  --accent-hover: #6ee89a;
+  --accent-dim:   rgba(74,222,128,.12);
+  --accent-glow:  rgba(74,222,128,.28);
+  --accent-text:  #4ade80;
+  --danger:       #f97316;
+  --danger-dim:   rgba(249,115,22,.14);
+  --success:      #4ade80;
+  --success-dim:  rgba(74,222,128,.14);
+  --shadow-sm:    0 2px 8px rgba(0,0,0,.5);
+  --shadow-md:    0 4px 20px rgba(0,0,0,.6);
+  --shadow-lg:    0 8px 40px rgba(0,0,0,.7);
+  --scrollbar-bg: #0e1a10;
+  --scrollbar-thumb: #2a4832;
+  --silhouette-stroke: #4a8c48;
+}
+
+/* ─── THEME: BLOOD ORANGE ────────────────────────────────── */
+[data-theme="orange"] {
+  --bg-base:     #0e0804;
+  --bg-surface:  #1a1008;
+  --bg-raised:   #231810;
+  --bg-elevated: #2e2018;
+  --bg-input:    #1a1008;
+  --border:      #3a2010;
+  --border-md:   #502c14;
+  --border-strong: #6a3c1c;
+  --text-primary:   #f5ece0;
+  --text-secondary: #c08050;
+  --text-muted:     #6a4428;
+  --accent:       #f97316;
+  --accent-hover: #fb923c;
+  --accent-dim:   rgba(249,115,22,.14);
+  --accent-glow:  rgba(249,115,22,.30);
+  --accent-text:  #f97316;
+  --danger:       #ef4444;
+  --danger-dim:   rgba(239,68,68,.14);
+  --success:      #4ade80;
+  --success-dim:  rgba(74,222,128,.14);
+  --shadow-sm:    0 2px 8px rgba(0,0,0,.55);
+  --shadow-md:    0 4px 20px rgba(0,0,0,.65);
+  --shadow-lg:    0 8px 40px rgba(0,0,0,.75);
+  --scrollbar-bg: #1a1008;
+  --scrollbar-thumb: #502c14;
+  --silhouette-stroke: #a05028;
+}
+
+/* ─── THEME: GLACIER ─────────────────────────────────────── */
+[data-theme="glacier"] {
+  --bg-base:     #050c12;
+  --bg-surface:  #0a1822;
+  --bg-raised:   #102030;
+  --bg-elevated: #162840;
+  --bg-input:    #0c1c2c;
+  --border:      #1a3048;
+  --border-md:   #244060;
+  --border-strong: #2e5078;
+  --text-primary:   #dceeff;
+  --text-secondary: #6aaad4;
+  --text-muted:     #2a5070;
+  --accent:       #38bdf8;
+  --accent-hover: #60cef8;
+  --accent-dim:   rgba(56,189,248,.12);
+  --accent-glow:  rgba(56,189,248,.30);
+  --accent-text:  #38bdf8;
+  --danger:       #fb7185;
+  --danger-dim:   rgba(251,113,133,.14);
+  --success:      #34d399;
+  --success-dim:  rgba(52,211,153,.14);
+  --shadow-sm:    0 2px 8px rgba(0,0,0,.5);
+  --shadow-md:    0 4px 20px rgba(0,0,0,.6);
+  --shadow-lg:    0 8px 40px rgba(0,0,0,.7);
+  --scrollbar-bg: #0a1822;
+  --scrollbar-thumb: #244060;
+  --silhouette-stroke: #2a7090;
+}
+
+/* ─── THEME: ROSE GOLD ───────────────────────────────────── */
+[data-theme="rose"] {
+  --bg-base:     #120a0c;
+  --bg-surface:  #1e1014;
+  --bg-raised:   #28181e;
+  --bg-elevated: #342028;
+  --bg-input:    #1e1014;
+  --border:      #3c2030;
+  --border-md:   #522c40;
+  --border-strong: #6a3852;
+  --text-primary:   #f5e0e8;
+  --text-secondary: #c07090;
+  --text-muted:     #6a3850;
+  --accent:       #f472b6;
+  --accent-hover: #f899cc;
+  --accent-dim:   rgba(244,114,182,.12);
+  --accent-glow:  rgba(244,114,182,.28);
+  --accent-text:  #f472b6;
+  --danger:       #ef4444;
+  --danger-dim:   rgba(239,68,68,.14);
+  --success:      #34d399;
+  --success-dim:  rgba(52,211,153,.14);
+  --shadow-sm:    0 2px 8px rgba(0,0,0,.5);
+  --shadow-md:    0 4px 20px rgba(0,0,0,.6);
+  --shadow-lg:    0 8px 40px rgba(0,0,0,.7);
+  --scrollbar-bg: #1e1014;
+  --scrollbar-thumb: #522c40;
+  --silhouette-stroke: #8a4060;
+}
