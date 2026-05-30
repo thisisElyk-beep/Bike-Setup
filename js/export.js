@@ -5,7 +5,6 @@ import { showToast } from './utils.js';
 // Resolved hex values per theme (can't use CSS vars in jsPDF)
 const THEME_PALETTES = {
   dark:    { bg: '#141210', surface: '#1c1916', accent: '#f59e0b', text: '#f5f0e8', muted: '#504840', border: '#3d3828' },
-  amber:   { bg: '#0c0b09', surface: '#1c1916', accent: '#f59e0b', text: '#f5f0e8', muted: '#504840', border: '#3d3828' },
   teal:    { bg: '#070c10', surface: '#131f2e', accent: '#00d4b8', text: '#e8f4f8', muted: '#3a6070', border: '#2a4060' },
   carbon:  { bg: '#0a0a0a', surface: '#141414', accent: '#e0ff4f', text: '#ffffff', muted: '#787878', border: '#303030' },
   slate:   { bg: '#0b0d14', surface: '#171c2c', accent: '#818cf8', text: '#e8eaf6', muted: '#404870', border: '#313b55' },

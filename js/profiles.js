@@ -14,8 +14,7 @@ import { setActiveProfile } from './db.js';
 // ── THEME MANAGEMENT ──────────────────────────────────────
 export const THEMES = [
   { id: 'light',   name: 'Light',          swatch: ['#f4f6f8','#2563eb'] },
-  { id: 'carbon',  name: 'Carbon',         swatch: ['#0a0a0a','#e0ff4f'] },
-  { id: 'amber',   name: 'Amber',          swatch: ['#0c0b09','#f59e0b'] },
+  { id: 'carbon',  name: 'Dark',            swatch: ['#0a0a0a','#e0ff4f'] },
   { id: 'teal',    name: 'Midnight Teal',  swatch: ['#070c10','#00d4b8'] },
   { id: 'slate',   name: 'Slate',          swatch: ['#0b0d14','#818cf8'] },
   { id: 'forest',  name: 'Forest',         swatch: ['#080e09','#4ade80'] },
@@ -27,7 +26,7 @@ export const THEMES = [
 function themeKey(profileId) { return `quiver_theme_${profileId}`; }
 
 export function getProfileTheme(profileId) {
-  return localStorage.getItem(themeKey(profileId)) || 'dark';
+  return localStorage.getItem(themeKey(profileId)) || 'light';
 }
 
 export function setProfileTheme(profileId, themeId) {
