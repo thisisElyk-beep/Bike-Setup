@@ -109,7 +109,7 @@ function renderActiveSession(session) {
     chip('R Tire', rt.psi, brt.psi),
   ].filter(Boolean);
 
-  const notes = session.notes || [];
+  const notes = Array.isArray(session.notes) ? session.notes : [];
 
   return `<div class="active-session-card">
     <div class="active-session-header">
@@ -148,7 +148,7 @@ function renderActiveSession(session) {
 function renderSessionCard(s) {
   const duration = s.endedAt && s.startedAt
     ? fmtElapsed(s.endedAt - s.startedAt) : '—';
-  const notes = s.notes || [];
+  const notes = Array.isArray(s.notes) ? s.notes : [];
   const adopted = s.adopted ? '<span class="session-adopted-badge">Adopted</span>' : '';
 
   return `<div class="session-card">
@@ -286,7 +286,7 @@ function showAddNoteModal(bike, session, onSaved) {
   document.getElementById('modal-save-note').onclick = () => {
     const text = document.getElementById('note-text').value.trim();
     if (!text) { showToast('Write something first', 'error'); return; }
-    const updated = { ...session, notes: [...(session.notes||[]), { text, offsetMs: Date.now() - session.startedAt }] };
+    const updated = { ...session, notes: [...(Array.isArray(session.notes) ? session.notes : []), { text, offsetMs: Date.now() - session.startedAt }] };
     saveActiveSession(bike.id, updated);
     closeModal();
     onSaved();
