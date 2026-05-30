@@ -1,450 +1,414 @@
-import { getTestSessions, createTestSession, updateTestSession, deleteTestSession, updateBike } from './db.js';
+import { createTestSession, getTestSessions, updateTestSession, deleteTestSession, updateBike } from './db.js';
 import { showToast, openModal, closeModal } from './utils.js';
 
-let _activeBike = null;
-let _sessions = [];
+// ── SESSION STATE ──────────────────────────────────────────
+// Active session persists in localStorage so it survives page reloads
+function activeKey(bikeId)   { return `quiver_active_session_${bikeId}`; }
+function getActiveSession(bikeId) {
+  try { return JSON.parse(localStorage.getItem(activeKey(bikeId))); }
+  catch { return null; }
+}
+function saveActiveSession(bikeId, session) {
+  if (session) localStorage.setItem(activeKey(bikeId), JSON.stringify(session));
+  else localStorage.removeItem(activeKey(bikeId));
+}
 
+// ── ENTRY POINT ────────────────────────────────────────────
 export async function renderTestingTab(bike) {
-  _activeBike = bike;
-  const historyList = document.getElementById('test-history-list');
-  const emptyEl = document.getElementById('test-empty');
-  const activePanel = document.getElementById('active-test-panel');
+  const container = document.getElementById('tab-testing');
+  if (!container) return;
+  container.innerHTML = `<div class="rides-loading"><span>Loading…</span></div>`;
 
-  historyList.innerHTML = '<div style="padding:1rem 2rem;color:var(--text-muted);font-size:.85rem">Loading...</div>';
+  let sessions = [];
+  try { sessions = await getTestSessions(bike.id); } catch(e) {}
 
-  try {
-    _sessions = await getTestSessions(bike.id);
-    historyList.innerHTML = '';
-
-    const active = _sessions.find(s => !s.adopted && s.isActive);
-
-    if (active) {
-      renderActivePanel(active, bike);
-    } else {
-      activePanel.classList.add('hidden');
-      activePanel.innerHTML = '';
-    }
-
-    if (_sessions.length === 0) {
-      historyList.classList.add('hidden');
-      emptyEl.classList.remove('hidden');
-    } else {
-      historyList.classList.remove('hidden');
-      emptyEl.classList.add('hidden');
-      _sessions.forEach(s => historyList.appendChild(buildSessionCard(s, bike)));
-    }
-  } catch (e) {
-    historyList.innerHTML = `<p style="color:var(--danger);padding:1rem 2rem">Error: ${e.message}</p>`;
-  }
-
-  document.getElementById('btn-new-test').onclick = () => showNewTestModal(bike);
+  const active = getActiveSession(bike.id);
+  renderTuningView(container, bike, sessions, active);
 }
 
-// ── ACTIVE TEST PANEL ─────────────────────────────────────
-
-function renderActivePanel(session, bike) {
-  const panel = document.getElementById('active-test-panel');
-  panel.classList.remove('hidden');
-
-  const delta = computeDelta(bike.baseline || {}, session.testSettings || {});
-  const deltaRows = delta.map(r => `
-    <tr>
-      <td class="delta-param">${escHtml(r.param)}</td>
-      <td class="delta-base">${escHtml(r.base)}</td>
-      <td class="delta-test">${escHtml(r.test)}</td>
-      <td class="delta-diff ${r.cssClass}">${escHtml(r.diff)}</td>
-    </tr>
-  `).join('');
-
-  panel.innerHTML = `
-    <div class="active-test-header">
-      <span class="active-test-badge">Active Session</span>
+// ── MAIN VIEW ──────────────────────────────────────────────
+function renderTuningView(container, bike, sessions, active) {
+  container.innerHTML = `
+    <div class="rides-toolbar">
+      <h2 class="tab-section-title" style="margin:0">Tuning</h2>
+      ${!active ? `<button class="btn-primary" id="btn-new-session">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        New Session
+      </button>` : ''}
     </div>
-    <div class="active-test-name">${escHtml(session.name)}</div>
-    <div class="active-test-meta">
-      ${session.trail ? `Trail: ${escHtml(session.trail)}` : ''}
-      ${session.conditions ? ` · ${escHtml(session.conditions)}` : ''}
-      ${session.weather ? ` · ${escHtml(session.weather)}` : ''}
-    </div>
-    ${delta.length > 0 ? `
-    <table class="delta-table">
-      <thead><tr>
-        <th>Parameter</th><th>Baseline</th><th>Test</th><th>Δ</th>
-      </tr></thead>
-      <tbody>${deltaRows}</tbody>
-    </table>` : '<p style="font-size:.82rem;color:var(--text-muted)">No numeric differences from baseline.</p>'}
-    ${session.notes ? `<div class="test-notes">${escHtml(session.notes)}</div>` : ''}
-    <div class="active-test-actions">
-      <button class="btn-success" id="btn-adopt-active">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 7l3.5 3.5L11 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Adopt as Baseline
-      </button>
-      <button class="btn-danger" id="btn-discard-active">Discard Session</button>
-    </div>
-  `;
 
-  document.getElementById('btn-adopt-active').onclick = () => adoptSession(session, bike);
-  document.getElementById('btn-discard-active').onclick = () => discardSession(session, bike);
+    ${active ? renderActiveSession(active) : ''}
+
+    <div id="sessions-list">
+      ${sessions.length === 0 && !active
+        ? `<div class="empty-state" style="padding:2rem">
+            <h3>No tuning sessions yet</h3>
+            <p>Start a session to log suspension changes and how they felt on trail.</p>
+           </div>`
+        : sessions.map(s => renderSessionCard(s)).join('')}
+    </div>`;
+
+  // Wire buttons
+  document.getElementById('btn-new-session')?.addEventListener('click', () =>
+    showNewSessionModal(bike, sessions, () => renderTestingTab(bike))
+  );
+
+  document.getElementById('btn-end-session')?.addEventListener('click', () =>
+    showEndSessionModal(bike, active, sessions, () => renderTestingTab(bike))
+  );
+
+  document.getElementById('btn-add-note')?.addEventListener('click', () =>
+    showAddNoteModal(bike, active, () => renderTestingTab(bike))
+  );
+
+  // Elapsed timer
+  if (active) startElapsedTimer(active.startedAt);
+
+  // Past session delete
+  container.querySelectorAll('.session-delete-btn').forEach(btn => {
+    btn.onclick = async () => {
+      if (!confirm('Delete this session?')) return;
+      try {
+        await deleteTestSession(bike.id, btn.dataset.id);
+        renderTestingTab(bike);
+      } catch(e) { showToast('Delete failed', 'error'); }
+    };
+  });
 }
 
-// ── SESSION CARD (history) ────────────────────────────────
+// ── ACTIVE SESSION CARD ────────────────────────────────────
+function renderActiveSession(session) {
+  const bl = session.settings || {};
+  const fk = bl.fork || {}, sk = bl.shock || {};
+  const ft = bl.frontTire || {}, rt = bl.rearTire || {};
 
-function buildSessionCard(session, bike) {
-  const card = document.createElement('div');
-  card.className = 'test-session-card';
+  const settingChips = [
+    fk.psi  != null ? `Fork ${fk.psi} psi` : null,
+    fk.lsr  != null ? `LSR ${fk.lsr}` : null,
+    fk.lsc  != null ? `LSC ${fk.lsc}` : null,
+    sk.psi  != null ? `Shock ${sk.psi} psi` : null,
+    sk.lsr  != null ? `Rebound ${sk.lsr}` : null,
+    sk.lsc  != null ? `Compression ${sk.lsc}` : null,
+    ft.psi  != null ? `F Tire ${ft.psi} psi` : null,
+    rt.psi  != null ? `R Tire ${rt.psi} psi` : null,
+  ].filter(Boolean);
 
-  const date = session.createdAt?.toDate
-    ? session.createdAt.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : session.createdAt
-      ? new Date(session.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      : 'Unknown date';
+  const notes = session.notes || [];
 
-  const adopted = session.adopted;
+  return `<div class="active-session-card">
+    <div class="active-session-header">
+      <div class="active-session-pulse"></div>
+      <div class="active-session-info">
+        <div class="active-session-title">${escHtml(session.title)}</div>
+        <div class="active-session-elapsed" id="session-elapsed">—</div>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn-text" id="btn-add-note" style="font-size:.78rem">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Add Note
+        </button>
+        <button class="btn-danger" id="btn-end-session" style="font-size:.78rem;padding:.35rem .75rem">
+          End Session
+        </button>
+      </div>
+    </div>
 
-  card.innerHTML = `
-    <div class="test-session-header">
+    <div class="active-session-chips">
+      ${settingChips.map(c => `<span class="session-chip">${c}</span>`).join('')}
+    </div>
+
+    ${notes.length > 0 ? `
+    <div class="session-notes-log">
+      ${notes.map(n => `
+        <div class="session-note-entry">
+          <span class="session-note-time">${fmtElapsed(n.offsetMs)}</span>
+          <span class="session-note-text">${escHtml(n.text)}</span>
+        </div>`).join('')}
+    </div>` : `<div class="session-notes-empty">No notes yet — add notes as you ride to capture how changes felt</div>`}
+  </div>`;
+}
+
+// ── PAST SESSION CARD ──────────────────────────────────────
+function renderSessionCard(s) {
+  const duration = s.endedAt && s.startedAt
+    ? fmtElapsed(s.endedAt - s.startedAt) : '—';
+  const notes = s.notes || [];
+  const adopted = s.adopted ? '<span class="session-adopted-badge">Adopted</span>' : '';
+
+  return `<div class="session-card">
+    <div class="session-card-header">
       <div>
-        <div class="test-session-name">${escHtml(session.name)}</div>
-        <div class="test-session-meta">
-          <span>${date}</span>
-          ${session.trail ? `<span>· ${escHtml(session.trail)}</span>` : ''}
-          ${session.conditions ? `<span>· ${escHtml(session.conditions)}</span>` : ''}
-          <span class="test-session-badge ${adopted ? 'adopted' : 'pending'}">${adopted ? 'Adopted' : 'Not Adopted'}</span>
-        </div>
+        <div class="session-card-title">${escHtml(s.title || 'Untitled Session')} ${adopted}</div>
+        <div class="session-card-meta">${fmtDate(s.startedAt)} · ${duration}</div>
       </div>
-      <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;transition:transform .2s;color:var(--text-muted)">
-        <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+      <button class="btn-icon-sm session-delete-btn" data-id="${s.id}" title="Delete" style="color:var(--text-muted)">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4.5 3V2a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v1M4.5 5v4M7.5 5v4M2.5 3l.6 6.5a.5.5 0 00.5.5h5a.5.5 0 00.5-.5L9.5 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
     </div>
-    <div class="test-session-body">
-      ${buildDeltaTable(bike, session)}
-      ${session.notes ? `<div class="test-notes">${escHtml(session.notes)}</div>` : ''}
-      <div class="test-session-actions">
-        ${!adopted ? `<button class="btn-success btn-adopt-hist" data-id="${session.id}">
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 7l3.5 3.5L11 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Adopt as Baseline
-        </button>` : ''}
-        <button class="btn-danger btn-delete-sess" data-id="${session.id}">Delete</button>
+    ${notes.length > 0 ? `<div class="session-notes-log">
+      ${notes.slice(0,3).map(n => `
+        <div class="session-note-entry">
+          <span class="session-note-time">${fmtElapsed(n.offsetMs)}</span>
+          <span class="session-note-text">${escHtml(n.text)}</span>
+        </div>`).join('')}
+      ${notes.length > 3 ? `<div style="font-size:.72rem;color:var(--text-muted)">+${notes.length-3} more notes</div>` : ''}
+    </div>` : ''}
+  </div>`;
+}
+
+// ── NEW SESSION MODAL ──────────────────────────────────────
+function showNewSessionModal(bike, sessions, onSaved) {
+  const bl = bike.baseline || {};
+  const fk = bl.fork || {}, sk = bl.shock || {};
+  const ft = bl.frontTire || {}, rt = bl.rearTire || {};
+
+  const spinnerField = (label, id, val, min, max) => `
+    <div class="field-group">
+      <label class="field-label">${label}</label>
+      <div class="spinner-row">
+        <button type="button" class="spinner-btn spinner-minus" data-id="${id}" data-step="1" data-min="${min}" data-max="${max}">−</button>
+        <input type="number" id="${id}" class="field-input spinner-input" value="${val ?? ''}" min="${min}" max="${max}" step="1" placeholder="—">
+        <button type="button" class="spinner-btn spinner-plus" data-id="${id}" data-step="1" data-min="${min}" data-max="${max}">+</button>
       </div>
-    </div>
-  `;
+    </div>`;
 
-  // Expand/collapse
-  const header = card.querySelector('.test-session-header');
-  const body   = card.querySelector('.test-session-body');
-  const chev   = card.querySelector('.chevron');
-  header.addEventListener('click', () => {
-    const open = body.classList.toggle('open');
-    chev.style.transform = open ? 'rotate(180deg)' : '';
-  });
+  const fkDt = fk.damperType || '4way';
+  const skDt = sk.damperType || '4way';
 
-  const adoptBtn = card.querySelector('.btn-adopt-hist');
-  if (adoptBtn) adoptBtn.onclick = (e) => { e.stopPropagation(); adoptSession(session, bike); };
-
-  card.querySelector('.btn-delete-sess').onclick = (e) => {
-    e.stopPropagation();
-    confirmDeleteSession(session, bike);
-  };
-
-  return card;
-}
-
-function buildDeltaTable(bike, session) {
-  const delta = computeDelta(bike.baseline || {}, session.testSettings || {});
-  if (delta.length === 0) return '<p style="font-size:.82rem;color:var(--text-muted);margin-bottom:.75rem">No recorded setting differences.</p>';
-
-  const rows = delta.map(r => `
-    <tr>
-      <td class="delta-param">${escHtml(r.param)}</td>
-      <td class="delta-base">${escHtml(r.base)}</td>
-      <td class="delta-test">${escHtml(r.test)}</td>
-      <td class="delta-diff ${r.cssClass}">${escHtml(r.diff)}</td>
-    </tr>
-  `).join('');
-
-  return `
-    <table class="delta-table" style="margin-bottom:.75rem">
-      <thead><tr><th>Parameter</th><th>Baseline</th><th>Test</th><th>Δ</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
-}
-
-// ── DELTA COMPUTATION ─────────────────────────────────────
-
-function computeDelta(baseline, testSettings) {
-  const rows = [];
-
-  const checks = [
-    { param: 'F Tire PSI',  base: baseline.frontTire?.psi,  test: testSettings.frontTire?.psi,  unit: 'psi' },
-    { param: 'R Tire PSI',  base: baseline.rearTire?.psi,   test: testSettings.rearTire?.psi,   unit: 'psi' },
-    { param: 'Fork PSI',    base: baseline.fork?.psi,       test: testSettings.fork?.psi,       unit: 'psi' },
-    { param: 'Shock PSI',   base: baseline.shock?.psi,      test: testSettings.shock?.psi,      unit: 'psi' },
-    // Fork damper rows — filtered by damperType
-    ...(() => {
-      const dt = baseline.fork?.damperType || '4way';
-      const rows = [];
-      if (dt !== 'none' && dt !== 'comp') rows.push({ param: dt==='single'?'Fork Rebound':'Fork LSR', base: baseline.fork?.lsr, test: testSettings.fork?.lsr, unit: 'clicks' });
-      if (dt === '3way' || dt === '4way')  rows.push({ param: 'Fork HSR', base: baseline.fork?.hsr, test: testSettings.fork?.hsr, unit: 'clicks' });
-      if (dt === 'comp' || dt === '2way' || dt === '3way' || dt === '4way') rows.push({ param: dt==='comp'?'Fork Compression':'Fork LSC', base: baseline.fork?.lsc, test: testSettings.fork?.lsc, unit: 'clicks' });
-      if (dt === '4way') rows.push({ param: 'Fork HSC', base: baseline.fork?.hsc, test: testSettings.fork?.hsc, unit: 'clicks' });
-      return rows;
-    })(),
-    // Shock damper rows — filtered by damperType
-    ...(() => {
-      const dt = baseline.shock?.damperType || '4way';
-      const rows = [];
-      if (dt !== 'none' && dt !== 'comp') rows.push({ param: dt==='single'?'Shock Rebound':'Shock LSR', base: baseline.shock?.lsr, test: testSettings.shock?.lsr, unit: 'clicks' });
-      if (dt === '3way' || dt === '4way')  rows.push({ param: 'Shock HSR', base: baseline.shock?.hsr, test: testSettings.shock?.hsr, unit: 'clicks' });
-      if (dt === 'comp' || dt === '2way' || dt === '3way' || dt === '4way') rows.push({ param: dt==='comp'?'Shock Compression':'Shock LSC', base: baseline.shock?.lsc, test: testSettings.shock?.lsc, unit: 'clicks' });
-      if (dt === '4way') rows.push({ param: 'Shock HSC', base: baseline.shock?.hsc, test: testSettings.shock?.hsc, unit: 'clicks' });
-      return rows;
-    })(),
-  ];
-
-  checks.forEach(({ param, base, test, unit }) => {
-    if (base == null && test == null) return;
-    const baseNum = parseFloat(base);
-    const testNum = parseFloat(test);
-
-    if (!isNaN(baseNum) && !isNaN(testNum) && baseNum !== testNum) {
-      const diff = testNum - baseNum;
-      rows.push({
-        param,
-        base: `${baseNum} ${unit}`,
-        test: `${testNum} ${unit}`,
-        diff: diff > 0 ? `+${diff}` : `${diff}`,
-        cssClass: diff > 0 ? 'positive' : 'negative',
-      });
-    }
-  });
-
-  return rows;
-}
-
-// ── NEW TEST MODAL ────────────────────────────────────────
-
-function showNewTestModal(bike) {
   const body = `
-    <div class="field-group">
-      <label class="field-label" for="test-name">Session Name</label>
-      <input id="test-name" class="field-input" type="text" placeholder="e.g. Whistler lower fork pressure">
+    <div class="field-group" style="margin-bottom:.75rem">
+      <label class="field-label">Session Title</label>
+      <input id="session-title" class="field-input" type="text" placeholder="e.g. Lower PSI test, +2 LSC clicks" autofocus>
     </div>
+    <p class="preset-modal-hint">Settings are pre-filled from your baseline. Change only what you're testing.</p>
+
+    <div class="settings-section-divider">Fork</div>
     <div class="field-row">
-      <div class="field-group">
-        <label class="field-label" for="test-trail">Trail / Location</label>
-        <input id="test-trail" class="field-input" type="text" placeholder="e.g. Hatcher Pass">
-      </div>
-      <div class="field-group">
-        <label class="field-label" for="test-conditions">Conditions</label>
-        <input id="test-conditions" class="field-input" type="text" placeholder="e.g. Wet loam, chunky">
-      </div>
+      ${spinnerField('Air Pressure (psi)', 'ss-fk-psi', fk.psi, 20, 350)}
+      ${fkDt !== 'none' && fkDt !== 'comp' ? spinnerField(fkDt==='single'?'Rebound':'LSR', 'ss-fk-lsr', fk.lsr, 0, 40) : ''}
     </div>
-    <div class="field-group">
-      <label class="field-label" for="test-weather">Weather</label>
-      <input id="test-weather" class="field-input" type="text" placeholder="e.g. 48°F, overcast">
+    ${fkDt === '3way' || fkDt === '4way' ? `<div class="field-row">${spinnerField('HSR','ss-fk-hsr',fk.hsr,0,40)}${spinnerField('LSC','ss-fk-lsc',fk.lsc,0,40)}</div>` : ''}
+    ${fkDt === 'comp' || fkDt === '2way' ? `<div class="field-row">${spinnerField('LSC','ss-fk-lsc',fk.lsc,0,40)}</div>` : ''}
+    ${fkDt === '4way' ? `<div class="field-row">${spinnerField('HSC','ss-fk-hsc',fk.hsc,0,40)}</div>` : ''}
+
+    <div class="settings-section-divider">Rear Shock</div>
+    <div class="field-row">
+      ${spinnerField('Air Pressure (psi)', 'ss-sk-psi', sk.psi, 20, 350)}
+      ${skDt !== 'none' && skDt !== 'comp' ? spinnerField(skDt==='single'?'Rebound':'LSR', 'ss-sk-lsr', sk.lsr, 0, 40) : ''}
     </div>
+    ${skDt === '3way' || skDt === '4way' ? `<div class="field-row">${spinnerField('HSR','ss-sk-hsr',sk.hsr,0,40)}${spinnerField('LSC','ss-sk-lsc',sk.lsc,0,40)}</div>` : ''}
+    ${skDt === 'comp' || skDt === '2way' ? `<div class="field-row">${spinnerField('LSC','ss-sk-lsc',sk.lsc,0,40)}</div>` : ''}
+    ${skDt === '4way' ? `<div class="field-row">${spinnerField('HSC','ss-sk-hsc',sk.hsc,0,40)}</div>` : ''}
 
-    <div class="divider"></div>
-    <p style="font-size:.8rem;color:var(--text-secondary);margin-bottom:1rem">
-      Enter only the settings you're changing. Everything else inherits from baseline.
-    </p>
-
-    ${testSettingsForm(bike.baseline || {})}
-
-    <div class="field-group" style="margin-top:1rem">
-      <label class="field-label" for="test-notes">Notes</label>
-      <textarea id="test-notes" class="field-input" rows="3" placeholder="Observations, feel, what to try next..."></textarea>
-    </div>
-  `;
+    <div class="settings-section-divider">Tires</div>
+    <div class="field-row">
+      ${spinnerField('Front PSI', 'ss-ft-psi', ft.psi, 10, 160)}
+      ${spinnerField('Rear PSI',  'ss-rt-psi', rt.psi, 10, 160)}
+    </div>`;
 
   const footer = `
     <button class="btn-secondary" id="modal-cancel">Cancel</button>
-    <button class="btn-primary" id="modal-start-test">Start Session</button>
-  `;
+    <button class="btn-primary" id="modal-start-session">Start Session</button>`;
 
   openModal('New Tuning Session', body, footer);
 
-  // Bind spinners via delegation — works after innerHTML is set
-  document.getElementById('modal-body').addEventListener('click', function spinHandler(e) {
+  // Spinner binding
+  document.getElementById('modal-body').addEventListener('click', e => {
     const btn = e.target.closest('.spinner-btn');
     if (!btn) return;
     const inp = document.getElementById(btn.dataset.id);
     if (!inp) return;
-    const step = parseFloat(btn.dataset.step || 1);
-    const min  = parseFloat(btn.dataset.min ?? 0);
-    const max  = parseFloat(btn.dataset.max ?? 9999);
-    const cur  = parseFloat(inp.value) || 0;
+    const step = 1, min = parseFloat(btn.dataset.min), max = parseFloat(btn.dataset.max);
+    const cur = parseFloat(inp.value) || 0;
     inp.value = btn.classList.contains('spinner-minus')
-      ? Math.max(min, parseFloat((cur - step).toFixed(3)))
-      : Math.min(max, parseFloat((cur + step).toFixed(3)));
-  });
-
-  // Range live update
-  document.querySelectorAll('#modal-body input[type="range"]').forEach(r => {
-    const valEl = document.querySelector(`#val-${r.id}`);
-    r.addEventListener('input', () => { if (valEl) valEl.textContent = r.value; });
+      ? Math.max(min, Math.round(cur - step))
+      : Math.min(max, Math.round(cur + step));
   });
 
   document.getElementById('modal-cancel').onclick = closeModal;
-  document.getElementById('modal-start-test').onclick = async () => {
-    const name = document.getElementById('test-name').value.trim();
-    if (!name) { showToast('Give this session a name', 'error'); return; }
+  document.getElementById('modal-start-session').onclick = () => {
+    const title = document.getElementById('session-title').value.trim();
+    if (!title) { showToast('Enter a session title', 'error'); return; }
+    const n = id => { const el = document.getElementById(id); return el && el.value !== '' ? parseFloat(el.value) : null; };
 
-    const testSettings = collectTestSettings(bike.baseline || {});
+    const session = {
+      id: 'session_' + Date.now(),
+      title,
+      startedAt: Date.now(),
+      endedAt: null,
+      notes: [],
+      settings: {
+        fork:      { ...fk, psi: n('ss-fk-psi'), lsr: n('ss-fk-lsr'), hsr: n('ss-fk-hsr'), lsc: n('ss-fk-lsc'), hsc: n('ss-fk-hsc') },
+        shock:     { ...sk, psi: n('ss-sk-psi'), lsr: n('ss-sk-lsr'), hsr: n('ss-sk-hsr'), lsc: n('ss-sk-lsc'), hsc: n('ss-sk-hsc') },
+        frontTire: { ...ft, psi: n('ss-ft-psi') },
+        rearTire:  { ...rt, psi: n('ss-rt-psi') },
+      },
+    };
 
-    try {
-      await createTestSession(bike.id, {
-        name,
-        trail:       document.getElementById('test-trail').value.trim(),
-        conditions:  document.getElementById('test-conditions').value.trim(),
-        weather:     document.getElementById('test-weather').value.trim(),
-        notes:       document.getElementById('test-notes').value.trim(),
-        testSettings,
-        baselineSnapshot: bike.baseline || {},
-        isActive: true,
-      });
-      showToast('Test session started', 'success');
-      closeModal();
-      renderTestingTab(bike);
-    } catch (e) {
-      showToast('Failed to create session: ' + e.message, 'error');
-    }
+    saveActiveSession(bike.id, session);
+    closeModal();
+    renderTestingTab(bike);
   };
 }
 
-function testSettingsForm(baseline) {
-  const bl = baseline;
-  const fk = bl.fork  || {};
-  const sk = bl.shock || {};
-  const ft = bl.frontTire || {};
-  const rt = bl.rearTire  || {};
-
-  const spinnerField = (label, id, min, max, step, val, unit = '') => `
+// ── ADD NOTE MODAL ─────────────────────────────────────────
+function showAddNoteModal(bike, session, onSaved) {
+  const body = `
     <div class="field-group">
-      <label class="field-label">${label}${unit ? ' <span class="field-unit">'+unit+'</span>' : ''}</label>
-      <div class="spinner-row">
-        <button type="button" class="spinner-btn spinner-minus" data-id="${id}" data-step="${step}" data-min="${min}" data-max="${max}">−</button>
-        <input type="number" id="${id}" class="field-input spinner-input" value="${val ?? 0}" min="${min}" max="${max}" step="${step}">
-        <button type="button" class="spinner-btn spinner-plus" data-id="${id}" data-step="${step}" data-min="${min}" data-max="${max}">+</button>
-      </div>
-    </div>
-  `;
+      <label class="field-label">Note</label>
+      <textarea id="note-text" class="field-input" rows="3"
+        placeholder="e.g. Felt more planted in corners but pushed through rock garden — try 1 more click LSC"></textarea>
+    </div>`;
+  const footer = `
+    <button class="btn-secondary" id="modal-cancel">Cancel</button>
+    <button class="btn-primary" id="modal-save-note">Add Note</button>`;
 
-  // Helper: render damper fields respecting damperType setting
-  const damperFields = (prefix, data) => {
-    const dt = data.damperType || '4way';
-    const showLSR = dt !== 'none' && dt !== 'comp';
-    const showHSR = dt === '3way' || dt === '4way';
-    const showLSC = dt === 'comp' || dt === '2way' || dt === '3way' || dt === '4way';
-    const showHSC = dt === '4way';
-    let html = '';
-    if (showLSR) html += spinnerField(dt==='single'?'Rebound':'LSR', prefix+'-lsr', 0, 40, 1, data.lsr ?? 10, 'clicks');
-    if (showHSR) html += spinnerField('HSR', prefix+'-hsr', 0, 40, 1, data.hsr ?? 5, 'clicks');
-    if (showLSC) html += spinnerField(dt==='comp'?'Compression':'LSC', prefix+'-lsc', 0, 40, 1, data.lsc ?? 8, 'clicks');
-    if (showHSC) html += spinnerField('HSC', prefix+'-hsc', 0, 40, 1, data.hsc ?? 4, 'clicks');
-    return html;
+  openModal('Add Note', body, footer);
+  setTimeout(() => document.getElementById('note-text')?.focus(), 50);
+  document.getElementById('modal-cancel').onclick = closeModal;
+  document.getElementById('modal-save-note').onclick = () => {
+    const text = document.getElementById('note-text').value.trim();
+    if (!text) { showToast('Write something first', 'error'); return; }
+    const updated = { ...session, notes: [...(session.notes||[]), { text, offsetMs: Date.now() - session.startedAt }] };
+    saveActiveSession(bike.id, updated);
+    closeModal();
+    onSaved();
   };
+}
 
-  return `
-    <div class="settings-section-divider">Tire Pressure</div>
-    <div class="field-row">
-      ${spinnerField('Front PSI', 'ts-ft-psi', 10, 160, 1, ft.psi ?? 25, 'psi')}
-      ${spinnerField('Rear PSI',  'ts-rt-psi', 10, 160, 1,   rt.psi ?? 25, 'psi')}
-    </div>
+// ── END SESSION MODAL ──────────────────────────────────────
+function showEndSessionModal(bike, session, sessions, onSaved) {
+  const bl = bike.baseline || {};
+  const s = session.settings || {};
 
-    ${fk.brand ? `
-    <div class="settings-section-divider">Fork</div>
-    ${fk.type !== 'coil' ? spinnerField('Air Pressure', 'ts-fk-psi', 20, 350, 1, fk.psi ?? 80, 'psi') : ''}
-    <div class="field-row">
-      ${damperFields('ts-fk', fk)}
+  // Compute diff between session settings and baseline
+  const FIELDS = [
+    ['Fork Air', bl.fork?.psi,       s.fork?.psi,       'psi'],
+    ['Fork LSR', bl.fork?.lsr,       s.fork?.lsr,       'clicks'],
+    ['Fork HSR', bl.fork?.hsr,       s.fork?.hsr,       'clicks'],
+    ['Fork LSC', bl.fork?.lsc,       s.fork?.lsc,       'clicks'],
+    ['Fork HSC', bl.fork?.hsc,       s.fork?.hsc,       'clicks'],
+    ['Shock Air',bl.shock?.psi,      s.shock?.psi,      'psi'],
+    ['Shock LSR',bl.shock?.lsr,      s.shock?.lsr,      'clicks'],
+    ['Shock HSR',bl.shock?.hsr,      s.shock?.hsr,      'clicks'],
+    ['Shock LSC',bl.shock?.lsc,      s.shock?.lsc,      'clicks'],
+    ['Shock HSC',bl.shock?.hsc,      s.shock?.hsc,      'clicks'],
+    ['Front PSI',bl.frontTire?.psi,  s.frontTire?.psi,  'psi'],
+    ['Rear PSI', bl.rearTire?.psi,   s.rearTire?.psi,   'psi'],
+  ].filter(([,base,test]) => base != null && test != null && base !== test);
+
+  const diffHtml = diff => diff.length === 0
+    ? '<div style="font-size:.85rem;color:var(--text-muted);padding:.5rem 0">No changes from baseline</div>'
+    : diff.map(([label, base, test, unit]) => `
+        <div class="preset-diff-row">
+          <span class="preset-diff-label">${label}</span>
+          <span class="preset-diff-vals">
+            <span class="preset-diff-base">${base} ${unit}</span>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 5h8M6 2l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="preset-diff-new">${test} ${unit}</span>
+          </span>
+        </div>`).join('');
+
+  const body = `
+    <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem">
+      How do you want to handle <strong>${escHtml(session.title)}</strong>?
+    </p>
+    ${FIELDS.length > 0 ? `
+    <div class="settings-section-divider">Changes from baseline</div>
+    <div class="preset-diff-list" style="margin-bottom:1rem">
+      ${diffHtml(FIELDS)}
     </div>` : ''}
+    <div style="display:flex;flex-direction:column;gap:.5rem">
+      <button class="btn-primary" id="end-adopt" style="text-align:left;padding:.65rem 1rem">
+        <div style="font-weight:700">Adopt as Baseline</div>
+        <div style="font-size:.75rem;font-weight:400;opacity:.8">Save session + update your baseline with these settings</div>
+      </button>
+      <button class="btn-secondary" id="end-save" style="text-align:left;padding:.65rem 1rem">
+        <div style="font-weight:600">Save for Reference</div>
+        <div style="font-size:.75rem;color:var(--text-muted)">Keep session logged without changing baseline</div>
+      </button>
+      <button class="btn-text" id="end-discard" style="font-size:.82rem;color:var(--danger);padding:.5rem">
+        Discard Session
+      </button>
+    </div>`;
 
-    ${sk.brand ? `
-    <div class="settings-section-divider">Rear Shock</div>
-    ${sk.type !== 'coil' ? spinnerField('Air Pressure', 'ts-sk-psi', 20, 350, 1, sk.psi ?? 140, 'psi') : ''}
-    <div class="field-row">
-      ${damperFields('ts-sk', sk)}
-    </div>` : ''}
-  `;
-}
+  openModal('End Session', body, '');
 
-function collectTestSettings(baseline) {
-  const num = id => { const el = document.getElementById(id); return el ? parseFloat(el.value) : null; };
-  const fk = baseline.fork  || {};
-  const sk = baseline.shock || {};
+  // Adopt as baseline
+  document.getElementById('end-adopt').onclick = async () => {
+    try {
+      // Merge session settings into baseline
+      const newBaseline = {
+        ...bl,
+        fork:      { ...bl.fork,      ...s.fork },
+        shock:     { ...bl.shock,     ...s.shock },
+        frontTire: { ...bl.frontTire, ...s.frontTire },
+        rearTire:  { ...bl.rearTire,  ...s.rearTire },
+      };
+      await updateBike(bike.id, { baseline: newBaseline });
+      bike.baseline = newBaseline;
 
-  const numIfPresent = id => {
-    const el = document.getElementById(id);
-    return el && el.type !== 'hidden' ? parseFloat(el.value) : null;
+      const ended = { ...session, endedAt: Date.now(), adopted: true };
+      await createTestSession(bike.id, ended);
+      saveActiveSession(bike.id, null);
+      showToast('Session saved + baseline updated', 'success');
+      closeModal();
+      onSaved();
+    } catch(e) { showToast('Failed: ' + e.message, 'error'); }
   };
-  return {
-    frontTire: { ...baseline.frontTire, psi: num('ts-ft-psi') },
-    rearTire:  { ...baseline.rearTire,  psi: num('ts-rt-psi') },
-    fork:  fk.brand ? { ...fk,
-      psi: num('ts-fk-psi'),
-      lsr: numIfPresent('ts-fk-lsr'),
-      hsr: numIfPresent('ts-fk-hsr'),
-      lsc: numIfPresent('ts-fk-lsc'),
-      hsc: numIfPresent('ts-fk-hsc'),
-    } : null,
-    shock: sk.brand ? { ...sk,
-      psi: num('ts-sk-psi'),
-      lsr: numIfPresent('ts-sk-lsr'),
-      hsr: numIfPresent('ts-sk-hsr'),
-      lsc: numIfPresent('ts-sk-lsc'),
-      hsc: numIfPresent('ts-sk-hsc'),
-    } : null,
+
+  // Save for reference only
+  document.getElementById('end-save').onclick = async () => {
+    try {
+      const ended = { ...session, endedAt: Date.now(), adopted: false };
+      await createTestSession(bike.id, ended);
+      saveActiveSession(bike.id, null);
+      showToast('Session saved', 'success');
+      closeModal();
+      onSaved();
+    } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+  };
+
+  // Discard
+  document.getElementById('end-discard').onclick = () => {
+    saveActiveSession(bike.id, null);
+    closeModal();
+    onSaved();
   };
 }
 
-// ── ADOPT / DISCARD ───────────────────────────────────────
-
-async function adoptSession(session, bike) {
-  if (!confirm(`Adopt "${session.name}" settings as your new baseline? This overwrites the current baseline.`)) return;
-  try {
-    const newBaseline = mergeTestIntoBaseline(bike.baseline || {}, session.testSettings || {});
-    await updateBike(bike.id, { baseline: newBaseline });
-    await updateTestSession(bike.id, session.id, { adopted: true, isActive: false });
-    bike.baseline = newBaseline;
-    showToast('Baseline updated', 'success');
-    renderTestingTab(bike);
-  } catch (e) {
-    showToast('Failed to adopt: ' + e.message, 'error');
-  }
+// ── ELAPSED TIMER ──────────────────────────────────────────
+function startElapsedTimer(startedAt) {
+  const el = document.getElementById('session-elapsed');
+  if (!el) return;
+  const update = () => {
+    const ms = Date.now() - startedAt;
+    el.textContent = fmtElapsed(ms);
+  };
+  update();
+  const interval = setInterval(() => {
+    if (!document.getElementById('session-elapsed')) { clearInterval(interval); return; }
+    update();
+  }, 1000);
 }
 
-async function discardSession(session, bike) {
-  if (!confirm('Discard this session? It will be kept in history but marked inactive.')) return;
-  try {
-    await updateTestSession(bike.id, session.id, { isActive: false });
-    showToast('Session discarded', 'info');
-    renderTestingTab(bike);
-  } catch (e) {
-    showToast('Failed: ' + e.message, 'error');
-  }
+// ── HELPERS ────────────────────────────────────────────────
+function fmtElapsed(ms) {
+  if (!ms) return '0:00';
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return h > 0
+    ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+    : `${m}:${String(s).padStart(2,'0')}`;
 }
 
-async function confirmDeleteSession(session, bike) {
-  if (!confirm(`Permanently delete "${session.name}"?`)) return;
-  try {
-    await deleteTestSession(bike.id, session.id);
-    showToast('Session deleted', 'success');
-    renderTestingTab(bike);
-  } catch (e) {
-    showToast('Delete failed', 'error');
-  }
-}
-
-function mergeTestIntoBaseline(baseline, testSettings) {
-  const merged = { ...baseline };
-  if (testSettings.frontTire) merged.frontTire = { ...(baseline.frontTire || {}), ...testSettings.frontTire };
-  if (testSettings.rearTire)  merged.rearTire  = { ...(baseline.rearTire  || {}), ...testSettings.rearTire  };
-  if (testSettings.fork)      merged.fork       = { ...(baseline.fork      || {}), ...testSettings.fork       };
-  if (testSettings.shock)     merged.shock      = { ...(baseline.shock     || {}), ...testSettings.shock      };
-  return merged;
+function fmtDate(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
 }
 
 function escHtml(s) {
-  return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
