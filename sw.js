@@ -1,4 +1,4 @@
-const CACHE_NAME = 'quiver-v7';
+const CACHE_NAME = 'quiver-v8';
 const BASE = '/Bike-Setup';
 const APP_SHELL = [
   `${BASE}/`,
