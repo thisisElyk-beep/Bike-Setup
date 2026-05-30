@@ -525,7 +525,7 @@ svg { display: block; flex-shrink: 0; }
   gap: 0;
   flex: 1;
   min-height: 0;
-  height: calc(100vh - var(--header-h) - var(--tab-nav-h));
+  overflow: hidden;
 }
 
 .silhouette-panel {
