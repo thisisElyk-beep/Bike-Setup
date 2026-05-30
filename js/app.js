@@ -471,14 +471,22 @@ function renderFleetStats() {
     const { getComponents } = await import('./db.js');
     try {
       const comps = await getComponents(b.id);
+      const hoursLog = JSON.parse(localStorage.getItem(`quiver_hours_${b.id}`) || '[]');
+      const totalHours = hoursLog.reduce((s, e) => s + (e.hours || 0), 0);
+      const SERVICE_CATS = ['Fork','Rear Shock','Dropper Post','Brakes'];
       return comps.filter(c => {
-        if (!c.serviceIntervalMonths) return false;
+        if (!SERVICE_CATS.includes(c.category)) return false;
         const log = c.serviceLog || [];
         const lastDate = log[0]?.date || c.installDate;
-        if (!lastDate) return false;
-        const due = new Date(lastDate + 'T00:00:00');
-        due.setMonth(due.getMonth() + parseFloat(c.serviceIntervalMonths));
-        return due < new Date();
+        // Months-based check
+        if (c.serviceIntervalMonths && lastDate) {
+          const due = new Date(lastDate + 'T00:00:00');
+          due.setMonth(due.getMonth() + parseFloat(c.serviceIntervalMonths));
+          if (due < new Date()) return true;
+        }
+        // Hours-based check
+        if (c.rideHours != null && c.rideHours >= 50) return true;
+        return false;
       }).length;
     } catch { return 0; }
   })).then(counts => {

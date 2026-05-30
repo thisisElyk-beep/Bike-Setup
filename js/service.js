@@ -226,10 +226,10 @@ function renderServiceCard(sc, installed, bike) {
       const effHours     = interval.hours;
       const effMonths    = interval.months;
       // "Whichever comes first" — check both hours and months
-      let pct = 0, status = 'ok', label = effHours ? `${Math.max(0,effHours-hoursSince).toFixed(0)}h remaining` : 'No interval';
+      let pct = 0, status = 'ok', label = effHours ? `${Math.max(0,effHours-hoursSince).toFixed(0)} ride hrs remaining` : 'No interval';
       if (effHours) {
         const hPct = Math.min(120, (hoursSince / effHours) * 100);
-        if (hPct > pct) { pct = hPct; label = hPct >= 100 ? `${(hoursSince-effHours).toFixed(0)}h overdue` : `${Math.max(0,effHours-hoursSince).toFixed(0)}h remaining`; }
+        if (hPct > pct) { pct = hPct; label = hPct >= 100 ? `${(hoursSince-effHours).toFixed(0)} ride hrs overdue` : `${Math.max(0,effHours-hoursSince).toFixed(0)} ride hrs remaining`; }
       }
       if (effMonths && lastSvc) {
         const monthsSince = (Date.now() - new Date(lastSvc.date+'T00:00:00').getTime()) / (30.44*24*3600*1000);
@@ -283,7 +283,7 @@ function tierBar(label, current, maxVal, min, pct, status, statusLabel, compId, 
       <div class="svc-progress-fill ${status === 'overdue' ? 'svc-overdue-pulse' : ''}"
            style="width:${barPct}%;background:${barColor}"></div>
     </div>
-    ${current != null ? `<div class="svc-tier-sub">${current.toFixed(0)}h / ${maxVal}h</div>` : ''}
+    ${current != null ? `<div class="svc-tier-sub">${current.toFixed(0)} / ${maxVal} ride hrs</div>` : ''}
     <button class="btn-secondary svc-log-service-btn" style="font-size:.75rem;margin-top:.35rem;width:100%"
             data-comp-id="${compId}" data-category="${category}" data-tier-id="${tierId}">
       Log Service
@@ -496,8 +496,8 @@ function renderCustomServiceCards(components, bike) {
     const statusLabel = !cs.intervalHours
       ? (lastSvc ? `Last: ${fmtDate(lastSvc.date)}` : 'No interval set')
       : status === 'overdue'
-        ? `${(hoursSince - cs.intervalHours).toFixed(0)}h overdue`
-        : `${remaining.toFixed(0)}h remaining`;
+        ? `${(hoursSince - cs.intervalHours).toFixed(0)} ride hrs overdue`
+        : `${remaining.toFixed(0)} ride hrs remaining`;
     const barColor = status === 'overdue' ? 'var(--danger)' : status === 'soon' ? 'var(--accent)' : 'var(--success)';
 
     return `<div class="svc-card" data-custom-id="${cs.id}">
