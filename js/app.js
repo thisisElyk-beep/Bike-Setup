@@ -102,39 +102,51 @@ function renderSetupChangelog(bike) {
 
 // ── HELP MODAL ─────────────────────────────────────────────
 function showHelpModal() {
+  const tabs = [
+    { icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`, name: 'Setup', desc: 'Tap zones on the bike diagram to configure your baseline — fork, shock, tires, cockpit, drivetrain.' },
+    { icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 4V3a3 3 0 016 0v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`, name: 'Components', desc: 'Log installed parts with brand, model, and install date. Referenced by the Service tab.' },
+    { icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2v12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`, name: 'Adjust', desc: 'Quick trailside access to pressures and damper clicks. Changes save directly to your baseline.' },
+    { icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 13V6l5-4 5 4v7" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="6" y="9" width="4" height="4" stroke="currentColor" stroke-width="1.2"/></svg>`, name: 'Tuning', desc: 'Start a session to test a setting change. Log notes as you ride, then adopt or discard.' },
+    { icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="12" r="2.5" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 12V6l4-2 3 3v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`, name: 'Rides', desc: 'Log rides with GPX import or manual entry. Compare performance across setups on the same route.' },
+    { icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="2" width="10" height="12" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M6 6h4M6 9h4M6 12h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`, name: 'Presets', desc: 'Save contextual setups (Bike Park, Wet Conditions). Only stores what differs from baseline — reference only.' },
+    { icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3.5l2.5 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`, name: 'Service', desc: 'Track service intervals for fork, shock, dropper, and brakes. Log ride hours to count down to milestones.' },
+  ];
+
+  const dampers = [
+    { label: 'None',              desc: 'PSI only — no damper adjusters' },
+    { label: 'Rebound Only',      desc: 'Single rebound dial — RockShox Select, budget forks' },
+    { label: 'Compression Only',  desc: 'Single compression dial' },
+    { label: 'LSR + LSC',         desc: 'Low-speed rebound + compression — RockShox Select+' },
+    { label: 'LSR + HSR + LSC',   desc: 'Adds high-speed rebound' },
+    { label: 'Full 4-Way',        desc: 'LSR, HSR, LSC, HSC — Fox Factory, RockShox Ultimate' },
+  ];
+
   const body = `
-    <div class="help-section">
-      <div class="help-tab-intro">Quiver is a bike setup tracker. Add your bikes, dial in your settings, and track changes over time.</div>
+    <p class="help-intro">Bike setup tracker. Add bikes, dial in your settings, track changes over time.</p>
+
+    <div class="help-section-title">Tabs</div>
+    <div class="help-cards">
+      ${tabs.map(t => `
+        <div class="help-card">
+          <div class="help-card-icon">${t.icon}</div>
+          <div>
+            <div class="help-card-name">${t.name}</div>
+            <div class="help-card-desc">${t.desc}</div>
+          </div>
+        </div>`).join('')}
     </div>
-    <div class="help-section">
-      <div class="help-section-title">Tabs</div>
-      <div class="help-item"><strong>Setup</strong> — tap zones on the bike diagram to enter fork, shock, tire, cockpit, and drivetrain settings. Your saved setup is the baseline everything else references.</div>
-      <div class="help-item"><strong>Components</strong> — log your installed parts (brand, model, install date). Used by the Service tab.</div>
-      <div class="help-item"><strong>Adjust</strong> — quick access to your key pressure and damper settings for trailside tweaks. Changes save back to your baseline.</div>
-      <div class="help-item"><strong>Tune Log</strong> (MTB) — log tuning sessions. Compare a modified setup against your baseline and record how changes felt trailside.</div>
-      <div class="help-item"><strong>Rides & Testing</strong> — log rides or segments with GPX import or manual entry. Compare performance across different setups on the same route or trail.</div>
-      <div class="help-item"><strong>Presets</strong> — save contextual setups (Bike Park Day, Wet Conditions, Race Day). Presets only store what differs from your baseline — they're a reference card, not a replacement.</div>
-      <div class="help-item"><strong>Service</strong> — track service intervals for fork, shock, dropper, and brakes. Log ride hours to count down toward service milestones.</div>
-    </div>
-    <div class="help-section">
-      <div class="help-section-title">Tips</div>
-      <div class="help-item">Use <strong>Presets</strong> to quickly reference what settings to change for different conditions — they don't affect your baseline.</div>
-      <div class="help-item">The <strong>Rides tab works for MTB too</strong> — great for tracking segment times across different suspension setups.</div>
-      <div class="help-item">The <strong>Export</strong> button (inside a bike) lets you copy your setup as text or download a themed PDF.</div>
-      <div class="help-item">Your data is saved per-profile. Each profile has its own bikes, setups, and service history.</div>
-    </div>
-    <div class="help-section">
-      <div class="help-section-title">Damper Types</div>
-      <div class="help-item"><strong>None</strong> — no damper adjusters (PSI only)</div>
-      <div class="help-item"><strong>Rebound Only</strong> — single rebound dial (e.g. RockShox Select, budget forks)</div>
-      <div class="help-item"><strong>Compression Only</strong> — single compression dial</div>
-      <div class="help-item"><strong>LSR + LSC</strong> — low-speed rebound and compression (e.g. RockShox Select+)</div>
-      <div class="help-item"><strong>LSR + HSR + LSC</strong> — adds high-speed rebound</div>
-      <div class="help-item"><strong>Full 4-Way</strong> — LSR, HSR, LSC, HSC (e.g. Fox Factory, RockShox Ultimate)</div>
+
+    <div class="help-section-title" style="margin-top:1.25rem">Damper Types</div>
+    <div class="help-dampers">
+      ${dampers.map(d => `
+        <div class="help-damper-row">
+          <span class="help-damper-label">${d.label}</span>
+          <span class="help-damper-desc">${d.desc}</span>
+        </div>`).join('')}
     </div>`;
 
   const footer = `<button class="btn-primary" id="modal-cancel">Got it</button>`;
-  openModal('How to use Quiver', body, footer);
+  openModal('Quiver', body, footer);
   document.getElementById('modal-cancel').onclick = closeModal;
 }
 

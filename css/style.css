@@ -3092,37 +3092,83 @@ textarea.field-input {
 }
 
 /* ─── HELP MODAL ─────────────────────────────────────────── */
-.help-section { margin-bottom: 1.25rem; }
-.help-section:last-child { margin-bottom: 0; }
-.help-tab-intro {
-  font-size: .88rem;
+.help-intro {
+  font-size: .85rem;
   color: var(--text-secondary);
-  line-height: 1.6;
-  padding: .75rem;
-  background: var(--bg-elevated);
-  border-radius: var(--radius-sm);
-  border-left: 3px solid var(--accent);
+  margin-bottom: 1rem;
+  line-height: 1.5;
 }
 .help-section-title {
   font-family: var(--font-display);
-  font-size: .68rem;
+  font-size: .64rem;
   font-weight: 700;
-  letter-spacing: .1em;
+  letter-spacing: .12em;
   text-transform: uppercase;
   color: var(--accent);
   margin-bottom: .6rem;
-  padding-bottom: .4rem;
-  border-bottom: 1px solid var(--border);
 }
-.help-item {
-  font-size: .83rem;
+.help-cards {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+.help-card {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  padding: .6rem .75rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.help-card-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: .1rem;
+}
+.help-card-name {
+  font-family: var(--font-display);
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: .15rem;
+  letter-spacing: .02em;
+}
+.help-card-desc {
+  font-size: .76rem;
   color: var(--text-secondary);
-  line-height: 1.55;
-  padding: .3rem 0;
-  border-bottom: 1px solid var(--border);
+  line-height: 1.45;
 }
-.help-item:last-child { border-bottom: none; }
-.help-item strong { color: var(--text-primary); }
+.help-dampers {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.help-damper-row {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  padding: .45rem .75rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.help-damper-row:last-child { border-bottom: none; }
+.help-damper-row:nth-child(odd) { background: var(--bg-raised); }
+.help-damper-label {
+  font-family: var(--font-mono);
+  font-size: .74rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex-shrink: 0;
+  min-width: 130px;
+}
+.help-damper-desc {
+  font-size: .74rem;
+  color: var(--text-secondary);
+}
 
 /* ─── PWA INSTALL BANNER ─────────────────────────────────── */
 .pwa-banner {
