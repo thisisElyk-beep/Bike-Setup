@@ -234,10 +234,22 @@ async function loadDemoData() {
   // ── Components ────────────────────────────────────────────
   const comps = [
     { category: 'Frame',         brand: 'Santa Cruz', model: 'Bronson V4 CC', installDate: '2024-03-15', notes: 'Large, Gloss Olive Green' },
-    { category: 'Fork',          brand: 'Fox',        model: '36 Factory GRIP2 160mm', installDate: '2024-03-15', serviceLog: [{id:'sl1', date:'2024-04-01', type:'Lower Leg Service', tier:'lowers', notes:'Fox 5wt bath oil, 10ml per leg'}], rideHours: 42 },
-    { category: 'Rear Shock',    brand: 'Fox',        model: 'Float X2 Factory', installDate: '2024-03-15', serviceLog: [{id:'sl2', date:'2024-04-01', type:'Air Can Service', tier:'aircan', notes:'Cleaned seals, re-greased IFP'}], rideHours: 38 },
-    { category: 'Dropper Post',  brand: 'Fox',        model: 'Transfer Factory 150mm', installDate: '2024-03-15', rideHours: 68 },
-    { category: 'Brakes',        brand: 'SRAM',       model: 'Maven Ultimate', installDate: '2024-03-15', notes: '4-piston front and rear', serviceLog: [{id:'sl3', date:'2024-03-15', type:'Brake Bleed', tier:'bleed', notes:'Fresh DOT 5.1'}] },
+    // Fork: lowers done recently (42h since), full overhaul getting close (92h since, due at 125h)
+    { category: 'Fork',          brand: 'Fox',        model: '36 Factory GRIP2 160mm', installDate: '2024-03-15',
+      serviceLog: [{id:'sl1', date:'2026-03-10', type:'Lower Leg Service', tier:'lowers', notes:'Fox 5wt bath oil, 10ml per leg'}],
+      rideHours: 42, serviceIntervalMonths: 6 },
+    // Rear Shock: air can done, full overhaul at 78h — 1 week overdue (due at 50h, now 57h since service)
+    { category: 'Rear Shock',    brand: 'Fox',        model: 'Float X2 Factory', installDate: '2024-03-15',
+      serviceLog: [{id:'sl2', date:'2026-01-15', type:'Air Can Service', tier:'aircan', notes:'Cleaned seals, re-greased IFP (internal piston)'}],
+      rideHours: 57, serviceIntervalMonths: 5 },
+    // Dropper: clean & lube at 68h — approaching interval (due at 50h, overdue by 18h)
+    { category: 'Dropper Post',  brand: 'Fox',        model: 'Transfer Factory 150mm', installDate: '2024-03-15',
+      serviceLog: [{id:'sl4', date:'2025-11-01', type:'Clean & Lube', tier:'clean', notes:'Wiper seal cleaned'}],
+      rideHours: 68, serviceIntervalMonths: 7 },
+    // Brakes: bled at install, now 14 months ago — 1 week overdue (interval 6 months, last bleed 6.25 months ago)
+    { category: 'Brakes',        brand: 'SRAM',       model: 'Maven Ultimate', installDate: '2024-03-15', notes: '4-piston front and rear',
+      serviceLog: [{id:'sl3', date:'2025-11-15', type:'Brake Bleed', tier:'bleed', notes:'Fresh DOT 5.1, full system flush'}],
+      serviceIntervalMonths: 6 },
     { category: 'Cassette',      brand: 'SRAM',       model: 'GX Eagle 10-52T', installDate: '2024-03-15' },
     { category: 'Chainring',     brand: 'SRAM',       model: 'GX Eagle 32T', installDate: '2024-03-15' },
     { category: 'Front Hub',     brand: 'Industry Nine', model: 'Hydra 6-bolt', installDate: '2024-03-15' },
@@ -322,6 +334,15 @@ async function loadDemoData() {
     createdAt: new Date('2024-05-17T10:15:00').getTime(),
   });
 
+  // Seed localStorage hours log so service.js progress bars show correctly
+  const hoursLog = [
+    { id: '1', hours: 20, timestamp: new Date('2026-02-01').getTime() },
+    { id: '2', hours: 25, timestamp: new Date('2026-03-01').getTime() },
+    { id: '3', hours: 22, timestamp: new Date('2026-04-01').getTime() },
+    { id: '4', hours: 25, timestamp: new Date('2026-05-01').getTime() },
+  ];
+  localStorage.setItem(`quiver_hours_${bikeId}`, JSON.stringify(hoursLog));
+
   showToast('Demo loaded — explore away!', 'success');
   _bikes = await getBikes();
   renderFleet();
@@ -348,15 +369,24 @@ async function initNotifications(bikes) {
     try { comps = await getComponents(bike.id); } catch(e) { continue; }
 
     const SERVICE_CATS = ['Fork','Rear Shock','Dropper Post','Brakes'];
+    const hoursLog = JSON.parse(localStorage.getItem(`quiver_hours_${b.id}`) || '[]');
+    const totalHours = hoursLog.reduce((s, e) => s + (e.hours || 0), 0);
     const overdue = comps.filter(c => {
       if (!SERVICE_CATS.includes(c.category)) return false;
-      if (!c.serviceIntervalMonths) return false;
       const log = c.serviceLog || [];
       const lastDate = log[0]?.date || c.installDate;
-      if (!lastDate) return false;
-      const due = new Date(lastDate + 'T00:00:00');
-      due.setMonth(due.getMonth() + parseFloat(c.serviceIntervalMonths));
-      return due < new Date();
+      // Check months-based interval
+      if (c.serviceIntervalMonths && lastDate) {
+        const due = new Date(lastDate + 'T00:00:00');
+        due.setMonth(due.getMonth() + parseFloat(c.serviceIntervalMonths));
+        if (due < new Date()) return true;
+      }
+      // Check hours-based (rideHours vs 50h default)
+      if (c.rideHours != null) {
+        const sinceService = c.rideHours;
+        if (sinceService >= 50) return true;
+      }
+      return false;
     });
 
     if (overdue.length > 0) {
