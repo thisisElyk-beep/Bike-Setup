@@ -234,10 +234,10 @@ async function loadDemoData() {
   // ── Components ────────────────────────────────────────────
   const comps = [
     { category: 'Frame',         brand: 'Santa Cruz', model: 'Bronson V4 CC', installDate: '2024-03-15', notes: 'Large, Gloss Olive Green' },
-    { category: 'Fork',          brand: 'Fox',        model: '36 Factory GRIP2 160mm', installDate: '2024-03-15' },
-    { category: 'Rear Shock',    brand: 'Fox',        model: 'Float X2 Factory', installDate: '2024-03-15' },
-    { category: 'Dropper Post',  brand: 'Fox',        model: 'Transfer Factory 150mm', installDate: '2024-03-15' },
-    { category: 'Brakes',        brand: 'SRAM',       model: 'Maven Ultimate', installDate: '2024-03-15', notes: '4-piston front and rear' },
+    { category: 'Fork',          brand: 'Fox',        model: '36 Factory GRIP2 160mm', installDate: '2024-03-15', serviceLog: [{id:'sl1', date:'2024-04-01', type:'Lower Leg Service', tier:'lowers', notes:'Fox 5wt bath oil, 10ml per leg'}], rideHours: 42 },
+    { category: 'Rear Shock',    brand: 'Fox',        model: 'Float X2 Factory', installDate: '2024-03-15', serviceLog: [{id:'sl2', date:'2024-04-01', type:'Air Can Service', tier:'aircan', notes:'Cleaned seals, re-greased IFP'}], rideHours: 38 },
+    { category: 'Dropper Post',  brand: 'Fox',        model: 'Transfer Factory 150mm', installDate: '2024-03-15', rideHours: 68 },
+    { category: 'Brakes',        brand: 'SRAM',       model: 'Maven Ultimate', installDate: '2024-03-15', notes: '4-piston front and rear', serviceLog: [{id:'sl3', date:'2024-03-15', type:'Brake Bleed', tier:'bleed', notes:'Fresh DOT 5.1'}] },
     { category: 'Cassette',      brand: 'SRAM',       model: 'GX Eagle 10-52T', installDate: '2024-03-15' },
     { category: 'Chainring',     brand: 'SRAM',       model: 'GX Eagle 32T', installDate: '2024-03-15' },
     { category: 'Front Hub',     brand: 'Industry Nine', model: 'Hydra 6-bolt', installDate: '2024-03-15' },
@@ -281,29 +281,29 @@ async function loadDemoData() {
   // ── Rides — two runs of same trail ────────────────────────
   const trail = 'Whistler — A-Line';
   await createRide(bikeId, {
-    name: trail,
+    routeName: trail,
     date: '2024-05-10',
-    duration: 312,     // 5:12
+    duration: 312,
     distance: 3.8,
     elevationGain: 18,
     elevationLoss: 412,
     avgHeartRate: 148,
+    avgSpeed: 14.2,
     notes: 'Baseline setup. Front felt a touch harsh through the rollers. Good grip on berms.',
-    settings: { forkPsi: 82, shockPsi: 215, frontTirePsi: 24, rearTirePsi: 28 },
-    gpxImported: false,
+    forkPsi: 82, shockPsi: 215, frontTirePsi: 24, rearTirePsi: 28,
   });
 
   await createRide(bikeId, {
-    name: trail,
+    routeName: trail,
     date: '2024-05-17',
-    duration: 298,     // 4:58 — 14s faster
+    duration: 298,
     distance: 3.8,
     elevationGain: 18,
     elevationLoss: 412,
     avgHeartRate: 152,
-    notes: 'Dropped fork 4psi, added 1 token. Noticeably more supple through chatter. Carried more speed into berms. 14 seconds faster.',
-    settings: { forkPsi: 78, shockPsi: 215, frontTirePsi: 24, rearTirePsi: 28 },
-    gpxImported: false,
+    avgSpeed: 15.1,
+    notes: 'Dropped fork 4psi. Noticeably more supple through chatter. Carried more speed into berms. 14 seconds faster.',
+    forkPsi: 78, shockPsi: 215, frontTirePsi: 24, rearTirePsi: 28,
   });
 
   // ── Tuning session ────────────────────────────────────────
@@ -936,13 +936,13 @@ function bindModal() {
 function initTheme() {
   const profileId = localStorage.getItem('dialed_active_profile');
   const saved = profileId ? localStorage.getItem(`quiver_theme_${profileId}`) : null;
-  if (saved && saved !== 'dark') {
-    // Saved theme — apply it ('dark' → treat as 'amber' since Classic is removed)
-    document.documentElement.setAttribute('data-theme', saved);
+  // Remap legacy theme IDs
+  const remapped = saved === 'dark' ? 'carbon' : saved === 'amber' ? 'carbon' : saved;
+  if (remapped) {
+    document.documentElement.setAttribute('data-theme', remapped);
   } else {
     // No saved theme or legacy 'dark' → follow system preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.setAttribute('data-theme', prefersDark ? 'carbon' : 'light');
+    document.documentElement.setAttribute('data-theme', 'light');
   }
 }
 
