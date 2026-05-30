@@ -263,7 +263,7 @@ function showNewTestModal(bike) {
     <button class="btn-primary" id="modal-start-test">Start Session</button>
   `;
 
-  openModal('New Tune Session', body, footer);
+  openModal('New Tuning Session', body, footer);
 
   // Bind spinners via delegation — works after innerHTML is set
   document.getElementById('modal-body').addEventListener('click', function spinHandler(e) {
