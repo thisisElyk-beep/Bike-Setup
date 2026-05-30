@@ -3282,3 +3282,58 @@ textarea.field-input {
   .active-session-card { margin: 0 1rem 1rem; }
   .session-card { margin: 0 1rem .75rem; }
 }
+
+/* ─── END SESSION OPTIONS ────────────────────────────────── */
+.end-session-options {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-top: .25rem;
+}
+.end-option-btn {
+  width: 100%;
+  text-align: left;
+  padding: .75rem 1rem;
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.end-option-btn:hover { border-color: var(--border-strong); }
+.end-option-btn.end-option-selected {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.end-option-title {
+  font-family: var(--font-display);
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: .2rem;
+}
+.end-option-sub {
+  font-size: .76rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ─── DELTA CHIPS ────────────────────────────────────────── */
+.session-chip-changed {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+  font-weight: 600;
+}
+
+/* ─── SERVICE TAB ADDITIONS ──────────────────────────────── */
+.svc-add-custom-wrap {
+  padding: .5rem 2rem 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+.svc-edit-interval-btn {
+  opacity: 0;
+  transition: opacity .15s;
+}
+.svc-tier:hover .svc-edit-interval-btn { opacity: 1; }
