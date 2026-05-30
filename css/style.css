@@ -490,14 +490,16 @@ svg { display: block; flex-shrink: 0; }
 
 .tab-content {
   display: none;
-  flex: 1;
   flex-direction: column;
   overflow-y: auto;
   align-items: stretch;
   justify-content: flex-start;
   min-height: 0;
+  flex: 1;
 }
-.tab-content.active { display: flex; }
+.tab-content.active {
+  display: flex;
+}
 
 /* ─── TAB TOOLBAR ──────────────────────────────────── */
 .tab-toolbar {
@@ -3346,30 +3348,3 @@ textarea.field-input {
 .svc-tier:hover .svc-edit-interval-btn { opacity: 1; }
 
 #bike-svg, .mini-silhouette { shape-rendering: geometricPrecision; }
-
-/* ─── LAYOUT OVERRIDE — force tab content to start at top ─ */
-.tab-content,
-.tab-content.active {
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-start !important;
-  align-items: stretch !important;
-  overflow-y: auto !important;
-  min-height: 0 !important;
-}
-.tab-content > * {
-  flex-shrink: 0 !important;
-}
-.empty-state {
-  justify-content: flex-start !important;
-  flex: 0 1 auto !important;
-  padding-top: 4rem !important;
-}
-#app {
-  height: 100vh !important;
-  overflow: hidden !important;
-}
-.view {
-  min-height: 0 !important;
-  flex: 1 !important;
-}
