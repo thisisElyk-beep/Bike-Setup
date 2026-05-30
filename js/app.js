@@ -17,7 +17,6 @@ let _bikes = [];
 let _bike  = null;
 let _tab   = 'setup';
 let _cockpitMode    = false;
-let _scratchpadTimer = null;
 
 const $ = id => document.getElementById(id);
 
@@ -472,21 +471,6 @@ function exitCockpitMode(bike) {
 
 // ── SCRATCHPAD ────────────────────────────────────────────
 function initScratchpad(bike) {
-  const area  = $('scratchpad-area');
-  const input = $('scratchpad-input');
-  const hint  = $('scratchpad-saving');
-  if (!area || !input) return;
-
-  area.style.display = '';
-  input.value = bike.notes || '';
-  if (hint) hint.textContent = '';
-
-  input.oninput = () => {
-    if (_scratchpadTimer) clearTimeout(_scratchpadTimer);
-    if (hint) hint.textContent = 'Saving...';
-    _scratchpadTimer = setTimeout(async () => {
-      try {
-        await updateBike(bike.id, { notes: input.value });
         bike.notes = input.value;
         if (hint) { hint.textContent = 'Saved'; setTimeout(() => { if (hint) hint.textContent = ''; }, 1500); }
       } catch { if (hint) hint.textContent = 'Save failed'; }
@@ -558,7 +542,6 @@ function showView(name) {
     $('bike-name-header').classList.add('hidden');
     $('btn-export').classList.add('hidden');
     $('btn-add-bike-header').classList.remove('hidden');
-    $('scratchpad-area').style.display = 'none';
     $('preset-quick-load').style.display = 'none';
     _bike = null;
   }
