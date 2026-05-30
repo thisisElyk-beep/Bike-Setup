@@ -13,8 +13,8 @@ import { setActiveProfile } from './db.js';
 
 // ── THEME MANAGEMENT ──────────────────────────────────────
 export const THEMES = [
-  { id: 'light',   name: 'Light',          swatch: ['#f2f0ef','#c2610e'] },
-  { id: 'carbon',  name: 'Carbon',         swatch: ['#0a0a0a','#ff4d4d'] },
+  { id: 'light',   name: 'Light',          swatch: ['#f4f6f8','#2563eb'] },
+  { id: 'carbon',  name: 'Carbon',         swatch: ['#0d0d0d','#5b8df0'] },
   { id: 'amber',   name: 'Amber',          swatch: ['#0c0b09','#f59e0b'] },
   { id: 'teal',    name: 'Midnight Teal',  swatch: ['#070c10','#00d4b8'] },
   { id: 'slate',   name: 'Slate',          swatch: ['#0b0d14','#818cf8'] },
