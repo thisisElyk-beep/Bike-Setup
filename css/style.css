@@ -1910,7 +1910,7 @@ textarea.field-input {
 
 .ride-card { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding:.85rem 1rem; background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-md); margin-bottom:.5rem; transition:border-color var(--transition),background var(--transition); }
 .ride-card:hover { background:var(--bg-elevated); border-color:var(--border-md); }
-.ride-card-main { flex:1; min-width:0; }
+.ride-card-main { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .ride-card-date { font-family:var(--font-mono); font-size:.72rem; color:var(--text-muted); margin-bottom:.2rem; }
 .ride-card-route { font-size:.92rem; font-weight:600; color:var(--text-primary); margin-bottom:.35rem; }
 .ride-card-stats { display:flex; align-items:center; gap:.35rem; flex-wrap:wrap; font-size:.82rem; color:var(--text-secondary); }
