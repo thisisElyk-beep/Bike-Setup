@@ -68,10 +68,16 @@ function renderTuningView(container, bike, sessions, active) {
   container.querySelectorAll('.session-delete-btn').forEach(btn => {
     btn.onclick = async () => {
       if (!confirm('Delete this session?')) return;
+      const card = btn.closest('.session-card');
+      if (card) card.style.display = 'none'; // hide immediately
       try {
         await deleteTestSession(bike.id, btn.dataset.id);
-        renderTestingTab(bike);
-      } catch(e) { showToast('Delete failed', 'error'); }
+        sessions = sessions.filter(s => s.id !== btn.dataset.id);
+        showToast('Session deleted', 'success');
+      } catch(e) {
+        if (card) card.style.display = '';
+        showToast('Delete failed', 'error');
+      }
     };
   });
 }
@@ -82,15 +88,25 @@ function renderActiveSession(session) {
   const fk = bl.fork || {}, sk = bl.shock || {};
   const ft = bl.frontTire || {}, rt = bl.rearTire || {};
 
+  // Build chips showing current value + delta from baseline
+  const baselineBl = session.baseline || {};
+  const bfk = baselineBl.fork || {}, bsk = baselineBl.shock || {};
+  const bft = baselineBl.frontTire || {}, brt = baselineBl.rearTire || {};
+  const chip = (label, val, baseVal) => {
+    if (val == null) return null;
+    const delta = baseVal != null && val !== baseVal ? ` (${val > baseVal ? '+' : ''}${val - baseVal})` : '';
+    const changed = baseVal != null && val !== baseVal;
+    return { label: `${label} ${val}${delta}`, changed };
+  };
   const settingChips = [
-    fk.psi  != null ? `Fork ${fk.psi} psi` : null,
-    fk.lsr  != null ? `LSR ${fk.lsr}` : null,
-    fk.lsc  != null ? `LSC ${fk.lsc}` : null,
-    sk.psi  != null ? `Shock ${sk.psi} psi` : null,
-    sk.lsr  != null ? `Rebound ${sk.lsr}` : null,
-    sk.lsc  != null ? `Compression ${sk.lsc}` : null,
-    ft.psi  != null ? `F Tire ${ft.psi} psi` : null,
-    rt.psi  != null ? `R Tire ${rt.psi} psi` : null,
+    chip('Fork', fk.psi, bfk.psi),
+    chip('LSR', fk.lsr, bfk.lsr),
+    chip('LSC Fork', fk.lsc, bfk.lsc),
+    chip('Shock', sk.psi, bsk.psi),
+    chip(sk.damperType==='single'?'Rebound':'LSR', sk.lsr, bsk.lsr),
+    chip('LSC Shock', sk.lsc, bsk.lsc),
+    chip('F Tire', ft.psi, bft.psi),
+    chip('R Tire', rt.psi, brt.psi),
   ].filter(Boolean);
 
   const notes = session.notes || [];
@@ -114,7 +130,7 @@ function renderActiveSession(session) {
     </div>
 
     <div class="active-session-chips">
-      ${settingChips.map(c => `<span class="session-chip">${c}</span>`).join('')}
+      ${settingChips.map(c => `<span class="session-chip ${c.changed ? 'session-chip-changed' : ''}">${escHtml(c.label)}</span>`).join('')}
     </div>
 
     ${notes.length > 0 ? `
@@ -237,6 +253,7 @@ function showNewSessionModal(bike, sessions, onSaved) {
       startedAt: Date.now(),
       endedAt: null,
       notes: [],
+      baseline: JSON.parse(JSON.stringify(bike.baseline || {})),
       settings: {
         fork:      { ...fk, psi: n('ss-fk-psi'), lsr: n('ss-fk-lsr'), hsr: n('ss-fk-hsr'), lsc: n('ss-fk-lsc'), hsc: n('ss-fk-hsc') },
         shock:     { ...sk, psi: n('ss-sk-psi'), lsr: n('ss-sk-lsr'), hsr: n('ss-sk-hsr'), lsc: n('ss-sk-lsc'), hsc: n('ss-sk-hsc') },
@@ -318,62 +335,62 @@ function showEndSessionModal(bike, session, sessions, onSaved) {
     <div class="preset-diff-list" style="margin-bottom:1rem">
       ${diffHtml(FIELDS)}
     </div>` : ''}
-    <div style="display:flex;flex-direction:column;gap:.5rem">
-      <button class="btn-primary" id="end-adopt" style="text-align:left;padding:.65rem 1rem">
-        <div style="font-weight:700">Adopt as Baseline</div>
-        <div style="font-size:.75rem;font-weight:400;opacity:.8">Save session + update your baseline with these settings</div>
+    <div class="end-session-options">
+      <button class="end-option-btn" data-choice="adopt" id="end-adopt">
+        <div class="end-option-title">Adopt as Baseline</div>
+        <div class="end-option-sub">Save session + update your baseline with these settings</div>
       </button>
-      <button class="btn-secondary" id="end-save" style="text-align:left;padding:.65rem 1rem">
-        <div style="font-weight:600">Save for Reference</div>
-        <div style="font-size:.75rem;color:var(--text-muted)">Keep session logged without changing baseline</div>
+      <button class="end-option-btn" data-choice="save" id="end-save">
+        <div class="end-option-title">Save for Reference</div>
+        <div class="end-option-sub">Keep session logged without changing baseline</div>
       </button>
-      <button class="btn-text" id="end-discard" style="font-size:.82rem;color:var(--danger);padding:.5rem">
-        Discard Session
+      <button class="end-option-btn" data-choice="discard" id="end-discard">
+        <div class="end-option-title" style="color:var(--danger)">Discard Session</div>
+        <div class="end-option-sub">Remove session without saving</div>
       </button>
-    </div>`;
+    </div>
+    <button class="btn-primary" id="end-confirm" disabled style="width:100%;margin-top:.75rem;opacity:.4">
+      Confirm
+    </button>`;
 
   openModal('End Session', body, '');
 
-  // Adopt as baseline
-  document.getElementById('end-adopt').onclick = async () => {
-    try {
-      // Merge session settings into baseline
-      const newBaseline = {
-        ...bl,
-        fork:      { ...bl.fork,      ...s.fork },
-        shock:     { ...bl.shock,     ...s.shock },
-        frontTire: { ...bl.frontTire, ...s.frontTire },
-        rearTire:  { ...bl.rearTire,  ...s.rearTire },
-      };
-      await updateBike(bike.id, { baseline: newBaseline });
-      bike.baseline = newBaseline;
+  let selectedChoice = null;
+  const confirmBtn = document.getElementById('end-confirm');
 
-      const ended = { ...session, endedAt: Date.now(), adopted: true };
-      await createTestSession(bike.id, ended);
-      saveActiveSession(bike.id, null);
-      showToast('Session saved + baseline updated', 'success');
+  document.querySelectorAll('.end-option-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.end-option-btn').forEach(b => b.classList.remove('end-option-selected'));
+      btn.classList.add('end-option-selected');
+      selectedChoice = btn.dataset.choice;
+      confirmBtn.disabled = false;
+      confirmBtn.style.opacity = '1';
+    };
+  });
+
+  confirmBtn.onclick = async () => {
+    if (!selectedChoice) return;
+    try {
+      if (selectedChoice === 'adopt') {
+        const newBaseline = { ...bl, fork: { ...bl.fork, ...s.fork }, shock: { ...bl.shock, ...s.shock }, frontTire: { ...bl.frontTire, ...s.frontTire }, rearTire: { ...bl.rearTire, ...s.rearTire } };
+        await updateBike(bike.id, { baseline: newBaseline });
+        bike.baseline = newBaseline;
+        const ended = { ...session, endedAt: Date.now(), adopted: true };
+        await createTestSession(bike.id, ended);
+        saveActiveSession(bike.id, null);
+        showToast('Session saved + baseline updated', 'success');
+      } else if (selectedChoice === 'save') {
+        const ended = { ...session, endedAt: Date.now(), adopted: false };
+        await createTestSession(bike.id, ended);
+        saveActiveSession(bike.id, null);
+        showToast('Session saved', 'success');
+      } else {
+        saveActiveSession(bike.id, null);
+        showToast('Session discarded', 'info');
+      }
       closeModal();
       onSaved();
     } catch(e) { showToast('Failed: ' + e.message, 'error'); }
-  };
-
-  // Save for reference only
-  document.getElementById('end-save').onclick = async () => {
-    try {
-      const ended = { ...session, endedAt: Date.now(), adopted: false };
-      await createTestSession(bike.id, ended);
-      saveActiveSession(bike.id, null);
-      showToast('Session saved', 'success');
-      closeModal();
-      onSaved();
-    } catch(e) { showToast('Failed: ' + e.message, 'error'); }
-  };
-
-  // Discard
-  document.getElementById('end-discard').onclick = () => {
-    saveActiveSession(bike.id, null);
-    closeModal();
-    onSaved();
   };
 }
 

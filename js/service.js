@@ -41,6 +41,31 @@ const SERVICE_COMPONENTS = [
   },
 ];
 
+
+// ── DEFAULT COMPONENT INTERVAL OVERRIDES ─────────────────
+// Users can customize intervals for built-in components
+function defaultIntervalsKey(bikeId) { return `quiver_svc_intervals_${bikeId}`; }
+
+function getDefaultIntervals(bikeId) {
+  try { return JSON.parse(localStorage.getItem(defaultIntervalsKey(bikeId)) || '{}'); }
+  catch { return {}; }
+}
+
+function saveDefaultInterval(bikeId, category, tierId, hours, months) {
+  const all = getDefaultIntervals(bikeId);
+  if (!all[category]) all[category] = {};
+  all[category][tierId] = { hours: hours || null, months: months || null };
+  localStorage.setItem(defaultIntervalsKey(bikeId), JSON.stringify(all));
+}
+
+function getTierInterval(bikeId, category, tier) {
+  const overrides = getDefaultIntervals(bikeId);
+  const override = overrides[category]?.[tier.id];
+  if (override) return override;
+  // Default values from the tier definition
+  return { hours: tier.hours || null, months: tier.months || null };
+}
+
 // ── HOURS LOG (localStorage) ───────────────────────────────
 function hoursKey(bikeId) { return `quiver_hours_${bikeId}`; }
 
@@ -106,16 +131,22 @@ function renderServiceView(container, bike, components) {
       }).join('')}
       ${renderCustomServiceCards(components, bike)}
     </div>
-    <div style="padding:0 2rem 1.5rem;text-align:center">
-      <button class="btn-text" id="svc-add-custom" style="font-size:.78rem;color:var(--text-muted)">
-        <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-        Track another component
+    <div class="svc-add-custom-wrap">
+      <button class="btn-secondary" id="svc-add-custom" style="font-size:.82rem">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Track Another Component
       </button>
     </div>`;
 
   document.getElementById('svc-log-hours').onclick = () => showLogHoursModal(bike, components, () => renderServiceView(container, bike, components));
 
   document.getElementById('svc-add-custom')?.addEventListener('click', () => showAddCustomServiceModal(bike, components, () => renderServiceTab(bike)));
+
+  container.querySelectorAll('.svc-edit-interval-btn').forEach(btn => {
+    const sc  = SERVICE_COMPONENTS.find(s => s.category === btn.dataset.category);
+    const tier = sc?.tiers.find(t => t.id === btn.dataset.tierId);
+    if (sc && tier) btn.onclick = () => showEditIntervalModal(bike, sc, tier, () => renderServiceView(container, bike, components));
+  });
 
   container.querySelectorAll('.svc-log-service-btn').forEach(btn => {
     const compId   = btn.dataset.compId;
@@ -191,13 +222,22 @@ function renderServiceCard(sc, installed, bike) {
       // Hours-based
       const sinceDateStr = lastSvc?.date || comp.installDate || null;
       const hoursSince   = getHoursSince(bike.id, sinceDateStr);
-      const pct = Math.min(120, (hoursSince / tier.hours) * 100);
-      const status = pct >= 100 ? 'overdue' : pct >= 80 ? 'soon' : 'ok';
-      const remaining = Math.max(0, tier.hours - hoursSince);
-      const label = status === 'overdue'
-        ? `${(hoursSince - tier.hours).toFixed(0)}h overdue`
-        : `${remaining.toFixed(0)}h remaining`;
-      return tierBar(tier.label, hoursSince, tier.hours, 0, pct, status, label, comp.id, sc.category, tier.id);
+      const interval     = getTierInterval(bike.id, sc.category, tier);
+      const effHours     = interval.hours;
+      const effMonths    = interval.months;
+      // "Whichever comes first" — check both hours and months
+      let pct = 0, status = 'ok', label = effHours ? `${Math.max(0,effHours-hoursSince).toFixed(0)}h remaining` : 'No interval';
+      if (effHours) {
+        const hPct = Math.min(120, (hoursSince / effHours) * 100);
+        if (hPct > pct) { pct = hPct; label = hPct >= 100 ? `${(hoursSince-effHours).toFixed(0)}h overdue` : `${Math.max(0,effHours-hoursSince).toFixed(0)}h remaining`; }
+      }
+      if (effMonths && lastSvc) {
+        const monthsSince = (Date.now() - new Date(lastSvc.date+'T00:00:00').getTime()) / (30.44*24*3600*1000);
+        const mPct = Math.min(120, (monthsSince / effMonths) * 100);
+        if (mPct > pct) { pct = mPct; label = mPct >= 100 ? `${Math.round(monthsSince-effMonths)}mo overdue` : `${Math.round(effMonths-monthsSince)}mo remaining`; }
+      }
+      status = pct >= 100 ? 'overdue' : pct >= 80 ? 'soon' : 'ok';
+      return tierBar(tier.label, effHours ? hoursSince : null, effHours, 0, pct, status, label, comp.id, sc.category, tier.id, bike.id);
     }).join('');
 
     return `<div class="svc-card">
@@ -222,7 +262,7 @@ function renderServiceCard(sc, installed, bike) {
   }).join('');
 }
 
-function tierBar(label, current, max, min, pct, status, statusLabel, compId, category, tierId) {
+function tierBar(label, current, maxVal, min, pct, status, statusLabel, compId, category, tierId, bikeId) {
   const barColor = status === 'overdue' ? 'var(--danger)'
                  : status === 'soon'    ? 'var(--accent)'
                  : 'var(--success)';
@@ -230,13 +270,20 @@ function tierBar(label, current, max, min, pct, status, statusLabel, compId, cat
   return `<div class="svc-tier">
     <div class="svc-tier-labels">
       <span class="svc-tier-name">${label}</span>
-      <span class="svc-tier-status ${status}">${statusLabel}</span>
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <span class="svc-tier-status ${status}">${statusLabel}</span>
+        <button class="svc-edit-interval-btn btn-icon-sm" title="Edit interval"
+                data-comp-id="${compId}" data-category="${category}" data-tier-id="${tierId}"
+                style="color:var(--text-muted);opacity:.6">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7 1.5l2.5 2.5L3.5 9.5H1V7L7 1.5z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
     </div>
     <div class="svc-progress-track">
       <div class="svc-progress-fill ${status === 'overdue' ? 'svc-overdue-pulse' : ''}"
            style="width:${barPct}%;background:${barColor}"></div>
     </div>
-    ${current != null ? `<div class="svc-tier-sub">${current.toFixed(0)}h / ${max}h</div>` : ''}
+    ${current != null ? `<div class="svc-tier-sub">${current.toFixed(0)}h / ${maxVal}h</div>` : ''}
     <button class="btn-secondary svc-log-service-btn" style="font-size:.75rem;margin-top:.35rem;width:100%"
             data-comp-id="${compId}" data-category="${category}" data-tier-id="${tierId}">
       Log Service
@@ -349,6 +396,77 @@ function showLogServiceModal(bike, comp, sc, tier, onSaved) {
   };
 }
 
+
+
+// ── EDIT INTERVAL MODAL ───────────────────────────────────
+function showEditIntervalModal(bike, sc, tier, onSaved) {
+  const current = getTierInterval(bike.id, sc.category, tier);
+  const body = `
+    <p style="font-size:.83rem;color:var(--text-secondary);margin-bottom:.75rem">
+      Customize the service interval for <strong>${tier.label}</strong> on your ${sc.label}.
+      Set hours, months, or both — whichever comes first will trigger the reminder.
+    </p>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Every <span class="field-unit">hours</span></label>
+        <div class="spinner-row">
+          <button type="button" class="spinner-btn spinner-minus" data-id="ei-hours" data-step="5" data-min="0" data-max="500">−</button>
+          <input type="number" id="ei-hours" class="field-input spinner-input"
+                 value="${current.hours || ''}" min="0" max="500" step="5" placeholder="—">
+          <button type="button" class="spinner-btn spinner-plus" data-id="ei-hours" data-step="5" data-min="0" data-max="500">+</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Every <span class="field-unit">months</span></label>
+        <div class="spinner-row">
+          <button type="button" class="spinner-btn spinner-minus" data-id="ei-months" data-step="1" data-min="0" data-max="60">−</button>
+          <input type="number" id="ei-months" class="field-input spinner-input"
+                 value="${current.months || ''}" min="0" max="60" step="1" placeholder="—">
+          <button type="button" class="spinner-btn spinner-plus" data-id="ei-months" data-step="1" data-min="0" data-max="60">+</button>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:.72rem;color:var(--text-muted);margin-top:.25rem">
+      Leave a field empty to ignore that interval type.
+    </div>`;
+
+  const footer = `
+    <button class="btn-text" id="ei-reset" style="color:var(--text-muted);font-size:.78rem;margin-right:auto">Reset to default</button>
+    <button class="btn-secondary" id="modal-cancel">Cancel</button>
+    <button class="btn-primary" id="ei-save">Save</button>`;
+
+  openModal(`${tier.label} — ${sc.label}`, body, footer);
+
+  document.getElementById('modal-body').addEventListener('click', e => {
+    const btn = e.target.closest('.spinner-btn');
+    if (!btn) return;
+    const inp = document.getElementById(btn.dataset.id);
+    if (!inp) return;
+    const step = parseFloat(btn.dataset.step), min = parseFloat(btn.dataset.min), max = parseFloat(btn.dataset.max);
+    const cur = parseFloat(inp.value) || 0;
+    inp.value = btn.classList.contains('spinner-minus') ? Math.max(min, cur-step) : Math.min(max, cur+step);
+    if (inp.value === '0') inp.value = '';
+  });
+
+  document.getElementById('modal-cancel').onclick = closeModal;
+  document.getElementById('ei-reset').onclick = () => {
+    // Clear override — will fall back to tier defaults
+    const all = getDefaultIntervals(bike.id);
+    if (all[sc.category]) delete all[sc.category][tier.id];
+    localStorage.setItem(defaultIntervalsKey(bike.id), JSON.stringify(all));
+    showToast('Reset to default', 'success');
+    closeModal();
+    onSaved();
+  };
+  document.getElementById('ei-save').onclick = () => {
+    const hours  = parseFloat(document.getElementById('ei-hours').value)  || null;
+    const months = parseFloat(document.getElementById('ei-months').value) || null;
+    saveDefaultInterval(bike.id, sc.category, tier.id, hours, months);
+    showToast('Interval updated', 'success');
+    closeModal();
+    onSaved();
+  };
+}
 
 // ── CUSTOM SERVICE TRACKING ───────────────────────────────
 // Custom tracked components stored in localStorage per bike
