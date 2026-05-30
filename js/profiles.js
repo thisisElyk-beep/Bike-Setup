@@ -78,14 +78,8 @@ const STORAGE_KEY_ACTIVE   = 'dialed_active_profile';
 export function getProfiles() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_PROFILES);
-    const profiles = raw ? JSON.parse(raw) : [];
-    // Always ensure "default" profile exists first
-    if (!profiles.find(p => p.id === 'default')) {
-      profiles.unshift({ id: 'default', name: 'Default', createdAt: 0 });
-      saveProfiles(profiles);
-    }
-    return profiles;
-  } catch { return [{ id: 'default', name: 'Default', createdAt: 0 }]; }
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
 }
 
 function saveProfiles(profiles) {
@@ -117,8 +111,9 @@ export function deleteProfile(profileId) {
   if (profileId === 'default') throw new Error('Cannot delete the default profile');
   const profiles = getProfiles().filter(p => p.id !== profileId);
   saveProfiles(profiles);
-  if (getActiveProfileId() === profileId) {
-    activateProfile('default');
+  const remaining = getProfiles();
+  if (getActiveProfileId() === profileId && remaining.length > 0) {
+    activateProfile(remaining[0].id);
   }
 }
 
@@ -155,22 +150,21 @@ export function showProfilePicker(onSelected) {
         </svg>
         <span class="profile-picker-app-name">Quiver</span>
       </div>
-      <h2 class="profile-picker-title">Who's riding?</h2>
-      <p class="profile-picker-sub">Select your profile to view your fleet and settings</p>
-      <div class="profile-list" id="profile-list">
+      <h2 class="profile-picker-title">Welcome to Quiver</h2>
+      <p class="profile-picker-sub">Create a profile to save your bikes, setup, and service history</p>
+      ${profiles.length > 0 ? `<div class="profile-list" id="profile-list">
         ${profiles.map(p => `
           <button class="profile-btn" data-id="${p.id}">
             <div class="profile-btn-avatar">${p.name.charAt(0).toUpperCase()}</div>
             <span class="profile-btn-name">${escHtml(p.name)}</span>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 7h6M8 5l2 2-2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>`).join('')}
-      </div>
-      <div class="profile-picker-divider"></div>
+      </div><div class="profile-picker-divider"></div>` : ''}
       <div class="profile-new-section" id="profile-new-section">
-        <button class="btn-text profile-new-toggle" id="profile-new-toggle">
+        ${profiles.length === 0 ? '' : `<button class="btn-text profile-new-toggle" id="profile-new-toggle">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          New Profile
-        </button>
+          Add another profile
+        </button>`}
         <div class="profile-new-form hidden" id="profile-new-form">
           <input id="profile-new-name" class="field-input" type="text" placeholder="Your name" maxlength="32">
           <div style="display:flex;gap:.5rem;margin-top:.5rem">

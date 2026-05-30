@@ -56,8 +56,13 @@ async function loadFleet() {
     _bikes = await getBikes();
   } catch (e) {
     _bikes = [];
-    if (e.message?.includes('projectId') || e.code === 'failed-precondition') {
+    const offline = !navigator.onLine;
+    if (offline) {
+      showToast('You\'re offline — showing cached data', 'info');
+    } else if (e.message?.includes('projectId') || e.code === 'failed-precondition') {
       showToast('Configure Firebase in js/config.js to persist data', 'info');
+    } else {
+      showToast('Connection error — data may not load correctly', 'error');
     }
   }
   renderFleet();
@@ -93,6 +98,90 @@ function renderSetupChangelog(bike) {
         ${log.length > 8 ? `<div class="changelog-more">+${log.length-8} older entries</div>` : ''}
       </div>
     </div>`;
+}
+
+
+// ── HELP MODAL ─────────────────────────────────────────────
+function showHelpModal() {
+  const body = `
+    <div class="help-section">
+      <div class="help-tab-intro">Quiver is a bike setup tracker. Add your bikes, dial in your settings, and track changes over time.</div>
+    </div>
+    <div class="help-section">
+      <div class="help-section-title">Tabs</div>
+      <div class="help-item"><strong>Setup</strong> — tap zones on the bike diagram to enter fork, shock, tire, cockpit, and drivetrain settings. Your saved setup is the baseline everything else references.</div>
+      <div class="help-item"><strong>Components</strong> — log your installed parts (brand, model, install date). Used by the Service tab.</div>
+      <div class="help-item"><strong>Adjust</strong> — quick access to your key pressure and damper settings for trailside tweaks. Changes save back to your baseline.</div>
+      <div class="help-item"><strong>Test Mode</strong> (MTB) — log A/B test sessions. Compare a modified setup against your baseline and record how it felt.</div>
+      <div class="help-item"><strong>Rides & Testing</strong> — log rides or segments with GPX import or manual entry. Compare performance across different setups on the same route or trail.</div>
+      <div class="help-item"><strong>Presets</strong> — save contextual setups (Bike Park Day, Wet Conditions, Race Day). Presets only store what differs from your baseline — they're a reference card, not a replacement.</div>
+      <div class="help-item"><strong>Service</strong> — track service intervals for fork, shock, dropper, and brakes. Log ride hours to count down toward service milestones.</div>
+    </div>
+    <div class="help-section">
+      <div class="help-section-title">Tips</div>
+      <div class="help-item">Use <strong>Presets</strong> to quickly reference what settings to change for different conditions — they don't affect your baseline.</div>
+      <div class="help-item">The <strong>Rides tab works for MTB too</strong> — great for tracking segment times across different suspension setups.</div>
+      <div class="help-item">The <strong>Export</strong> button (inside a bike) lets you copy your setup as text or download a themed PDF.</div>
+      <div class="help-item">Your data is saved per-profile. Each profile has its own bikes, setups, and service history.</div>
+    </div>
+    <div class="help-section">
+      <div class="help-section-title">Damper Types</div>
+      <div class="help-item"><strong>None</strong> — no damper adjusters (PSI only)</div>
+      <div class="help-item"><strong>Rebound Only</strong> — single rebound dial (e.g. RockShox Select, budget forks)</div>
+      <div class="help-item"><strong>Compression Only</strong> — single compression dial</div>
+      <div class="help-item"><strong>LSR + LSC</strong> — low-speed rebound and compression (e.g. RockShox Select+)</div>
+      <div class="help-item"><strong>LSR + HSR + LSC</strong> — adds high-speed rebound</div>
+      <div class="help-item"><strong>Full 4-Way</strong> — LSR, HSR, LSC, HSC (e.g. Fox Factory, RockShox Ultimate)</div>
+    </div>`;
+
+  const footer = `<button class="btn-primary" id="modal-cancel">Got it</button>`;
+  openModal('How to use Quiver', body, footer);
+  document.getElementById('modal-cancel').onclick = closeModal;
+}
+
+// ── PWA INSTALL PROMPT ─────────────────────────────────────
+let _deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+  // Show install banner after 30s if not already installed
+  setTimeout(() => {
+    if (_deferredInstallPrompt && !window.matchMedia('(display-mode: standalone)').matches) {
+      showInstallBanner();
+    }
+  }, 30000);
+});
+
+function showInstallBanner() {
+  const existing = document.getElementById('pwa-install-banner');
+  if (existing) return;
+  const banner = document.createElement('div');
+  banner.id = 'pwa-install-banner';
+  banner.className = 'pwa-banner';
+  banner.innerHTML = `
+    <div class="pwa-banner-text">
+      <strong>Add Quiver to your home screen</strong>
+      <span>Access your setup offline, anytime</span>
+    </div>
+    <div class="pwa-banner-actions">
+      <button class="btn-primary pwa-install-btn" style="font-size:.78rem;padding:.35rem .75rem">Install</button>
+      <button class="btn-text pwa-dismiss-btn" style="font-size:.78rem;color:var(--text-muted)">Not now</button>
+    </div>`;
+  document.body.appendChild(banner);
+  setTimeout(() => banner.classList.add('pwa-banner-visible'), 100);
+
+  banner.querySelector('.pwa-install-btn').onclick = async () => {
+    if (_deferredInstallPrompt) {
+      _deferredInstallPrompt.prompt();
+      const { outcome } = await _deferredInstallPrompt.userChoice;
+      _deferredInstallPrompt = null;
+    }
+    banner.remove();
+  };
+  banner.querySelector('.pwa-dismiss-btn').onclick = () => {
+    banner.classList.remove('pwa-banner-visible');
+    setTimeout(() => banner.remove(), 300);
+  };
 }
 
 // ── PUSH NOTIFICATIONS ────────────────────────────────────
@@ -277,9 +366,10 @@ function openBike(bike) {
   // Rides tab: road/gravel only. Test Mode tab: MTB/DJ/hardtail only.
   const ridesTab   = $('tab-btn-rides');
   const testingTab = $('tab-btn-testing');
+  // Rides: all bike types. Test Mode: MTB/Hardtail/DJ only (not road/gravel)
   const isRoadGravel = ['road','gravel'].includes(bike.type);
-  if (ridesTab)   ridesTab.classList.toggle('hidden',   !isRoadGravel);
-  if (testingTab) testingTab.classList.toggle('hidden',  isRoadGravel);
+  if (ridesTab)   ridesTab.classList.remove('hidden');
+  if (testingTab) testingTab.classList.toggle('hidden', isRoadGravel);
   $('btn-export').classList.remove('hidden');
   $('btn-add-bike-header').classList.add('hidden');
   showView('detail');
