@@ -57,7 +57,7 @@ function docData(snap) {
 }
 
 function colData(snap) {
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
 }
 
 // ── BIKES ─────────────────────────────────────────────────
