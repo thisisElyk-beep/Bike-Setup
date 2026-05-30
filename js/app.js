@@ -112,7 +112,7 @@ function showHelpModal() {
       <div class="help-item"><strong>Setup</strong> — tap zones on the bike diagram to enter fork, shock, tire, cockpit, and drivetrain settings. Your saved setup is the baseline everything else references.</div>
       <div class="help-item"><strong>Components</strong> — log your installed parts (brand, model, install date). Used by the Service tab.</div>
       <div class="help-item"><strong>Adjust</strong> — quick access to your key pressure and damper settings for trailside tweaks. Changes save back to your baseline.</div>
-      <div class="help-item"><strong>Test Mode</strong> (MTB) — log A/B test sessions. Compare a modified setup against your baseline and record how it felt.</div>
+      <div class="help-item"><strong>Tune Log</strong> (MTB) — log tuning sessions. Compare a modified setup against your baseline and record how changes felt trailside.</div>
       <div class="help-item"><strong>Rides & Testing</strong> — log rides or segments with GPX import or manual entry. Compare performance across different setups on the same route or trail.</div>
       <div class="help-item"><strong>Presets</strong> — save contextual setups (Bike Park Day, Wet Conditions, Race Day). Presets only store what differs from your baseline — they're a reference card, not a replacement.</div>
       <div class="help-item"><strong>Service</strong> — track service intervals for fork, shock, dropper, and brakes. Log ride hours to count down toward service milestones.</div>
