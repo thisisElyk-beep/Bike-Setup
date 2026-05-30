@@ -195,6 +195,143 @@ function showInstallBanner() {
   };
 }
 
+
+// ── DEMO BIKE ─────────────────────────────────────────────
+async function loadDemoData() {
+  if (!confirm('Load a demo bike to explore Quiver? You can delete it anytime.')) return;
+
+  showToast('Loading demo…', 'info');
+
+  const { createBike, createComponent, createPreset, createRide, createTestSession } = await import('./db.js');
+
+  // ── Bike ──────────────────────────────────────────────────
+  const bikeId = await createBike({
+    name: 'Bronson V4 — Demo',
+    type: 'mtb',
+    suspensionType: 'full',
+    year: 2024,
+    baseline: {
+      frame: { brand: 'Santa Cruz', model: 'Bronson V4', size: 'Large', year: '2024', material: 'Carbon CC', color: 'Gloss Olive Green' },
+      fork: {
+        brand: 'Fox', model: '36 Factory GRIP2', travel: '160mm', offset: '44mm',
+        type: 'air', damperType: '4way',
+        psi: 82, tokens: 1,
+        lsr: 10, hsr: 3, lsc: 8, hsc: 4,
+      },
+      shock: {
+        brand: 'Fox', model: 'Float X2 Factory', stroke: '65mm',
+        type: 'air', damperType: '4way',
+        psi: 215, tokens: 0,
+        lsr: 10, hsr: 3, lsc: 8, hsc: 4,
+      },
+      frontTire: { brand: 'Maxxis', model: 'Assegai', size: '29x2.5', compound: 'MaxxGrip', casing: 'DD', psi: 24 },
+      rearTire:  { brand: 'Maxxis', model: 'Minion DHR2', size: '29x2.4', compound: 'MaxxTerra', casing: 'EXO+', psi: 28 },
+      handlebar: { brand: 'Deity', model: 'Skywire', width: '800mm', rise: '20mm', sweep: '8°' },
+      stem:      { brand: 'Deity', model: 'Copperhead', length: '50mm', clamp: '35mm' },
+      drivetrain:{ brand: 'SRAM', model: 'GX Eagle', cassette: '10-52T', chainring: '32T', chain: 'GX Eagle' },
+      dropper:   { brand: 'Fox', model: 'Transfer Factory', travel: '150mm', diameter: '31.6mm' },
+    },
+  });
+
+  // ── Components ────────────────────────────────────────────
+  const comps = [
+    { category: 'Frame',         brand: 'Santa Cruz', model: 'Bronson V4 CC', installDate: '2024-03-15', notes: 'Large, Gloss Olive Green' },
+    { category: 'Fork',          brand: 'Fox',        model: '36 Factory GRIP2 160mm', installDate: '2024-03-15' },
+    { category: 'Rear Shock',    brand: 'Fox',        model: 'Float X2 Factory', installDate: '2024-03-15' },
+    { category: 'Dropper Post',  brand: 'Fox',        model: 'Transfer Factory 150mm', installDate: '2024-03-15' },
+    { category: 'Brakes',        brand: 'SRAM',       model: 'Maven Ultimate', installDate: '2024-03-15', notes: '4-piston front and rear' },
+    { category: 'Cassette',      brand: 'SRAM',       model: 'GX Eagle 10-52T', installDate: '2024-03-15' },
+    { category: 'Chainring',     brand: 'SRAM',       model: 'GX Eagle 32T', installDate: '2024-03-15' },
+    { category: 'Front Hub',     brand: 'Industry Nine', model: 'Hydra 6-bolt', installDate: '2024-03-15' },
+    { category: 'Rear Hub',      brand: 'Industry Nine', model: 'Hydra 6-bolt', installDate: '2024-03-15' },
+    { category: 'Handlebar',     brand: 'Deity',      model: 'Skywire 800mm', installDate: '2024-03-15' },
+    { category: 'Saddle',        brand: 'SDG',        model: 'Bel-Air V3', installDate: '2024-03-15' },
+    { category: 'Pedals',        brand: 'Crankbrothers', model: 'Stamp 7', installDate: '2024-03-15', notes: 'Large platform, green' },
+  ];
+  await Promise.all(comps.map(c => createComponent(bikeId, c)));
+
+  // ── Preset ────────────────────────────────────────────────
+  await createPreset(bikeId, {
+    name: 'Bike Park Day',
+    notes: 'More support, slower rebound for bigger hits',
+    createdAt: Date.now() - 7 * 24 * 3600 * 1000,
+    overrides: {
+      'fork.psi':   88,
+      'fork.lsr':   8,
+      'fork.hsr':   2,
+      'fork.lsc':   6,
+      'shock.psi':  225,
+      'shock.lsr':  8,
+      'shock.hsc':  3,
+      'frontTire.psi': 27,
+      'rearTire.psi':  31,
+    },
+  });
+
+  await createPreset(bikeId, {
+    name: 'Wet Conditions',
+    notes: 'Lower pressure for more grip and traction',
+    createdAt: Date.now() - 3 * 24 * 3600 * 1000,
+    overrides: {
+      'frontTire.psi': 21,
+      'rearTire.psi':  24,
+      'fork.lsr':   12,
+      'shock.lsr':  12,
+    },
+  });
+
+  // ── Rides — two runs of same trail ────────────────────────
+  const trail = 'Whistler — A-Line';
+  await createRide(bikeId, {
+    name: trail,
+    date: '2024-05-10',
+    duration: 312,     // 5:12
+    distance: 3.8,
+    elevationGain: 18,
+    elevationLoss: 412,
+    avgHeartRate: 148,
+    notes: 'Baseline setup. Front felt a touch harsh through the rollers. Good grip on berms.',
+    settings: { forkPsi: 82, shockPsi: 215, frontTirePsi: 24, rearTirePsi: 28 },
+    gpxImported: false,
+  });
+
+  await createRide(bikeId, {
+    name: trail,
+    date: '2024-05-17',
+    duration: 298,     // 4:58 — 14s faster
+    distance: 3.8,
+    elevationGain: 18,
+    elevationLoss: 412,
+    avgHeartRate: 152,
+    notes: 'Dropped fork 4psi, added 1 token. Noticeably more supple through chatter. Carried more speed into berms. 14 seconds faster.',
+    settings: { forkPsi: 78, shockPsi: 215, frontTirePsi: 24, rearTirePsi: 28 },
+    gpxImported: false,
+  });
+
+  // ── Tuning session ────────────────────────────────────────
+  await createTestSession(bikeId, {
+    title: 'Fork PSI drop — A-Line test',
+    startedAt: new Date('2024-05-17T10:15:00').getTime(),
+    endedAt:   new Date('2024-05-17T12:45:00').getTime(),
+    adopted: true,
+    baseline: { fork: { psi: 82, lsr: 10 }, shock: { psi: 215 }, frontTire: { psi: 24 }, rearTire: { psi: 28 } },
+    settings: { fork: { psi: 78, lsr: 10 }, shock: { psi: 215 }, frontTire: { psi: 24 }, rearTire: { psi: 28 } },
+    notes: [
+      { text: 'First run — felt harsh through the rock rolls mid-section', offsetMs: 18 * 60 * 1000 },
+      { text: 'Dropped 4psi front. Immediately more compliant on second run', offsetMs: 52 * 60 * 1000 },
+      { text: 'Carrying more speed through berms, less arm pump. Keeping this.', offsetMs: 118 * 60 * 1000 },
+    ],
+    createdAt: new Date('2024-05-17T10:15:00').getTime(),
+  });
+
+  showToast('Demo loaded — explore away!', 'success');
+  await new Promise(r => setTimeout(r, 800));
+  window._bikes = null;
+  const { getBikes } = await import('./db.js');
+  _bikes = await getBikes();
+  renderFleet();
+}
+
 // ── PUSH NOTIFICATIONS ────────────────────────────────────
 async function initNotifications(bikes) {
   if (!('Notification' in window)) return;
@@ -557,6 +694,7 @@ function bindHeader() {
   $('btn-help').onclick   = () => showHelpModal();
   $('btn-add-bike-header').onclick = showAddBikeModal;
   $('btn-add-bike-empty').onclick  = showAddBikeModal;
+  $('btn-load-demo')?.addEventListener('click', loadDemoData);
 }
 
 // ── ADD BIKE + ONBOARDING ─────────────────────────────────
