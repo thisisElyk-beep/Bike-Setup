@@ -941,8 +941,8 @@ svg { display: block; flex-shrink: 0; }
 
 .spinner-input {
   flex: 1;
-  min-width: 3ch;
-  width: 3ch;
+  min-width: 52px;
+  width: 52px;
   text-align: center;
   font-family: var(--font-mono);
   font-size: 0.95rem;
@@ -951,7 +951,7 @@ svg { display: block; flex-shrink: 0; }
   background: none;
   border: none;
   outline: none;
-  padding: 0.2rem 0;
+  padding: 0.2rem 0.25rem;
   -moz-appearance: textfield;
   height: 38px;
   border-radius: 0;
