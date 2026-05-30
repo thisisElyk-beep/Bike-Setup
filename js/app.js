@@ -427,8 +427,6 @@ function loadSetupTab(bike) {
       if (icon) icon.style.transform = collapsed ? 'rotate(180deg)' : '';
     };
   }
-
-  initScratchpad(bike);
 }
 
 function enterCockpitMode(bike, container, settingsContent) {
@@ -467,15 +465,6 @@ function exitCockpitMode(bike) {
   const currentSvg = container.querySelector('svg');
   if (currentSvg) { currentSvg.style.transition = 'opacity 0.22s ease'; currentSvg.style.opacity = '0'; }
   setTimeout(() => { loadSetupTab(bike); }, 240);
-}
-
-// ── SCRATCHPAD ────────────────────────────────────────────
-function initScratchpad(bike) {
-        bike.notes = input.value;
-        if (hint) { hint.textContent = 'Saved'; setTimeout(() => { if (hint) hint.textContent = ''; }, 1500); }
-      } catch { if (hint) hint.textContent = 'Save failed'; }
-    }, 900);
-  };
 }
 
 // ── PRESET QUICK-LOAD ─────────────────────────────────────
