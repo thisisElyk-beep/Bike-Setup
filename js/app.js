@@ -862,7 +862,7 @@ function updateThemeBtn(themeId) {
 // ── SERVICE WORKER ────────────────────────────────────────
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+    window.addEventListener('load', () => { navigator.serviceWorker.register('/Bike-Setup/sw.js').catch(() => {}); });
   }
 }
 
