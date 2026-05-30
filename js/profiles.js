@@ -207,7 +207,8 @@ export function showProfilePicker(onSelected) {
       }
     };
   }
-  document.getElementById('profile-new-cancel')?.onclick = () => {
+  const cancelBtn = document.getElementById('profile-new-cancel');
+  if (cancelBtn) cancelBtn.onclick = () => {
     form.classList.add('hidden');
     toggle.style.display = '';
     document.getElementById('profile-new-error').style.display = 'none';
