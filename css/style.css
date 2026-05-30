@@ -490,6 +490,9 @@ svg { display: block; flex-shrink: 0; }
   display: none;
   flex: 1;
   flex-direction: column;
+  overflow-y: auto;
+  align-items: stretch;
+  justify-content: flex-start;
 }
 .tab-content.active { display: flex; }
 
