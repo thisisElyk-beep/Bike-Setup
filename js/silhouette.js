@@ -185,7 +185,7 @@ function svgMTBFS(hasMotor = false) {
   const F=suspFork(HC,FW,9,0.44);
 
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
-  class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
+  class="bike-silhouette" shape-rendering="geometricPrecision" preserveAspectRatio="xMidYMid meet">
 
   ${roadWheel(RW.x,RW.y,'rear-wheel',14)}
 
@@ -312,7 +312,7 @@ function svgHardtail(isDJ = false) {
   };
 
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
-  class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
+  class="bike-silhouette" shape-rendering="geometricPrecision" preserveAspectRatio="xMidYMid meet">
 
   ${isDJ ? roadWheel(RW.x,RW.y,'rear-wheel',12) : mtbWheel(RW.x,RW.y,'rear-wheel')}
 
@@ -420,7 +420,7 @@ function svgGravel() {
   const HoodX=566, HoodY=166;
 
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
-  class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
+  class="bike-silhouette" shape-rendering="geometricPrecision" preserveAspectRatio="xMidYMid meet">
 
   ${roadWheel(RW.x,RW.y,'rear-wheel',14)}
 
@@ -533,7 +533,7 @@ function svgRoad() {
   const fCx1r=HC.x+14, fCy1r=HC.y+36, fCx2r=FW.x+14, fCy2r=FW.y-24;
 
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
-  class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
+  class="bike-silhouette" shape-rendering="geometricPrecision" preserveAspectRatio="xMidYMid meet">
 
   ${roadWheel(RW.x,RW.y,'rear-wheel',6)}
 
@@ -844,7 +844,7 @@ export function createCockpitFrontView(bike) {
 
 function cockpitFlatBars() {
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
-  class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
+  class="bike-silhouette" shape-rendering="geometricPrecision" preserveAspectRatio="xMidYMid meet">
 
   <g id="g-cockpit-bars" class="bike-zone" data-zone="cockpit-bars">
     <line x1="208" y1="248" x2="366" y2="248" stroke-width="8" stroke-linecap="round"/>
@@ -913,7 +913,7 @@ function cockpitFlatBars() {
 // Layout: steerer top center → stem → flat bar sections L+R → drops curving down
 function cockpitDropBars() {
   return `<svg id="bike-svg" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
-  class="bike-silhouette" preserveAspectRatio="xMidYMid meet">
+  class="bike-silhouette" shape-rendering="geometricPrecision" preserveAspectRatio="xMidYMid meet">
 
   <!-- Flat top sections of the bar (either side of stem) -->
   <g id="g-cockpit-bars" class="bike-zone" data-zone="cockpit-bars">
