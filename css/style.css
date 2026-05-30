@@ -916,6 +916,7 @@ svg { display: block; flex-shrink: 0; }
   border-radius: var(--radius-sm);
   overflow: hidden;
   transition: border-color var(--transition);
+  min-width: 128px; /* 38px btn + 52px input + 38px btn */
 }
 .spinner-row:focus-within { border-color: var(--accent); }
 
