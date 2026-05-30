@@ -1,5 +1,5 @@
 import { showToast, openModal, closeModal } from './utils.js';
-import { getBikes, createBike, updateBike, deleteBike } from './db.js';
+import { getBikes, createBike, updateBike, deleteBike, createComponent, createPreset, createRide, createTestSession } from './db.js';
 import { initProfile, showProfilePicker, renderProfileChip, THEMES, getProfileTheme, setProfileTheme, applyTheme } from './profiles.js';
 import { getPresets } from './db.js';
 import { createSilhouette, createMiniSilhouette, setupZoneInteraction, resetZoom, createCockpitFrontView, setupCockpitInteraction } from './silhouette.js';
@@ -202,8 +202,6 @@ async function loadDemoData() {
 
   showToast('Loading demo…', 'info');
 
-  const { createBike, createComponent, createPreset, createRide, createTestSession } = await import('./db.js');
-
   // ── Bike ──────────────────────────────────────────────────
   const bikeId = await createBike({
     name: 'Bronson V4 — Demo',
@@ -325,9 +323,6 @@ async function loadDemoData() {
   });
 
   showToast('Demo loaded — explore away!', 'success');
-  await new Promise(r => setTimeout(r, 800));
-  window._bikes = null;
-  const { getBikes } = await import('./db.js');
   _bikes = await getBikes();
   renderFleet();
 }
