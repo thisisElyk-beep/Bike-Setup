@@ -168,8 +168,8 @@ export function showProfilePicker(onSelected) {
         <div class="profile-new-form hidden" id="profile-new-form">
           <input id="profile-new-name" class="field-input" type="text" placeholder="Your name" maxlength="32">
           <div style="display:flex;gap:.5rem;margin-top:.5rem">
-            <button class="btn-secondary" id="profile-new-cancel" style="flex:1">Cancel</button>
-            <button class="btn-primary" id="profile-new-save" style="flex:1">Create</button>
+            ${profiles.length > 0 ? `<button class="btn-secondary" id="profile-new-cancel" style="flex:1">Cancel</button>` : ''}
+            <button class="btn-primary" id="profile-new-save" style="flex:1">Get Started</button>
           </div>
           <div id="profile-new-error" style="font-size:.78rem;color:var(--danger);margin-top:.35rem;display:none"></div>
         </div>
@@ -191,13 +191,22 @@ export function showProfilePicker(onSelected) {
   // New profile form toggle
   const toggle = document.getElementById('profile-new-toggle');
   const form   = document.getElementById('profile-new-form');
-  toggle.onclick = () => {
-    form.classList.toggle('hidden');
-    if (!form.classList.contains('hidden')) {
-      document.getElementById('profile-new-name').focus();
-      toggle.style.display = 'none';
-    }
-  };
+
+  // No profiles yet — show form immediately
+  if (profiles.length === 0) {
+    form.classList.remove('hidden');
+    setTimeout(() => document.getElementById('profile-new-name')?.focus(), 100);
+  }
+
+  if (toggle) {
+    toggle.onclick = () => {
+      form.classList.toggle('hidden');
+      if (!form.classList.contains('hidden')) {
+        document.getElementById('profile-new-name').focus();
+        toggle.style.display = 'none';
+      }
+    };
+  }
   document.getElementById('profile-new-cancel').onclick = () => {
     form.classList.add('hidden');
     toggle.style.display = '';
