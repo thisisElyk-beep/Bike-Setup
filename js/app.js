@@ -430,7 +430,6 @@ function loadSetupTab(bike) {
   }
 
   initScratchpad(bike);
-  initPresetQuickLoad(bike, container, settingsContent);
 }
 
 function enterCockpitMode(bike, container, settingsContent) {
@@ -570,7 +569,8 @@ function bindHeader() {
   $('logo-home').onclick  = () => showView('bikes');
   $('btn-back').onclick   = () => showView('bikes');
   $('btn-theme').onclick  = (e) => showThemeDropdown(e);
-  $('btn-export').onclick = () => _bike && exportBikePDF(_bike);
+  $('btn-export').onclick = (e) => showExportDropdown(e);
+  $('btn-help').onclick   = () => showHelpModal();
   $('btn-add-bike-header').onclick = showAddBikeModal;
   $('btn-add-bike-empty').onclick  = showAddBikeModal;
 }

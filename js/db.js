@@ -164,13 +164,13 @@ export async function deletePreset(bikeId, presetId) {
 // ── TEST SESSIONS ─────────────────────────────────────────
 export async function getTestSessions(bikeId) {
   const snap = await getDocs(
-    query(collection(db, 'bikes', bikeId, 'testSessions'), orderBy('createdAt', 'desc'))
+    query(subCol(bikeId, 'testSessions'), orderBy('createdAt', 'desc'))
   );
   return colData(snap);
 }
 
 export async function createTestSession(bikeId, data) {
-  const ref = await addDoc(collection(db, 'bikes', bikeId, 'testSessions'), clean({
+  const ref = await addDoc(subCol(bikeId, 'testSessions'), clean({
     ...data,
     adopted: false,
     createdAt: serverTimestamp()
@@ -179,11 +179,11 @@ export async function createTestSession(bikeId, data) {
 }
 
 export async function updateTestSession(bikeId, sessionId, data) {
-  await updateDoc(doc(db, 'bikes', bikeId, 'testSessions', sessionId), clean(data));
+  await updateDoc(subDoc(bikeId, 'testSessions', sessionId), clean(data));
 }
 
 export async function deleteTestSession(bikeId, sessionId) {
-  await deleteDoc(doc(db, 'bikes', bikeId, 'testSessions', sessionId));
+  await deleteDoc(subDoc(bikeId, 'testSessions', sessionId));
 }
 
 // ── Utility ───────────────────────────────────────────────

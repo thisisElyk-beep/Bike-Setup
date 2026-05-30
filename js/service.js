@@ -104,9 +104,18 @@ function renderServiceView(container, bike, components) {
         const installed = components.filter(c => c.category === sc.category);
         return renderServiceCard(sc, installed, bike);
       }).join('')}
+      ${renderCustomServiceCards(components, bike)}
+    </div>
+    <div style="padding:0 2rem 1.5rem;text-align:center">
+      <button class="btn-text" id="svc-add-custom" style="font-size:.78rem;color:var(--text-muted)">
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Track another component
+      </button>
     </div>`;
 
   document.getElementById('svc-log-hours').onclick = () => showLogHoursModal(bike, components, () => renderServiceView(container, bike, components));
+
+  document.getElementById('svc-add-custom')?.addEventListener('click', () => showAddCustomServiceModal(bike, components, () => renderServiceTab(bike)));
 
   container.querySelectorAll('.svc-log-service-btn').forEach(btn => {
     const compId   = btn.dataset.compId;
@@ -118,6 +127,23 @@ function renderServiceView(container, bike, components) {
     if (comp && sc && tier) {
       btn.onclick = () => showLogServiceModal(bike, comp, sc, tier, () => renderServiceTab(bike));
     }
+  });
+
+  container.querySelectorAll('.svc-custom-delete').forEach(btn => {
+    btn.onclick = () => {
+      const custom = getCustomServiceComponents(bike.id).filter(c => c.id !== btn.dataset.id);
+      saveCustomServiceComponents(bike.id, custom);
+      renderServiceView(container, bike, components);
+    };
+  });
+
+  container.querySelectorAll('.svc-custom-log-btn').forEach(btn => {
+    const cs = getCustomServiceComponents(bike.id).find(c => c.id === btn.dataset.id);
+    const comp = components.find(c => c.id === btn.dataset.compId);
+    btn.onclick = () => showLogServiceModal(bike, comp || {id: btn.dataset.compId, serviceLog:[]},
+      {label: cs?.label || 'Service', icon:'', bleed:false},
+      {id:'custom', label:'Service', types:['Full Service','Cleaned','Lubricated','Replaced','Other']},
+      () => renderServiceTab(bike));
   });
 
   container.querySelectorAll('.svc-add-comp-btn').forEach(btn => {
@@ -211,9 +237,9 @@ function tierBar(label, current, max, min, pct, status, statusLabel, compId, cat
            style="width:${barPct}%;background:${barColor}"></div>
     </div>
     ${current != null ? `<div class="svc-tier-sub">${current.toFixed(0)}h / ${max}h</div>` : ''}
-    <button class="btn-text svc-log-service-btn" style="font-size:.73rem;margin-top:.2rem;color:var(--text-muted)"
+    <button class="btn-secondary svc-log-service-btn" style="font-size:.75rem;margin-top:.35rem;width:100%"
             data-comp-id="${compId}" data-category="${category}" data-tier-id="${tierId}">
-      + Log service
+      Log Service
     </button>
   </div>`;
 }
@@ -229,9 +255,9 @@ function showLogHoursModal(bike, components, onSaved) {
     <div class="field-group">
       <label class="field-label">Hours ridden</label>
       <div class="spinner-row" style="max-width:160px">
-        <button type="button" class="spinner-btn spinner-minus" data-id="hours-input" data-step="0.5" data-min="0.5" data-max="24">−</button>
-        <input type="number" id="hours-input" class="field-input spinner-input" value="2" min="0.5" max="24" step="0.5">
-        <button type="button" class="spinner-btn spinner-plus" data-id="hours-input" data-step="0.5" data-min="0.5" data-max="24">+</button>
+        <button type="button" class="spinner-btn spinner-minus" data-id="hours-input" data-step="1" data-min="0.5" data-max="24">−</button>
+        <input type="number" id="hours-input" class="field-input spinner-input" value="2" min="0.5" max="24" step="1">
+        <button type="button" class="spinner-btn spinner-plus" data-id="hours-input" data-step="1" data-min="0.5" data-max="24">+</button>
       </div>
     </div>`;
 
@@ -320,6 +346,144 @@ function showLogServiceModal(bike, comp, sc, tier, onSaved) {
       closeModal();
       onSaved();
     } catch(e) { showToast('Save failed','error'); }
+  };
+}
+
+
+// ── CUSTOM SERVICE TRACKING ───────────────────────────────
+// Custom tracked components stored in localStorage per bike
+function customSvcKey(bikeId) { return `quiver_custom_svc_${bikeId}`; }
+
+function getCustomServiceComponents(bikeId) {
+  try { return JSON.parse(localStorage.getItem(customSvcKey(bikeId)) || '[]'); }
+  catch { return []; }
+}
+
+function saveCustomServiceComponents(bikeId, list) {
+  localStorage.setItem(customSvcKey(bikeId), JSON.stringify(list));
+}
+
+function renderCustomServiceCards(components, bike) {
+  const custom = getCustomServiceComponents(bike.id);
+  if (custom.length === 0) return '';
+  return custom.map(cs => {
+    const comp = components.find(c => c.id === cs.compId);
+    const label = comp ? [comp.brand, comp.model, comp.category].filter(Boolean).join(' ') : cs.label;
+    const log = comp?.serviceLog || [];
+    const lastSvc = log.find(e => e.tier === cs.id) || log[0];
+    const hoursSince = getHoursSince(bike.id, lastSvc?.date || null);
+    const pct = cs.intervalHours ? Math.min(120, (hoursSince / cs.intervalHours) * 100) : 0;
+    const status = pct >= 100 ? 'overdue' : pct >= 80 ? 'soon' : 'ok';
+    const remaining = cs.intervalHours ? Math.max(0, cs.intervalHours - hoursSince) : null;
+    const statusLabel = !cs.intervalHours
+      ? (lastSvc ? `Last: ${fmtDate(lastSvc.date)}` : 'No interval set')
+      : status === 'overdue'
+        ? `${(hoursSince - cs.intervalHours).toFixed(0)}h overdue`
+        : `${remaining.toFixed(0)}h remaining`;
+    const barColor = status === 'overdue' ? 'var(--danger)' : status === 'soon' ? 'var(--accent)' : 'var(--success)';
+
+    return `<div class="svc-card" data-custom-id="${cs.id}">
+      <div class="svc-card-header">
+        <div class="svc-card-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.8"/><path d="M11 7v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        <div class="svc-card-info">
+          <div class="svc-card-title">${escHtml(cs.label)}</div>
+          <div class="svc-card-sub">${escHtml(label)}</div>
+          ${lastSvc ? `<div class="svc-last-svc">Last: ${fmtDate(lastSvc.date)}</div>` : '<div class="svc-last-svc svc-never">Never serviced</div>'}
+        </div>
+        <button class="btn-icon-sm svc-custom-delete" data-id="${cs.id}" title="Remove from tracking" style="color:var(--text-muted)">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4.5 3V2a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v1M4.5 5v4M7.5 5v4M2.5 3l.6 6.5a.5.5 0 00.5.5h5a.5.5 0 00.5-.5L9.5 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      ${cs.intervalHours ? `
+      <div class="svc-tiers">
+        <div class="svc-tier">
+          <div class="svc-tier-labels">
+            <span class="svc-tier-name">Service Interval</span>
+            <span class="svc-tier-status ${status}">${statusLabel}</span>
+          </div>
+          <div class="svc-progress-track">
+            <div class="svc-progress-fill ${status === 'overdue' ? 'svc-overdue-pulse' : ''}"
+                 style="width:${Math.min(100,pct)}%;background:${barColor}"></div>
+          </div>
+          <div class="svc-tier-sub">${hoursSince.toFixed(0)}h / ${cs.intervalHours}h</div>
+        </div>
+      </div>` : `<div style="font-size:.78rem;color:var(--text-muted);margin:.25rem 0">No interval configured</div>`}
+      <button class="btn-secondary svc-custom-log-btn" data-id="${cs.id}" data-comp-id="${cs.compId || ''}"
+              style="font-size:.75rem;margin-top:.35rem;width:100%">Log Service</button>
+    </div>`;
+  }).join('');
+}
+
+function showAddCustomServiceModal(bike, components, onSaved) {
+  const tracked = getCustomServiceComponents(bike.id).map(c => c.compId);
+  const available = components.filter(c => !tracked.includes(c.id));
+
+  const body = `
+    <div class="field-group">
+      <label class="field-label">Component</label>
+      <select id="custom-comp-select" class="field-select">
+        <option value="">— Select a component —</option>
+        ${available.map(c => `<option value="${c.id}">${escHtml([c.category, c.brand, c.model].filter(Boolean).join(' — '))}</option>`).join('')}
+        <option value="__custom__">Other (enter manually)</option>
+      </select>
+    </div>
+    <div class="field-group" id="custom-label-group" style="display:none">
+      <label class="field-label">Custom Label</label>
+      <input id="custom-label" class="field-input" type="text" placeholder="e.g. Bottom Bracket, Bearings">
+    </div>
+    <div class="field-group" style="margin-top:.5rem">
+      <label class="field-label">Service Interval <span class="field-unit">hours</span></label>
+      <div class="spinner-row" style="max-width:160px">
+        <button type="button" class="spinner-btn spinner-minus" data-id="custom-interval" data-step="10" data-min="0" data-max="2000">−</button>
+        <input type="number" id="custom-interval" class="field-input spinner-input" value="100" min="0" max="2000" step="10">
+        <button type="button" class="spinner-btn spinner-plus" data-id="custom-interval" data-step="10" data-min="0" data-max="2000">+</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-top:.25rem">Set to 0 to track without an interval</div>
+    </div>`;
+
+  const footer = `
+    <button class="btn-secondary" id="modal-cancel">Cancel</button>
+    <button class="btn-primary" id="modal-save-custom">Add</button>`;
+
+  openModal('Track a Component', body, footer);
+
+  document.getElementById('custom-comp-select').onchange = function() {
+    document.getElementById('custom-label-group').style.display =
+      this.value === '__custom__' ? 'block' : 'none';
+  };
+
+  // Spinner
+  document.getElementById('modal-body').addEventListener('click', e => {
+    const btn = e.target.closest('.spinner-btn');
+    if (!btn) return;
+    const inp = document.getElementById(btn.dataset.id);
+    if (!inp) return;
+    const step = parseInt(btn.dataset.step), min = parseInt(btn.dataset.min), max = parseInt(btn.dataset.max);
+    const cur = parseInt(inp.value) || 0;
+    inp.value = btn.classList.contains('spinner-minus') ? Math.max(min, cur-step) : Math.min(max, cur+step);
+  });
+
+  document.getElementById('modal-cancel').onclick = closeModal;
+  document.getElementById('modal-save-custom').onclick = async () => {
+    const compId = document.getElementById('custom-comp-select').value;
+    if (!compId) { showToast('Select a component', 'error'); return; }
+    const comp = components.find(c => c.id === compId);
+    const customLabel = document.getElementById('custom-label')?.value.trim();
+    const label = compId === '__custom__'
+      ? (customLabel || 'Custom Component')
+      : [comp?.category, comp?.brand, comp?.model].filter(Boolean).join(' ');
+    const intervalHours = parseInt(document.getElementById('custom-interval').value) || 0;
+    const custom = getCustomServiceComponents(bike.id);
+    custom.push({
+      id: 'custom_' + Date.now(),
+      compId: compId === '__custom__' ? null : compId,
+      label,
+      intervalHours: intervalHours || null,
+    });
+    saveCustomServiceComponents(bike.id, custom);
+    showToast('Component added to service tracking', 'success');
+    closeModal();
+    onSaved();
   };
 }
 
