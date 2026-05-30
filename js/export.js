@@ -7,7 +7,7 @@ const THEME_PALETTES = {
   dark:    { bg: '#141210', surface: '#1c1916', accent: '#f59e0b', text: '#f5f0e8', muted: '#504840', border: '#3d3828' },
   amber:   { bg: '#0c0b09', surface: '#1c1916', accent: '#f59e0b', text: '#f5f0e8', muted: '#504840', border: '#3d3828' },
   teal:    { bg: '#070c10', surface: '#131f2e', accent: '#00d4b8', text: '#e8f4f8', muted: '#3a6070', border: '#2a4060' },
-  carbon:  { bg: '#0d0d0d', surface: '#161618', accent: '#5b8df0', text: '#f0f0f2', muted: '#60606e', border: '#2e2e36' },
+  carbon:  { bg: '#0d0d0d', surface: '#161618', accent: '#e8e8f0', text: '#f0f0f2', muted: '#60606e', border: '#2e2e36' },
   slate:   { bg: '#0b0d14', surface: '#171c2c', accent: '#818cf8', text: '#e8eaf6', muted: '#404870', border: '#313b55' },
   forest:  { bg: '#080e09', surface: '#0e1a10', accent: '#4ade80', text: '#d8edd6', muted: '#3a6038', border: '#1e3323' },
   orange:  { bg: '#0e0804', surface: '#1a1008', accent: '#f97316', text: '#f5ece0', muted: '#6a4428', border: '#3a2010' },

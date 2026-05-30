@@ -118,11 +118,11 @@
   --text-primary:   #f0f0f2;
   --text-secondary: #9090a0;
   --text-muted:     #60606e;
-  --accent:       #5b8df0;
-  --accent-hover: #7aa3f4;
-  --accent-dim:   rgba(91,141,240,0.12);
-  --accent-glow:  rgba(91,141,240,0.25);
-  --accent-text:  #5b8df0;
+  --accent:       #e8e8f0;
+  --accent-hover: #ffffff;
+  --accent-dim:   rgba(232,232,240,0.10);
+  --accent-glow:  rgba(232,232,240,0.20);
+  --accent-text:  #e8e8f0;
   --danger:       #f05a5a;
   --danger-dim:   rgba(240,90,90,0.14);
   --success:      #3ecf7e;
@@ -133,7 +133,7 @@
   --scrollbar-bg: #161618;
   --scrollbar-thumb: #3c3c46;
   --silhouette-stroke: #d0d0e0;
-  --zone-highlight:    #c8d8fc;
+  --zone-highlight:    #ffffff;
 }
 
 /* ─── THEME C: SLATE + INDIGO ───────────────────────── */
