@@ -984,6 +984,38 @@ function initTheme() {
   }
 }
 
+function showExportDropdown(e) {
+  e.stopPropagation();
+  const existing = document.getElementById('export-dropdown');
+  if (existing) { existing.remove(); return; }
+
+  const btn = $('btn-export');
+  const drop = document.createElement('div');
+  drop.id = 'export-dropdown';
+  drop.className = 'profile-dropdown';
+  drop.style.cssText = 'position:fixed;z-index:9999;min-width:180px;';
+  drop.innerHTML = `
+    <button class="profile-dropdown-item" id="export-copy">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 10V2h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Copy as Text
+    </button>
+    <button class="profile-dropdown-item" id="export-pdf">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="1" width="10" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 5h6M4 7h6M4 9h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Download PDF
+    </button>`;
+
+  document.body.appendChild(drop);
+  const rect = btn.getBoundingClientRect();
+  drop.style.top  = (rect.bottom + 6) + 'px';
+  drop.style.right = (window.innerWidth - rect.right) + 'px';
+
+  drop.querySelector('#export-copy').onclick = () => { drop.remove(); copySetupSummary(_bike); };
+  drop.querySelector('#export-pdf').onclick  = () => { drop.remove(); exportBikePDF(_bike); };
+
+  const close = (ev) => { if (!drop.contains(ev.target)) { drop.remove(); document.removeEventListener('click', close); } };
+  setTimeout(() => document.addEventListener('click', close), 0);
+}
+
 function showThemeDropdown(e) {
   e.stopPropagation();
   const existing = document.getElementById('theme-dropdown');
