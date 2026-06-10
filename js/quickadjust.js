@@ -74,9 +74,28 @@ function buildQuickAdjust(bike) {
     <div class="qa-header">
       <div>
         <div class="qa-title">Quick Adjust</div>
-        <div class="qa-sub">Trailside tweaks save directly to your baseline</div>
+        <div class="qa-sub">Trailside tweaks save to your baseline</div>
       </div>
-      <div class="qa-save-status" id="qa-save-status"></div>
+      <div class="qa-header-actions">
+        <div class="qa-save-status" id="qa-save-status"></div>
+        <button class="btn-primary" id="qa-save-btn" disabled>Save Changes</button>
+      </div>
+    </div>
+    <div class="qa-direction-hint" id="qa-direction-hint">
+      <button class="qa-hint-toggle" id="qa-hint-toggle" aria-label="Toggle click direction reminder">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 9V6M6.5 4h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Click direction
+      </button>
+      <div class="qa-hint-content">
+        <div class="qa-hint-row">
+          <span class="qa-hint-dir">Clockwise <span class="qa-hint-sign">＋</span></span>
+          <span class="qa-hint-desc">firmer · more damping · slower</span>
+        </div>
+        <div class="qa-hint-row">
+          <span class="qa-hint-dir">Counter-CW <span class="qa-hint-sign">－</span></span>
+          <span class="qa-hint-desc">softer · less damping · faster</span>
+        </div>
+      </div>
     </div>
     <div class="qa-grid">${sections.join('')}</div>
   `;
@@ -133,29 +152,41 @@ function bindControls(bike, container) {
       const cur = parseFloat(input.value) || 0;
       const next = Math.max(min, parseFloat((cur - step).toFixed(2)));
       input.value = next;
-      scheduleSave(bike, container);
+      markDirty();
     });
 
     field.querySelector('.qa-plus').addEventListener('click', () => {
       const cur = parseFloat(input.value) || 0;
       const next = Math.min(max, parseFloat((cur + step).toFixed(2)));
       input.value = next;
-      scheduleSave(bike, container);
+      markDirty();
     });
 
-    input.addEventListener('change', () => scheduleSave(bike, container));
+    input.addEventListener('change', () => markDirty());
   });
+
+  // Save button
+  const saveBtn = container.querySelector('#qa-save-btn');
+  if (saveBtn) saveBtn.addEventListener('click', () => save(bike, container));
+
+  // Direction hint toggle
+  const hintToggle = container.querySelector('#qa-hint-toggle');
+  const hint = container.querySelector('#qa-direction-hint');
+  if (hintToggle && hint) {
+    hintToggle.addEventListener('click', () => hint.classList.toggle('expanded'));
+  }
 }
 
 // ── SAVE ──────────────────────────────────────────────────
-function scheduleSave(bike, container) {
+function markDirty() {
+  const btn = document.getElementById('qa-save-btn');
+  if (btn) { btn.disabled = false; }
   const status = document.getElementById('qa-save-status');
-  if (status) { status.textContent = 'Saving...'; status.className = 'qa-save-status saving'; }
-  if (_saveTimer) clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(() => save(bike, container), 800);
+  if (status) { status.textContent = 'Unsaved changes'; status.className = 'qa-save-status dirty'; }
 }
 
 async function save(bike, container) {
+  const btn = document.getElementById('qa-save-btn');
   const val = id => {
     const el = container.querySelector(`#${id}`);
     if (!el || el.value === '') return null;
@@ -185,18 +216,21 @@ async function save(bike, container) {
   if (bl.frontTire && val('ftire-psi') != null) bl.frontTire = { ...bl.frontTire, psi: val('ftire-psi') };
   if (bl.rearTire  && val('rtire-psi') != null) bl.rearTire  = { ...bl.rearTire,  psi: val('rtire-psi') };
 
+  const status = document.getElementById('qa-save-status');
+  if (status) { status.textContent = 'Saving…'; status.className = 'qa-save-status saving'; }
+  if (btn) btn.disabled = true;
+
   try {
     await updateBike(bike.id, { baseline: bl });
     bike.baseline = bl;
-    const status = document.getElementById('qa-save-status');
     if (status) {
       status.textContent = 'Saved';
       status.className = 'qa-save-status saved';
       setTimeout(() => { if (status) { status.textContent = ''; status.className = 'qa-save-status'; }}, 1800);
     }
   } catch (e) {
-    const status = document.getElementById('qa-save-status');
     if (status) { status.textContent = 'Save failed'; status.className = 'qa-save-status error'; }
+    if (btn) btn.disabled = false;
     showToast('Save failed: ' + e.message, 'error');
   }
 }
