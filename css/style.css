@@ -3372,3 +3372,82 @@ textarea.field-input {
 .svc-tier:hover .svc-edit-interval-btn { opacity: 1; }
 
 #bike-svg, .mini-silhouette { shape-rendering: geometricPrecision; }
+
+/* ─── QUICK ADJUST — DIRECTION HINT + SAVE ───────────────── */
+.qa-header-actions {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+.qa-save-status {
+  font-size: .76rem;
+  font-family: var(--font-mono);
+  transition: color var(--transition);
+}
+.qa-save-status.dirty   { color: var(--text-muted); }
+.qa-save-status.saving  { color: var(--text-secondary); }
+.qa-save-status.saved   { color: var(--success); }
+.qa-save-status.error   { color: var(--danger); }
+#qa-save-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.qa-direction-hint {
+  margin: 0 2rem 1rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.qa-hint-toggle {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  width: 100%;
+  padding: .55rem .85rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: .76rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+.qa-hint-toggle:hover { color: var(--text-primary); }
+.qa-hint-toggle svg { color: var(--accent); flex-shrink: 0; }
+.qa-hint-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .25s ease, padding .25s ease;
+  padding: 0 .85rem;
+}
+.qa-direction-hint.expanded .qa-hint-content {
+  max-height: 120px;
+  padding: 0 .85rem .7rem;
+}
+.qa-hint-row {
+  display: flex;
+  align-items: baseline;
+  gap: .6rem;
+  padding: .2rem 0;
+}
+.qa-hint-dir {
+  font-family: var(--font-mono);
+  font-size: .76rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 110px;
+  flex-shrink: 0;
+}
+.qa-hint-sign {
+  color: var(--accent);
+  font-weight: 700;
+}
+.qa-hint-desc {
+  font-size: .74rem;
+  color: var(--text-secondary);
+}
