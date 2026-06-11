@@ -3422,24 +3422,42 @@ textarea.field-input {
 .qa-hint-content {
   max-height: 0;
   overflow: hidden;
-  transition: max-height .25s ease, padding .25s ease;
+  transition: max-height .3s ease, padding .3s ease;
   padding: 0 .85rem;
 }
 .qa-direction-hint.expanded .qa-hint-content {
-  max-height: 120px;
+  max-height: 320px;
   padding: 0 .85rem .7rem;
+}
+.qa-hint-group {
+  padding: .5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.qa-hint-group:last-child { border-bottom: none; }
+.qa-hint-group-title {
+  font-family: var(--font-ui);
+  font-size: .76rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: .35rem;
+}
+.qa-hint-group-sub {
+  font-weight: 400;
+  font-size: .7rem;
+  color: var(--text-muted);
+  margin-left: .35rem;
 }
 .qa-hint-row {
   display: flex;
   align-items: baseline;
   gap: .6rem;
-  padding: .2rem 0;
+  padding: .15rem 0;
 }
 .qa-hint-dir {
   font-family: var(--font-mono);
-  font-size: .76rem;
+  font-size: .74rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   min-width: 110px;
   flex-shrink: 0;
 }

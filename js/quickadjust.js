@@ -84,16 +84,30 @@ function buildQuickAdjust(bike) {
     <div class="qa-direction-hint" id="qa-direction-hint">
       <button class="qa-hint-toggle" id="qa-hint-toggle" aria-label="Toggle click direction reminder">
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 9V6M6.5 4h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        Click direction
+        Which way do I turn it?
       </button>
       <div class="qa-hint-content">
-        <div class="qa-hint-row">
-          <span class="qa-hint-dir">Clockwise <span class="qa-hint-sign">＋</span></span>
-          <span class="qa-hint-desc">firmer · more damping · slower</span>
+        <div class="qa-hint-group">
+          <div class="qa-hint-group-title">Compression <span class="qa-hint-group-sub">support / how it holds up</span></div>
+          <div class="qa-hint-row">
+            <span class="qa-hint-dir">Clockwise <span class="qa-hint-sign">＋</span></span>
+            <span class="qa-hint-desc">firmer, more support, rides higher</span>
+          </div>
+          <div class="qa-hint-row">
+            <span class="qa-hint-dir">Counter-CW <span class="qa-hint-sign">－</span></span>
+            <span class="qa-hint-desc">softer, more small-bump sensitivity</span>
+          </div>
         </div>
-        <div class="qa-hint-row">
-          <span class="qa-hint-dir">Counter-CW <span class="qa-hint-sign">－</span></span>
-          <span class="qa-hint-desc">softer · less damping · faster</span>
+        <div class="qa-hint-group">
+          <div class="qa-hint-group-title">Rebound <span class="qa-hint-group-sub">how fast it returns</span></div>
+          <div class="qa-hint-row">
+            <span class="qa-hint-dir">Clockwise <span class="qa-hint-sign">＋</span></span>
+            <span class="qa-hint-desc">slower return, more controlled</span>
+          </div>
+          <div class="qa-hint-row">
+            <span class="qa-hint-dir">Counter-CW <span class="qa-hint-sign">－</span></span>
+            <span class="qa-hint-desc">faster return, more poppy / lively</span>
+          </div>
         </div>
       </div>
     </div>
