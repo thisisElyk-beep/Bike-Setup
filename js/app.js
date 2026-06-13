@@ -720,14 +720,15 @@ function showView(name) {
 
 // ── HEADER ────────────────────────────────────────────────
 function bindHeader() {
-  $('logo-home').onclick  = () => showView('bikes');
-  $('btn-back').onclick   = () => showView('bikes');
-  $('btn-theme').onclick  = (e) => showThemeDropdown(e);
-  $('btn-export').onclick = (e) => showExportDropdown(e);
-  $('btn-help').onclick   = () => showHelpModal();
-  $('btn-settings').onclick = () => showSettingsModal();
-  $('btn-add-bike-header').onclick = showAddBikeModal;
-  $('btn-add-bike-empty').onclick  = showAddBikeModal;
+  const on = (id, evt, fn) => { const el = $(id); if (el) el[evt] = fn; };
+  on('logo-home', 'onclick', () => showView('bikes'));
+  on('btn-back', 'onclick', () => showView('bikes'));
+  on('btn-theme', 'onclick', (e) => showThemeDropdown(e));
+  on('btn-export', 'onclick', (e) => showExportDropdown(e));
+  on('btn-help', 'onclick', () => showHelpModal());
+  on('btn-settings', 'onclick', () => showSettingsModal());
+  on('btn-add-bike-header', 'onclick', showAddBikeModal);
+  on('btn-add-bike-empty', 'onclick', showAddBikeModal);
   $('btn-load-demo')?.addEventListener('click', loadDemoData);
 }
 
