@@ -1,6 +1,6 @@
 import { showToast, openModal, closeModal } from './utils.js';
 import { getBikes, createBike, updateBike, deleteBike, createComponent, createPreset, createRide, createTestSession } from './db.js';
-import { initProfile, showProfilePicker, renderProfileChip, THEMES, getProfileTheme, setProfileTheme, applyTheme } from './profiles.js';
+import { initProfile, showProfilePicker, renderProfileChip, THEMES, getProfileTheme, setProfileTheme, applyTheme, getActiveProfileId, getProfiles, activateProfile } from './profiles.js';
 import { getPresets } from './db.js';
 import { createSilhouette, createMiniSilhouette, setupZoneInteraction, resetZoom, createCockpitFrontView, setupCockpitInteraction } from './silhouette.js';
 import { renderZoneSettings, renderSettingsPlaceholder, renderCockpitSubZone, getSetupChangelog } from './setup.js';
@@ -725,6 +725,7 @@ function bindHeader() {
   $('btn-theme').onclick  = (e) => showThemeDropdown(e);
   $('btn-export').onclick = (e) => showExportDropdown(e);
   $('btn-help').onclick   = () => showHelpModal();
+  $('btn-settings').onclick = () => showSettingsModal();
   $('btn-add-bike-header').onclick = showAddBikeModal;
   $('btn-add-bike-empty').onclick  = showAddBikeModal;
   $('btn-load-demo')?.addEventListener('click', loadDemoData);
@@ -982,6 +983,76 @@ function initTheme() {
     // No saved theme or legacy 'dark' → follow system preference
     document.documentElement.setAttribute('data-theme', 'light');
   }
+}
+
+function showSettingsModal() {
+  const activeId = getActiveProfileId();
+  const profiles = getProfiles();
+  const active = profiles.find(p => p.id === activeId);
+  const name = active?.name || 'Profile';
+
+  const body = `
+    <div class="settings-modal-section">
+      <div class="settings-modal-label">Current Profile</div>
+      <div class="settings-profile-row">
+        <div class="settings-profile-avatar">${escHtml(name[0] || 'P').toUpperCase()}</div>
+        <div class="settings-profile-name">${escHtml(name)}</div>
+      </div>
+    </div>
+
+    <div class="settings-modal-section">
+      <div class="settings-modal-label">Sync to another device</div>
+      <p class="settings-modal-hint">Your data lives in this browser. To access your bikes on another browser or device, copy this profile code and paste it there.</p>
+      <div class="settings-sync-code-row">
+        <input type="text" id="sync-code-display" class="field-input" value="${escHtml(activeId)}" readonly>
+        <button class="btn-secondary" id="sync-copy-btn">Copy</button>
+      </div>
+    </div>
+
+    <div class="settings-modal-section">
+      <div class="settings-modal-label">Restore from a code</div>
+      <p class="settings-modal-hint">Paste a profile code from another device to load its bikes here.</p>
+      <div class="settings-sync-code-row">
+        <input type="text" id="sync-code-input" class="field-input" placeholder="profile_…">
+        <button class="btn-primary" id="sync-restore-btn">Restore</button>
+      </div>
+    </div>`;
+
+  const footer = `<button class="btn-secondary" id="modal-cancel">Close</button>`;
+  openModal('Settings', body, footer);
+
+  document.getElementById('modal-cancel').onclick = closeModal;
+
+  document.getElementById('sync-copy-btn').onclick = () => {
+    const input = document.getElementById('sync-code-display');
+    input.select();
+    navigator.clipboard.writeText(input.value).then(() => {
+      showToast('Profile code copied', 'success');
+    }).catch(() => {
+      document.execCommand('copy');
+      showToast('Profile code copied', 'success');
+    });
+  };
+
+  document.getElementById('sync-restore-btn').onclick = () => {
+    const code = document.getElementById('sync-code-input').value.trim();
+    if (!code) { showToast('Paste a profile code first', 'error'); return; }
+    if (!code.startsWith('profile_') && code !== 'default') {
+      showToast('That is not a valid profile code', 'error');
+      return;
+    }
+    if (!confirm('Load this profile? Your current view will switch to its bikes.')) return;
+
+    // Add to profiles list if not present, then activate
+    const profiles = getProfiles();
+    if (!profiles.find(p => p.id === code)) {
+      profiles.push({ id: code, name: 'Synced Profile', createdAt: Date.now() });
+      localStorage.setItem('dialed_profiles', JSON.stringify(profiles));
+    }
+    activateProfile(code);
+    showToast('Profile restored', 'success');
+    setTimeout(() => location.reload(), 600);
+  };
 }
 
 function showExportDropdown(e) {
