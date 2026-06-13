@@ -139,13 +139,10 @@ export function showProfilePicker(onSelected) {
   overlay.innerHTML = `
     <div class="profile-picker-card">
       <div class="profile-picker-logo">
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-          <circle cx="16" cy="16" r="14" stroke="var(--accent)" stroke-width="1.8"/>
-          <circle cx="16" cy="16" r="6" stroke="var(--accent)" stroke-width="1.8"/>
-          <line x1="16" y1="2" x2="16" y2="8" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/>
-          <line x1="16" y1="24" x2="16" y2="30" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/>
-          <line x1="2" y1="16" x2="8" y2="16" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/>
-          <line x1="24" y1="16" x2="30" y2="16" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" shape-rendering="geometricPrecision">
+          <circle cx="11" cy="11" r="8" stroke="var(--accent)" stroke-width="2"/>
+          <path d="M14.5 14.5 L21 21" stroke="var(--text-primary)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M21 21 L17.4 20.3 M21 21 L20.3 17.4" stroke="var(--text-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span class="profile-picker-app-name">Quiver</span>
       </div>
@@ -171,6 +168,19 @@ export function showProfilePicker(onSelected) {
             <button class="btn-primary" id="profile-new-save" style="flex:1">Get Started</button>
           </div>
           <div id="profile-new-error" style="font-size:.78rem;color:var(--danger);margin-top:.35rem;display:none"></div>
+        </div>
+      </div>
+      <div class="profile-picker-restore">
+        <button class="btn-text profile-restore-toggle" id="profile-restore-toggle">
+          Have a profile code? Restore it
+        </button>
+        <div class="profile-restore-form hidden" id="profile-restore-form">
+          <input id="profile-restore-input" class="field-input" type="text" placeholder="profile_… or default">
+          <div style="display:flex;gap:.5rem;margin-top:.5rem">
+            <button class="btn-secondary" id="profile-restore-cancel" style="flex:1">Cancel</button>
+            <button class="btn-primary" id="profile-restore-go" style="flex:1">Restore</button>
+          </div>
+          <div id="profile-restore-error" style="font-size:.78rem;color:var(--danger);margin-top:.35rem;display:none"></div>
         </div>
       </div>
     </div>`;
@@ -230,6 +240,40 @@ export function showProfilePicker(onSelected) {
 
   document.getElementById('profile-new-save').onclick = saveNew;
   document.getElementById('profile-new-name').onkeydown = e => { if (e.key === 'Enter') saveNew(); };
+
+  // Restore with code
+  const restoreToggle = document.getElementById('profile-restore-toggle');
+  const restoreForm   = document.getElementById('profile-restore-form');
+  restoreToggle.onclick = () => {
+    restoreForm.classList.toggle('hidden');
+    if (!restoreForm.classList.contains('hidden')) {
+      restoreToggle.style.display = 'none';
+      document.getElementById('profile-restore-input').focus();
+    }
+  };
+  document.getElementById('profile-restore-cancel').onclick = () => {
+    restoreForm.classList.add('hidden');
+    restoreToggle.style.display = '';
+    document.getElementById('profile-restore-error').style.display = 'none';
+  };
+  const doRestore = () => {
+    const code = document.getElementById('profile-restore-input').value.trim();
+    const errEl = document.getElementById('profile-restore-error');
+    if (!code) { errEl.textContent = 'Paste a profile code'; errEl.style.display = 'block'; return; }
+    if (!code.startsWith('profile_') && code !== 'default') {
+      errEl.textContent = 'That doesn\\'t look like a valid code'; errEl.style.display = 'block'; return;
+    }
+    const existing = getProfiles();
+    if (!existing.find(p => p.id === code)) {
+      existing.push({ id: code, name: 'Synced Profile', createdAt: Date.now() });
+      localStorage.setItem(STORAGE_KEY_PROFILES, JSON.stringify(existing));
+    }
+    activateProfile(code);
+    closePicker();
+    onSelected(code);
+  };
+  document.getElementById('profile-restore-go').onclick = doRestore;
+  document.getElementById('profile-restore-input').onkeydown = e => { if (e.key === 'Enter') doRestore(); };
 
   function closePicker() {
     overlay.remove();

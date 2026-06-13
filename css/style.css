@@ -3534,3 +3534,21 @@ textarea.field-input {
 .settings-sync-code-row .btn-primary {
   flex-shrink: 0;
 }
+
+/* ─── PROFILE PICKER RESTORE ─────────────────────────────── */
+.profile-picker-restore {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.profile-restore-toggle {
+  font-size: .8rem;
+  color: var(--text-secondary);
+  width: 100%;
+  text-align: center;
+}
+.profile-restore-toggle:hover { color: var(--accent); }
+.profile-restore-form .field-input {
+  font-family: var(--font-mono);
+  font-size: .8rem;
+}
