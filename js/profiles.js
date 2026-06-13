@@ -261,7 +261,7 @@ export function showProfilePicker(onSelected) {
     const errEl = document.getElementById('profile-restore-error');
     if (!code) { errEl.textContent = 'Paste a profile code'; errEl.style.display = 'block'; return; }
     if (!code.startsWith('profile_') && code !== 'default') {
-      errEl.textContent = 'That doesn\\'t look like a valid code'; errEl.style.display = 'block'; return;
+      errEl.textContent = 'That is not a valid code'; errEl.style.display = 'block'; return;
     }
     const existing = getProfiles();
     if (!existing.find(p => p.id === code)) {
